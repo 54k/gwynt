@@ -6,16 +6,13 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractIoSession<T> implements IoSession {
 
     protected final ByteBuffer readBuffer = ByteBuffer.allocateDirect(4096);
 
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
-    protected final AtomicBoolean pendingClose = new AtomicBoolean(false);
-
+    protected final AtomicReference<IoSessionStatus> status = new AtomicReference<>(IoSessionStatus.CLOSED);
     protected final AtomicReference<Object> attachment = new AtomicReference<>();
     protected final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
 
@@ -34,13 +31,8 @@ public abstract class AbstractIoSession<T> implements IoSession {
     }
 
     @Override
-    public boolean isClosed() {
-        return closed.get();
-    }
-
-    @Override
-    public boolean isPendingClose() {
-        return pendingClose.get();
+    public IoSessionStatus getStatus() {
+        return status.get();
     }
 
     @Override

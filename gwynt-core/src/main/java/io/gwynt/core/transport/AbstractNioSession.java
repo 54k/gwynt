@@ -3,6 +3,7 @@ package io.gwynt.core.transport;
 import io.gwynt.core.AbstractIoSession;
 import io.gwynt.core.Channel;
 import io.gwynt.core.Endpoint;
+import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.exception.EofException;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
 
     @Override
     public void write(byte[] data) {
-        if (!pendingClose.get() && !closed.get()) {
+        if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
             writeQueue.add(ByteBuffer.wrap(data));
             synchronized (registrationLock) {
                 if (registered.get()) {
@@ -37,8 +38,8 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
 
     @Override
     public void close() {
-        if (!pendingClose.get() && !closed.get()) {
-            pendingClose.set(true);
+        if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
+            status.set(IoSessionStatus.PENDING_CLOSE);
             synchronized (registrationLock) {
                 if (registered.get()) {
                     dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
@@ -53,8 +54,11 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
             registered.set(true);
             this.dispatcher.set(dispatcher);
         }
-        if (!pendingClose.get()) {
-            pipeline.fireOpen();
+        if (status.get() != IoSessionStatus.PENDING_CLOSE) {
+            boolean wasActive = status.getAndSet(IoSessionStatus.OPENED) == IoSessionStatus.OPENED;
+            if (!wasActive) {
+                pipeline.fireOpen();
+            }
             if (!writeQueue.isEmpty()) {
                 this.dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
             }
@@ -67,13 +71,13 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
             registered.set(false);
             this.dispatcher.set(null);
         }
-        if (pendingClose.get()) {
+        if (status.get() == IoSessionStatus.PENDING_CLOSE) {
             try {
                 channel.close();
             } catch (IOException e) {
                 // ignore
             }
-            boolean wasClosed = closed.getAndSet(true);
+            boolean wasClosed = status.getAndSet(IoSessionStatus.CLOSED) == IoSessionStatus.CLOSED;
             if (!wasClosed) {
                 pipeline.fireClose();
             }
@@ -124,7 +128,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
 
         if (!writeQueue.isEmpty()) {
             dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
-        } else if (pendingClose.get()) {
+        } else if (status.get() == IoSessionStatus.PENDING_CLOSE) {
             closeConnection();
         }
     }
@@ -136,7 +140,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
     }
 
     private void closeConnection() {
-        pendingClose.set(true);
+        status.set(IoSessionStatus.PENDING_CLOSE);
         if (!writeQueue.isEmpty()) {
             writeQueue.clear();
         }

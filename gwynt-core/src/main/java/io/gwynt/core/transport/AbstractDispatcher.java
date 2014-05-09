@@ -199,7 +199,6 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 performTasks();
                 lock.countDown();
             } catch (Throwable e) {
-                e.printStackTrace();
                 throw new RuntimeException("Unexpected exception", e);
             }
         }

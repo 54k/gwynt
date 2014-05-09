@@ -11,9 +11,7 @@ public interface IoSession extends Closeable {
 
     void close();
 
-    boolean isClosed();
-
-    boolean isPendingClose();
+    IoSessionStatus getStatus();
 
     Object attach(Object attachment);
 
