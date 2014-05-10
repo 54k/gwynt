@@ -62,6 +62,9 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
 
     @Override
     public void addFirst(IoHandler ioHandler) {
+        if (ioHandler == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
         addFirst(generateName(ioHandler), ioHandler);
     }
 
@@ -86,6 +89,9 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
 
     @Override
     public void addLast(IoHandler ioHandler) {
+        if (ioHandler == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
         addLast(generateName(ioHandler), ioHandler);
     }
 
@@ -252,6 +258,9 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
 
     @Override
     public void remove(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
         synchronized (lock) {
             remove(getContext(name));
         }
@@ -259,6 +268,9 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
 
     @Override
     public void remove(IoHandler ioHandler) {
+        if (ioHandler == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
         synchronized (lock) {
             remove(getContext(ioHandler));
         }
