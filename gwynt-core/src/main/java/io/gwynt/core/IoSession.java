@@ -13,6 +13,8 @@ public interface IoSession extends Closeable {
 
     IoSessionStatus getStatus();
 
+    boolean isRegistered();
+
     Object attach(Object attachment);
 
     Object attachment();

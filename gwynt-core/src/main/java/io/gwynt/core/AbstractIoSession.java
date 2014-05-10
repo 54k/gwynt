@@ -26,7 +26,7 @@ public abstract class AbstractIoSession<T> implements IoSession {
 
         pipeline = new DefaultPipeline(this);
         for (IoHandler ioHandler : endpoint.getHandlers()) {
-            pipeline.addHandler(ioHandler);
+            pipeline.addLast(ioHandler);
         }
     }
 

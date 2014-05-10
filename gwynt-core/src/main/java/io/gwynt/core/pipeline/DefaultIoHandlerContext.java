@@ -10,17 +10,28 @@ public class DefaultIoHandlerContext implements IoHandlerContext {
     volatile Runnable unregisteredEvent;
     volatile Runnable openEvent;
     volatile Runnable closeEvent;
+    volatile boolean removed = true;
 
     private volatile DefaultIoHandlerContext prev;
     private volatile DefaultIoHandlerContext next;
     private IoHandlerInvoker invoker;
     private AbstractIoSession ioSession;
     private IoHandler ioHandler;
+    private String name;
 
     public DefaultIoHandlerContext(AbstractIoSession ioSession, IoHandler ioHandler) {
         this.ioSession = ioSession;
         this.ioHandler = ioHandler;
         invoker = new DefaultIoHandlerInvoker(ioSession.getEndpoint().getScheduler());
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public DefaultIoHandlerContext getPrev() {
@@ -51,6 +62,14 @@ public class DefaultIoHandlerContext implements IoHandlerContext {
     @Override
     public IoSession getIoSession() {
         return ioSession;
+    }
+
+    public void fireOnAdded() {
+        getInvoker().invokeOnHandlerAdded(this);
+    }
+
+    public void fireOnRemoved() {
+        getInvoker().invokeOnHandlerRemoved(this);
     }
 
     @Override
@@ -107,6 +126,11 @@ public class DefaultIoHandlerContext implements IoHandlerContext {
         DefaultIoHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnExceptionCaught(next, e);
         return this;
+    }
+
+    @Override
+    public boolean isRemoved() {
+        return removed;
     }
 
     private DefaultIoHandlerContext findContextInbound() {

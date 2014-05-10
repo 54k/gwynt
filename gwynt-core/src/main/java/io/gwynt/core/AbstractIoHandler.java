@@ -5,6 +5,14 @@ import io.gwynt.core.pipeline.IoHandlerContext;
 public abstract class AbstractIoHandler<I, O> implements IoHandler<I, O> {
 
     @Override
+    public void onHandlerAdded(IoHandlerContext context) {
+    }
+
+    @Override
+    public void onHandlerRemoved(IoHandlerContext context) {
+    }
+
+    @Override
     public void onRegistered(IoHandlerContext context) {
         context.fireOnRegistered();
     }

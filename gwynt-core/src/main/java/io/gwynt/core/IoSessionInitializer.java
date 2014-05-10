@@ -14,10 +14,10 @@ public abstract class IoSessionInitializer extends AbstractIoHandler {
     public void onRegistered(IoHandlerContext context) {
         try {
             initialize(context.getIoSession());
-            context.getIoSession().getPipeline().removeHandler(this);
+            context.getIoSession().getPipeline().remove(context.getName());
             super.onRegistered(context);
         } catch (Throwable e) {
-            logger.error("Error occurred while initializing session {}", context.getIoSession());
+            logger.error("Error occurred while initializing session. {} will be closed.", context.getIoSession());
             context.fireClosing();
         }
     }

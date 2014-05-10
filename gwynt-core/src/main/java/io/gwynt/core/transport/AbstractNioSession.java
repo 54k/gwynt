@@ -16,9 +16,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public abstract class AbstractNioSession extends AbstractIoSession<SelectableChannel> implements SelectorEventListener {
 
     private final Object registrationLock = new Object();
-
-    private AtomicBoolean registered = new AtomicBoolean(false);
-    private AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
+    private final AtomicBoolean registered = new AtomicBoolean(false);
+    private final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
 
     public AbstractNioSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
@@ -46,6 +45,11 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return registered.get();
     }
 
     @Override

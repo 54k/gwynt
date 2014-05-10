@@ -2,6 +2,10 @@ package io.gwynt.core.pipeline;
 
 public interface IoHandlerInvoker {
 
+    void invokeOnHandlerAdded(IoHandlerContext context);
+
+    void invokeOnHandlerRemoved(IoHandlerContext context);
+
     void invokeOnRegistered(IoHandlerContext context);
 
     void invokeOnUnregistered(IoHandlerContext context);

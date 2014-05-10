@@ -19,11 +19,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractDispatcher implements Dispatcher {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractDispatcher.class);
-
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
     protected Selector selector;
     protected boolean daemon;
-    private AtomicBoolean running = new AtomicBoolean(false);
-    private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
     private CountDownLatch lock = new CountDownLatch(1);
     private String name;
 

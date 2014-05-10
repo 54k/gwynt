@@ -111,7 +111,7 @@ public class WebSocketHandshakeCodec extends AbstractIoHandler<byte[], Handshake
 
             webSocketConnection.completeHandshake();
 
-            context.getIoSession().getPipeline().removeHandler(this);
+            context.getIoSession().getPipeline().remove(this);
             context.getIoSession().getPipeline().addHandler(new WebSocketFrameCodec(webSocketConnection) {
                 @Override
                 protected boolean isServer() {

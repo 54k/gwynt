@@ -10,6 +10,22 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
         this.scheduler = scheduler;
     }
 
+    private static void invokeOnHandlerAddedNow(IoHandlerContext context) {
+        try {
+            context.getIoHandler().onHandlerAdded(context);
+        } catch (Throwable e) {
+            context.getIoHandler().onExceptionCaught(context, e);
+        }
+    }
+
+    private static void invokeOnHandlerRemovedNow(IoHandlerContext context) {
+        try {
+            context.getIoHandler().onHandlerRemoved(context);
+        } catch (Throwable e) {
+            context.getIoHandler().onExceptionCaught(context, e);
+        }
+    }
+
     private static void invokeOnRegisteredNow(IoHandlerContext context) {
         try {
             context.getIoHandler().onRegistered(context);
@@ -70,6 +86,35 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
 
     private static void invokeOnExceptionCaughtNow(IoHandlerContext context, Throwable e) {
         context.getIoHandler().onExceptionCaught(context, e);
+    }
+
+
+    @Override
+    public void invokeOnHandlerAdded(final IoHandlerContext context) {
+        if (scheduler.inSchedulerThread()) {
+            invokeOnHandlerAddedNow(context);
+        } else {
+            scheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    invokeOnHandlerAddedNow(context);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void invokeOnHandlerRemoved(final IoHandlerContext context) {
+        if (scheduler.inSchedulerThread()) {
+            invokeOnHandlerRemovedNow(context);
+        } else {
+            scheduler.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    invokeOnHandlerRemovedNow(context);
+                }
+            });
+        }
     }
 
     @Override

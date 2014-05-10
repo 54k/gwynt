@@ -5,6 +5,8 @@ import io.gwynt.core.IoSession;
 
 public interface IoHandlerContext {
 
+    String getName();
+
     IoHandler getIoHandler();
 
     IoSession getIoSession();
@@ -24,4 +26,6 @@ public interface IoHandlerContext {
     IoHandlerContext fireClose();
 
     IoHandlerContext fireExceptionCaught(Throwable e);
+
+    boolean isRemoved();
 }
