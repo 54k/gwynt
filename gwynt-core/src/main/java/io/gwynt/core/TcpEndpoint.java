@@ -10,12 +10,12 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 
-public class NioEndpoint extends AbstractEndpoint {
+public class TcpEndpoint extends AbstractEndpoint {
 
     private DispatcherPool dispatcherPool;
     private NioAcceptor acceptor;
 
-    public NioEndpoint() {
+    public TcpEndpoint() {
         ioSessionFactory = new NioSessionFactory(this);
         eventScheduler = new SingleThreadedEventScheduler();
     }

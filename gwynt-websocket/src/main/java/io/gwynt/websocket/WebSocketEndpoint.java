@@ -3,15 +3,15 @@ package io.gwynt.websocket;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoHandler;
 import io.gwynt.core.IoSessionFactory;
-import io.gwynt.core.NioEndpoint;
+import io.gwynt.core.TcpEndpoint;
 import io.gwynt.core.scheduler.EventScheduler;
 
 public class WebSocketEndpoint implements Endpoint {
 
-    private NioEndpoint endpoint;
+    private TcpEndpoint endpoint;
 
     public WebSocketEndpoint() {
-        this.endpoint = new NioEndpoint();
+        this.endpoint = new TcpEndpoint();
         this.endpoint.addHandler(null);
     }
 

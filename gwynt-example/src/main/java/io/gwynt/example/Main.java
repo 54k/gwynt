@@ -1,7 +1,7 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractIoHandler;
-import io.gwynt.core.NioEndpoint;
+import io.gwynt.core.TcpEndpoint;
 import io.gwynt.core.pipeline.IoHandlerContext;
 
 import java.util.Date;
@@ -10,7 +10,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
 
-        new NioEndpoint().addHandler(new AbstractIoHandler<byte[], String>() {
+        new TcpEndpoint().addHandler(new AbstractIoHandler<byte[], String>() {
 
             @Override
             public void onMessageReceived(IoHandlerContext context, byte[] message) {
