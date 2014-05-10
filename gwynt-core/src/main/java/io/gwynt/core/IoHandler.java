@@ -12,8 +12,18 @@ import io.gwynt.core.pipeline.IoHandlerContext;
  */
 public interface IoHandler<I, O> {
 
+    /**
+     * Called when {@link io.gwynt.core.IoHandler} is added to {@link io.gwynt.core.pipeline.Pipeline}
+     *
+     * @param context {@link io.gwynt.core.pipeline.IoHandlerContext}
+     */
     void onHandlerAdded(IoHandlerContext context);
 
+    /**
+     * Called when {@link io.gwynt.core.IoHandler} is removed from {@link io.gwynt.core.pipeline.Pipeline}
+     *
+     * @param context {@link io.gwynt.core.pipeline.IoHandlerContext}
+     */
     void onHandlerRemoved(IoHandlerContext context);
 
     /**
