@@ -11,6 +11,19 @@ import io.gwynt.core.pipeline.IoHandlerContext;
  * @param <O> Type of outbound high-level message. Last filter in {@link io.gwynt.core.pipeline.Pipeline} should return array of bytes.
  */
 public interface IoHandler<I, O> {
+    /**
+     * Called when {@link io.gwynt.core.IoSession} is registered by {@link io.gwynt.core.transport.AbstractDispatcher}
+     *
+     * @param context {@link io.gwynt.core.pipeline.IoHandlerContext}
+     */
+    void onRegistered(IoHandlerContext context);
+
+    /**
+     * Called when {@link io.gwynt.core.IoSession} is unregistered by {@link io.gwynt.core.transport.AbstractDispatcher}
+     *
+     * @param context {@link io.gwynt.core.pipeline.IoHandlerContext}
+     */
+    void onUnregistered(IoHandlerContext context);
 
     /**
      * Called when {@link io.gwynt.core.IoSession} is fully established

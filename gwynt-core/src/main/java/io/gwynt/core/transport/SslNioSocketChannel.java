@@ -66,7 +66,8 @@ public class SslNioSocketChannel extends AbstractSelectableChannel<SocketChannel
 
                 do {
                     result = engine.unwrap(peerReadBuffer, sslReadBuffer);
-                } while (result.getStatus() == SSLEngineResult.Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP);
+                }
+                while (result.getStatus() == SSLEngineResult.Status.OK && result.getHandshakeStatus() == HandshakeStatus.NEED_UNWRAP);
             } else if (result.getHandshakeStatus() == HandshakeStatus.NEED_WRAP) {
                 result = engine.wrap(sslWriteBuffer, peerWriteBuffer);
                 peerWriteBuffer.flip();

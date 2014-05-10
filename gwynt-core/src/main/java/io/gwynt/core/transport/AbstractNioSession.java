@@ -53,6 +53,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
         synchronized (registrationLock) {
             registered.set(true);
             this.dispatcher.set(dispatcher);
+            pipeline.fireRegistered();
         }
         if (status.get() != IoSessionStatus.PENDING_CLOSE) {
             boolean wasActive = status.getAndSet(IoSessionStatus.OPENED) == IoSessionStatus.OPENED;
@@ -70,6 +71,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
         synchronized (registrationLock) {
             registered.set(false);
             this.dispatcher.set(null);
+            pipeline.fireUnregistered();
         }
         if (status.get() == IoSessionStatus.PENDING_CLOSE) {
             try {

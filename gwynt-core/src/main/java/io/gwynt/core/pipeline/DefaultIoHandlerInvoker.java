@@ -10,6 +10,22 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
         this.scheduler = scheduler;
     }
 
+    private static void invokeOnRegisteredNow(IoHandlerContext context) {
+        try {
+            context.getIoHandler().onRegistered(context);
+        } catch (Throwable e) {
+            context.getIoHandler().onExceptionCaught(context, e);
+        }
+    }
+
+    private static void invokeOnUnregisteredNow(IoHandlerContext context) {
+        try {
+            context.getIoHandler().onUnregistered(context);
+        } catch (Throwable e) {
+            context.getIoHandler().onExceptionCaught(context, e);
+        }
+    }
+
     private static void invokeOnOpenNow(IoHandlerContext context) {
         try {
             context.getIoHandler().onOpen(context);
@@ -54,6 +70,44 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
 
     private static void invokeOnExceptionCaughtNow(IoHandlerContext context, Throwable e) {
         context.getIoHandler().onExceptionCaught(context, e);
+    }
+
+    @Override
+    public void invokeOnRegistered(final IoHandlerContext context) {
+        if (scheduler.inSchedulerThread()) {
+            invokeOnRegisteredNow(context);
+        } else {
+            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            Runnable event = dctx.registeredEvent;
+            if (event == null) {
+                dctx.registeredEvent = event = new Runnable() {
+                    @Override
+                    public void run() {
+                        invokeOnRegisteredNow(context);
+                    }
+                };
+            }
+            scheduler.schedule(event);
+        }
+    }
+
+    @Override
+    public void invokeOnUnregistered(final IoHandlerContext context) {
+        if (scheduler.inSchedulerThread()) {
+            invokeOnUnregisteredNow(context);
+        } else {
+            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            Runnable event = dctx.unregisteredEvent;
+            if (event == null) {
+                dctx.unregisteredEvent = event = new Runnable() {
+                    @Override
+                    public void run() {
+                        invokeOnUnregisteredNow(context);
+                    }
+                };
+            }
+            scheduler.schedule(event);
+        }
     }
 
     @Override

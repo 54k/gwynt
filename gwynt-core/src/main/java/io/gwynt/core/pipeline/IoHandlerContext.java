@@ -9,6 +9,10 @@ public interface IoHandlerContext {
 
     IoSession getIoSession();
 
+    IoHandlerContext fireOnRegistered();
+
+    IoHandlerContext fireOnUnregistered();
+
     IoHandlerContext fireOpen();
 
     IoHandlerContext fireMessageReceived(Object message);

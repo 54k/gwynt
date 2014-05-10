@@ -6,6 +6,8 @@ import io.gwynt.core.IoSession;
 
 public class DefaultIoHandlerContext implements IoHandlerContext {
 
+    volatile Runnable registeredEvent;
+    volatile Runnable unregisteredEvent;
     volatile Runnable openEvent;
     volatile Runnable closeEvent;
 
@@ -49,6 +51,20 @@ public class DefaultIoHandlerContext implements IoHandlerContext {
     @Override
     public IoSession getIoSession() {
         return ioSession;
+    }
+
+    @Override
+    public IoHandlerContext fireOnRegistered() {
+        DefaultIoHandlerContext next = findContextInbound();
+        next.getInvoker().invokeOnRegistered(next);
+        return this;
+    }
+
+    @Override
+    public IoHandlerContext fireOnUnregistered() {
+        DefaultIoHandlerContext next = findContextInbound();
+        next.getInvoker().invokeOnUnregistered(next);
+        return this;
     }
 
     @Override

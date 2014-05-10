@@ -24,9 +24,7 @@ public class DefaultPipeline implements Pipeline {
         head = new DefaultIoHandlerContext(ioSession, HEAD_HANDLER);
         tail = new DefaultIoHandlerContext(ioSession, TAIL_HANDLER);
         head.setNext(tail);
-        head.setPrev(tail);
         tail.setPrev(head);
-        tail.setNext(head);
     }
 
     @Override
@@ -39,6 +37,14 @@ public class DefaultPipeline implements Pipeline {
             handler.setPrev(prev);
             tail.setPrev(handler);
         }
+    }
+
+    public void fireRegistered() {
+        head.fireOnRegistered();
+    }
+
+    public void fireUnregistered() {
+        head.fireOnUnregistered();
     }
 
     public void fireOpen() {
@@ -87,6 +93,14 @@ public class DefaultPipeline implements Pipeline {
     }
 
     private static class TailHandler extends AbstractIoHandler {
+
+        @Override
+        public void onRegistered(IoHandlerContext context) {
+        }
+
+        @Override
+        public void onUnregistered(IoHandlerContext context) {
+        }
 
         @Override
         public void onOpen(IoHandlerContext context) {
