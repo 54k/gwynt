@@ -40,10 +40,6 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     @Override
     public void register(final SelectableChannel channel) {
-        if (!running.get()) {
-            throw new IllegalStateException("Not running");
-        }
-
         addTask(new Runnable() {
             @Override
             public void run() {
