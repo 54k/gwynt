@@ -19,8 +19,8 @@ import java.util.WeakHashMap;
 
 public class NioUpdSession extends NioTcpSession {
 
-    private Map<SocketAddress, NioUdpSessionInternal> address2session =
-            Collections.synchronizedMap(new WeakHashMap<SocketAddress, NioUdpSessionInternal>());
+    private Map<SocketAddress, InternalNioUdpSession> address2session =
+            Collections.synchronizedMap(new WeakHashMap<SocketAddress, InternalNioUdpSession>());
 
     public NioUpdSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
@@ -61,14 +61,10 @@ public class NioUpdSession extends NioTcpSession {
         synchronized (registrationLock) {
             registered.set(true);
             this.dispatcher.set(dispatcher);
-            pipeline.addFirst(new DatagramIoHandler());
             pipeline.fireRegistered();
         }
         status.set(IoSessionStatus.OPENED);
         pipeline.fireOpen();
-        if (!writeQueue.isEmpty()) {
-            this.dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
-        }
     }
 
     @Override
@@ -77,7 +73,7 @@ public class NioUpdSession extends NioTcpSession {
         SocketAddress address = channel.receive(readBuffer);
 
         if (!address2session.containsKey(address)) {
-            NioUdpSessionInternal session = new NioUdpSessionInternal(this.channel, endpoint, this, address);
+            InternalNioUdpSession session = new InternalNioUdpSession(this.channel, endpoint, this, address);
             address2session.put(address, session);
         }
 
@@ -85,8 +81,7 @@ public class NioUpdSession extends NioTcpSession {
         byte[] message = new byte[readBuffer.limit()];
         readBuffer.get(message);
         readBuffer.clear();
-
-        address2session.get(address).fireMessageReceived(new Datagram(address, ByteBuffer.wrap(message)));
+        address2session.get(address).fireMessageReceived(message);
     }
 
     @Override
@@ -100,6 +95,10 @@ public class NioUpdSession extends NioTcpSession {
                 writeQueue.poll();
             }
         }
+
+        if (!writeQueue.isEmpty()) {
+            dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+        }
     }
 
     @Override
@@ -107,22 +106,21 @@ public class NioUpdSession extends NioTcpSession {
         pipeline.fireExceptionCaught(e);
     }
 
-    private static class NioUdpSessionInternal extends AbstractIoSession {
+    private static class InternalNioUdpSession extends AbstractIoSession {
 
-        NioUpdSession parent;
-        SocketAddress address;
+        private NioUpdSession parent;
+        private SocketAddress address;
 
         @SuppressWarnings("unchecked")
-        private NioUdpSessionInternal(Channel<SelectableChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
+        private InternalNioUdpSession(Channel<SelectableChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
             super(channel, endpoint);
             this.parent = parent;
             this.address = address;
-            pipeline.addFirst(new DatagramIoHandler());
         }
 
         @Override
         public void write(Object data) {
-            parent.write(data);
+            parent.write(new Datagram(address, ByteBuffer.wrap((byte[]) data)));
         }
 
         @Override
@@ -140,7 +138,7 @@ public class NioUpdSession extends NioTcpSession {
             return address;
         }
 
-        void fireMessageReceived(Datagram message) {
+        void fireMessageReceived(byte[] message) {
             pipeline.fireMessageReceived(message);
         }
     }
