@@ -24,6 +24,8 @@ public class TcpEndpoint extends AbstractEndpoint {
     @Override
     public Endpoint bind(int port) {
         try {
+            eventScheduler.start();
+
             ServerSocketChannel channel = ServerSocketChannel.open();
             channel.configureBlocking(false);
             channel.socket().setSoTimeout(500);
@@ -31,7 +33,6 @@ public class TcpEndpoint extends AbstractEndpoint {
             channel.socket().setPerformancePreferences(0, 1, 2);
             channel.bind(new InetSocketAddress(port));
             initialize(channel);
-            eventScheduler.start();
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
