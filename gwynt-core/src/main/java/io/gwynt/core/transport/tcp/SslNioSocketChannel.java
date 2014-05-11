@@ -1,4 +1,6 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.transport.tcp;
+
+import io.gwynt.core.transport.AbstractSelectableChannel;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -11,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@Deprecated
 public class SslNioSocketChannel extends AbstractSelectableChannel<SocketChannel> {
 
     private SSLEngine engine;

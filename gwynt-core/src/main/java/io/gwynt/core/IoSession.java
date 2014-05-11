@@ -7,7 +7,7 @@ import java.net.SocketAddress;
 
 public interface IoSession extends Closeable {
 
-    void write(byte[] data);
+    void write(Object data);
 
     void close();
 

@@ -1,6 +1,8 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.IoSessionFactory;
+import io.gwynt.core.transport.tcp.NioTcpSession;
+import io.gwynt.core.transport.tcp.SelectorEventListener;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
@@ -8,9 +10,9 @@ import java.nio.channels.SelectionKey;
 
 public class NioDispatcher extends AbstractDispatcher {
 
-    private IoSessionFactory<SelectableChannel, AbstractNioSession> ioSessionFactory;
+    protected IoSessionFactory<SelectableChannel, NioTcpSession> ioSessionFactory;
 
-    public NioDispatcher(IoSessionFactory<SelectableChannel, AbstractNioSession> ioSessionFactory) {
+    public NioDispatcher(IoSessionFactory<SelectableChannel, NioTcpSession> ioSessionFactory) {
         this.ioSessionFactory = ioSessionFactory;
         daemon = true;
     }
@@ -42,10 +44,10 @@ public class NioDispatcher extends AbstractDispatcher {
         SelectorEventListener attachment = (SelectorEventListener) key.attachment();
         try {
             if (key.isReadable()) {
-                attachment.onSelectedForRead();
+                attachment.onSelectedForRead(key);
             } else if (key.isWritable()) {
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                attachment.onSelectedForWrite();
+                attachment.onSelectedForWrite(key);
             }
         } catch (IOException e) {
             attachment.onExceptionCaught(e);

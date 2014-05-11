@@ -324,10 +324,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
         };
     }
 
-    private static class HeadHandler extends AbstractIoHandler<Object, byte[]> {
+    private static class HeadHandler extends AbstractIoHandler {
 
         @Override
-        public void onMessageSent(IoHandlerContext context, byte[] message) {
+        public void onMessageSent(IoHandlerContext context, Object message) {
             context.getIoSession().write(message);
         }
 

@@ -1,4 +1,7 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.transport.tcp;
+
+import io.gwynt.core.transport.AbstractDispatcher;
+import io.gwynt.core.transport.DispatcherPool;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
