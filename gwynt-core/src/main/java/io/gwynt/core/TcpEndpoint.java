@@ -2,9 +2,9 @@ package io.gwynt.core;
 
 import io.gwynt.core.scheduler.SingleThreadedEventScheduler;
 import io.gwynt.core.transport.DispatcherPool;
-import io.gwynt.core.transport.NioAcceptor;
 import io.gwynt.core.transport.NioDispatcherPool;
-import io.gwynt.core.transport.NioSessionFactory;
+import io.gwynt.core.transport.tcp.NioAcceptor;
+import io.gwynt.core.transport.tcp.NioTcpSessionFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -16,7 +16,7 @@ public class TcpEndpoint extends AbstractEndpoint {
     private NioAcceptor acceptor;
 
     public TcpEndpoint() {
-        ioSessionFactory = new NioSessionFactory(this);
+        ioSessionFactory = new NioTcpSessionFactory(this);
         eventScheduler = new SingleThreadedEventScheduler();
     }
 
@@ -44,7 +44,7 @@ public class TcpEndpoint extends AbstractEndpoint {
         this.dispatcherPool = dispatcherPool;
 
         NioAcceptor acceptor = new NioAcceptor(dispatcherPool);
-        acceptor.setName("gwynt-acceptor");
+        acceptor.setName("gwynt-tcp-acceptor");
         acceptor.start();
         this.acceptor = acceptor;
         dispatcherPool.start();

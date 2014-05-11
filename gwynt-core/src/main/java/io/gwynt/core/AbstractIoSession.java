@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractIoSession<T> implements IoSession {
 
-    protected final ByteBuffer readBuffer = ByteBuffer.allocateDirect(4096);
+    protected final ByteBuffer readBuffer = ByteBuffer.allocateDirect(150000);
 
     protected final AtomicReference<IoSessionStatus> status = new AtomicReference<>(IoSessionStatus.CLOSED);
     protected final AtomicReference<Object> attachment = new AtomicReference<>();
-    protected final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
+    protected final Queue<Object> writeQueue = new ConcurrentLinkedQueue<>();
 
     protected Channel<T> channel;
     protected DefaultPipeline pipeline;
@@ -28,6 +28,10 @@ public abstract class AbstractIoSession<T> implements IoSession {
         for (IoHandler ioHandler : endpoint.getHandlers()) {
             pipeline.addLast(ioHandler);
         }
+    }
+
+    public Object getChannel() {
+        return channel;
     }
 
     @Override

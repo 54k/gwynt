@@ -36,30 +36,20 @@ public abstract class WebSocketFrameCodec extends AbstractIoHandler<byte[], Fram
 
     @Override
     public void onMessageSent(IoHandlerContext context, Frame message) {
-        super.onMessageSent(context, message);
+        context.fireMessageSent(encode(message));
     }
 
     @Override
     public void onMessageReceived(IoHandlerContext context, byte[] message) {
-        super.onMessageReceived(context, message);
-    }
-
-    @Override
-    public void decode(IoHandlerContext context, byte[] message) {
         inboundContext = context;
         appendInputData(message);
         try {
             decode();
         } catch (ProtocolException e) {
             webSocketConnection.close(e.getCloseFrame());
-            inboundContext.halt();
             logger.info("Protocol violation {}, closing session", e, webSocketConnection);
         }
-    }
-
-    @Override
-    public void encode(IoHandlerContext context, Frame message) {
-        context.proceed(encode(message));
+        super.onMessageReceived(context, message);
     }
 
     public byte[] encode(Frame data) {
@@ -233,14 +223,13 @@ public abstract class WebSocketFrameCodec extends AbstractIoHandler<byte[], Fram
             if (controlBuffer.remaining() > 1) {
                 code = controlBuffer.getShort();
             }
-            inboundContext.proceed(new CloseFrame(code, controlBuffer.asCharBuffer().toString()));
+            onMessageSent(inboundContext, new CloseFrame(code, controlBuffer.asCharBuffer().toString()));
         } else if (opCode == FrameUtils.OPCODE_PING) {
             Frame pongFrame = new Frame(FrameUtils.OPCODE_PONG, true, controlBufferToByteArray());
-            inboundContext.getIoSession().write(pongFrame);
-            inboundContext.halt();
+            onMessageSent(inboundContext, pongFrame);
         } else if (opCode == FrameUtils.OPCODE_PONG) {
             Frame pongFrame = new Frame(FrameUtils.OPCODE_PONG, true, controlBufferToByteArray());
-            inboundContext.proceed(pongFrame);
+            inboundContext.fireMessageReceived(pongFrame);
         } else {
             controlBuffer.clear();
             throw new ProtocolException(new CloseFrame(CloseFrame.PROTOCOL_ERROR, "Invalid opcode " + opCode));
@@ -260,7 +249,6 @@ public abstract class WebSocketFrameCodec extends AbstractIoHandler<byte[], Fram
     private void processDataFrame() {
         if (!appendPayloadToMessage(ByteBuffer.wrap(payload))) {
             if (!hasEnoughData(payloadLength - payloadWritten)) {
-                inboundContext.halt();
                 return;
             }
         }
@@ -270,11 +258,10 @@ public abstract class WebSocketFrameCodec extends AbstractIoHandler<byte[], Fram
         dataFrame.setFin(fin);
         dataFrame.setOpcode(opCode);
 
+        inboundContext.fireMessageReceived(dataFrame);
         if (continuationExpected) {
-            inboundContext.proceed(dataFrame);
             newFrame();
         } else {
-            inboundContext.proceed(dataFrame);
             newMessage();
         }
     }

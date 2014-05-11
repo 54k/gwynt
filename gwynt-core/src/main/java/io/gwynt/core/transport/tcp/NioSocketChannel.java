@@ -1,6 +1,7 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.transport.tcp;
 
 import io.gwynt.core.exception.EofException;
+import io.gwynt.core.transport.AbstractSelectableChannel;
 
 import java.io.IOException;
 import java.net.SocketAddress;

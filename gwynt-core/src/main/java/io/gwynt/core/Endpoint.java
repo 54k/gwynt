@@ -5,7 +5,7 @@ import io.gwynt.core.scheduler.EventScheduler;
 public interface Endpoint {
 
     /**
-     * Add filter from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
+     * Add handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
      *
      * @param ioHandler {@link IoHandler} implementation
      * @return current {@link Endpoint}
@@ -13,7 +13,7 @@ public interface Endpoint {
     Endpoint addHandler(IoHandler ioHandler);
 
     /**
-     * Remove filter from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
+     * Remove handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
      *
      * @param ioHandler {@link IoHandler} implementation
      * @return current {@link Endpoint}

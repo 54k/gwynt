@@ -58,6 +58,9 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
 
     @Override
     public void start() {
+        if (running.get()) {
+            return;
+        }
         running.set(true);
         Thread thread = new Thread(this);
         thread.setName("gwynt-scheduler");
@@ -73,6 +76,9 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
 
     @Override
     public void stop() {
+        if (!running.get()) {
+            return;
+        }
         running.set(false);
         if (schedulerThread.getState() == State.WAITING) {
             schedulerThread.interrupt();

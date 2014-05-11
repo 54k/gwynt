@@ -1,10 +1,11 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.transport.tcp;
 
 import io.gwynt.core.AbstractIoSession;
 import io.gwynt.core.Channel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.exception.EofException;
+import io.gwynt.core.transport.Dispatcher;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,20 +14,23 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class AbstractNioSession extends AbstractIoSession<SelectableChannel> implements SelectorEventListener {
+public class NioTcpSession extends AbstractIoSession<SelectableChannel> implements SelectorEventListener {
 
-    private final Object registrationLock = new Object();
-    private final AtomicBoolean registered = new AtomicBoolean(false);
-    private final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
+    protected final Object registrationLock = new Object();
+    protected final AtomicBoolean registered = new AtomicBoolean(false);
+    protected final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
 
-    public AbstractNioSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
+    public NioTcpSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
     }
 
     @Override
-    public void write(byte[] data) {
+    public void write(Object data) {
+        if (!(data instanceof byte[])) {
+            throw new IllegalArgumentException("data is not instanceof byte[]");
+        }
         if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
-            writeQueue.add(ByteBuffer.wrap(data));
+            writeQueue.add(ByteBuffer.wrap((byte[]) data));
             synchronized (registrationLock) {
                 if (registered.get()) {
                     dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
@@ -91,7 +95,7 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
     }
 
     @Override
-    public void onSelectedForRead() throws IOException {
+    public void onSelectedForRead(SelectionKey key) throws IOException {
         int totalBytesRead;
         boolean eof = false;
 
@@ -116,8 +120,8 @@ public abstract class AbstractNioSession extends AbstractIoSession<SelectableCha
     }
 
     @Override
-    public void onSelectedForWrite() throws IOException {
-        ByteBuffer data = writeQueue.peek();
+    public void onSelectedForWrite(SelectionKey key) throws IOException {
+        ByteBuffer data = (ByteBuffer) writeQueue.peek();
 
         if (data != null) {
             try {

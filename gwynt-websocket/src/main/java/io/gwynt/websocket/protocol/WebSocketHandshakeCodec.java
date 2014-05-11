@@ -112,20 +112,19 @@ public class WebSocketHandshakeCodec extends AbstractIoHandler<byte[], Handshake
             webSocketConnection.completeHandshake();
 
             context.getIoSession().getPipeline().remove(this);
-            context.getIoSession().getPipeline().addHandler(new WebSocketFrameCodec(webSocketConnection) {
+            context.getIoSession().getPipeline().addLast(new WebSocketFrameCodec(webSocketConnection) {
                 @Override
                 protected boolean isServer() {
                     return true;
                 }
             });
 
-            context.halt();
             eventHandler.onOpen(webSocketConnection);
         } catch (HandshakeException e) {
             Handshake handshake = new Handshake();
             handshake.setStatusLine(HANDSHAKE_SERVER_FORBIDDEN_STATUS_LINE);
-            ioSession.write(handshake);
-            ioSession.close();
+            onMessageSent(context, handshake);
+            context.fireClosing();
             logger.warn("Invalid handshake data: {}, closing session {}", e.getMessage(), ioSession);
         }
     }
