@@ -9,6 +9,9 @@ import io.gwynt.core.transport.tcp.NioTcpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.util.Date;
 
 public class Main {
@@ -22,14 +25,23 @@ public class Main {
 
     private static class StringConverter extends AbstractIoHandler<byte[], String> {
 
+        private Charset charset = Charset.forName("UTF-8");
+
         @Override
         public void onMessageReceived(IoHandlerContext context, byte[] message) {
-            context.fireMessageReceived(new String(message));
+            ByteBuffer buffer = ByteBuffer.wrap(message);
+            CharBuffer charBuffer = charset.decode(buffer);
+            buffer.clear();
+            context.fireMessageReceived(charBuffer.toString());
         }
 
         @Override
         public void onMessageSent(IoHandlerContext context, String message) {
-            context.fireMessageSent(message.getBytes());
+            ByteBuffer buffer = charset.encode(message);
+            byte[] messageBytes = new byte[buffer.limit()];
+            buffer.get(messageBytes);
+            buffer.clear();
+            context.fireMessageSent(messageBytes);
         }
     }
 
