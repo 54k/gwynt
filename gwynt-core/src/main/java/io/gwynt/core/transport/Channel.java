@@ -1,4 +1,4 @@
-package io.gwynt.core;
+package io.gwynt.core.transport;
 
 import java.io.IOException;
 import java.net.SocketAddress;

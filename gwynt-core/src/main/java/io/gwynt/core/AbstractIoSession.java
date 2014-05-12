@@ -1,6 +1,7 @@
 package io.gwynt.core;
 
 import io.gwynt.core.pipeline.DefaultPipeline;
+import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 import io.gwynt.core.transport.tcp.SelectorEventListener;
 
