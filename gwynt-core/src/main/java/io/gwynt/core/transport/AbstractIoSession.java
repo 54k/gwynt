@@ -1,5 +1,9 @@
-package io.gwynt.core;
+package io.gwynt.core.transport;
 
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.IoHandler;
+import io.gwynt.core.IoSession;
+import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.pipeline.DefaultPipeline;
 import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
@@ -35,6 +39,10 @@ public abstract class AbstractIoSession<T> implements SelectorEventListener, IoS
         for (IoHandler ioHandler : endpoint.getHandlers()) {
             pipeline.addLast(ioHandler);
         }
+    }
+
+    protected T javaChannel() {
+        return channel.unwrap();
     }
 
     @Override

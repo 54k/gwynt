@@ -1,6 +1,6 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.AbstractIoSession;
+import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.IoHandler;
 import io.gwynt.core.IoSession;
 

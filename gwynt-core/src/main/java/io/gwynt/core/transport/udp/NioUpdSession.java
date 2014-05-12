@@ -1,6 +1,6 @@
 package io.gwynt.core.transport.udp;
 
-import io.gwynt.core.AbstractIoSession;
+import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.transport.Channel;
@@ -17,7 +17,7 @@ import java.util.WeakHashMap;
 
 public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
 
-    private Map<SocketAddress, InternalNioUdpSession> address2session = Collections.synchronizedMap(new WeakHashMap<SocketAddress, InternalNioUdpSession>());
+    private Map<SocketAddress, RemoteNioUdpSession> address2session = Collections.synchronizedMap(new WeakHashMap<SocketAddress, RemoteNioUdpSession>());
 
     public NioUpdSession(Channel<DatagramChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
@@ -32,7 +32,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
             writeQueue.add(data);
             synchronized (registrationLock) {
                 if (registered.get()) {
-                    dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+                    dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
                 }
             }
         }
@@ -40,6 +40,14 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
 
     @Override
     public void close() {
+        if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
+            status.set(IoSessionStatus.PENDING_CLOSE);
+            synchronized (registrationLock) {
+                if (registered.get()) {
+                    dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
+                }
+            }
+        }
     }
 
     @Override
@@ -49,8 +57,17 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
             this.dispatcher.set(null);
             pipeline.fireUnregistered();
         }
-        status.set(IoSessionStatus.CLOSED);
-        pipeline.fireClose();
+        if (status.get() == IoSessionStatus.PENDING_CLOSE) {
+            try {
+                channel.close();
+            } catch (IOException e) {
+                // ignore
+            }
+            boolean wasClosed = status.getAndSet(IoSessionStatus.CLOSED) == IoSessionStatus.CLOSED;
+            if (!wasClosed) {
+                pipeline.fireClose();
+            }
+        }
     }
 
     @Override
@@ -60,17 +77,24 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
             this.dispatcher.set(dispatcher);
             pipeline.fireRegistered();
         }
-        status.set(IoSessionStatus.OPENED);
-        pipeline.fireOpen();
+        if (status.get() != IoSessionStatus.PENDING_CLOSE) {
+            boolean wasActive = status.getAndSet(IoSessionStatus.OPENED) == IoSessionStatus.OPENED;
+            if (!wasActive) {
+                pipeline.fireOpen();
+            }
+            if (!writeQueue.isEmpty()) {
+                this.dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
+            }
+        }
     }
 
     @Override
     public void onSelectedForRead(SelectionKey key) throws IOException {
-        DatagramChannel channel = (DatagramChannel) key.channel();
+        DatagramChannel channel = javaChannel();
         SocketAddress address = channel.receive(readBuffer);
 
         if (!address2session.containsKey(address)) {
-            InternalNioUdpSession session = new InternalNioUdpSession(this, address);
+            RemoteNioUdpSession session = new RemoteNioUdpSession(this, address);
             address2session.put(address, session);
         }
 
@@ -86,7 +110,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
         Datagram data = (Datagram) writeQueue.peek();
 
         if (data != null) {
-            DatagramChannel channel = (DatagramChannel) key.channel();
+            DatagramChannel channel = javaChannel();
             channel.send(data.getMessage(), data.getRecipient());
             if (!data.getMessage().hasRemaining()) {
                 writeQueue.poll();
@@ -94,21 +118,32 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
         }
 
         if (!writeQueue.isEmpty()) {
-            dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+            dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
+        } else if (status.get() == IoSessionStatus.PENDING_CLOSE) {
+            closeConnection();
         }
     }
 
     @Override
     public void onExceptionCaught(Throwable e) {
         pipeline.fireExceptionCaught(e);
+        closeConnection();
     }
 
-    private static class InternalNioUdpSession extends NioUpdSession {
+    private void closeConnection() {
+        status.set(IoSessionStatus.PENDING_CLOSE);
+        if (!writeQueue.isEmpty()) {
+            writeQueue.clear();
+        }
+        dispatcher.get().unregister(javaChannel());
+    }
+
+    private static class RemoteNioUdpSession extends NioUpdSession {
 
         private NioUpdSession parent;
         private SocketAddress recipient;
 
-        private InternalNioUdpSession(NioUpdSession parent, SocketAddress recipient) {
+        private RemoteNioUdpSession(NioUpdSession parent, SocketAddress recipient) {
             super(parent.channel, parent.endpoint);
             this.parent = parent;
             this.recipient = recipient;
@@ -134,7 +169,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
             return recipient;
         }
 
-        void fireMessageReceived(byte[] message) {
+        private void fireMessageReceived(byte[] message) {
             pipeline.fireMessageReceived(message);
         }
     }

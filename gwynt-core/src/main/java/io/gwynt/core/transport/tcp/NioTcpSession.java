@@ -1,10 +1,10 @@
 package io.gwynt.core.transport.tcp;
 
-import io.gwynt.core.AbstractIoSession;
-import io.gwynt.core.transport.Channel;
+import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.exception.EofException;
+import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
             writeQueue.add(ByteBuffer.wrap((byte[]) data));
             synchronized (registrationLock) {
                 if (registered.get()) {
-                    dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+                    dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
                 }
             }
         }
@@ -39,7 +39,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
             status.set(IoSessionStatus.PENDING_CLOSE);
             synchronized (registrationLock) {
                 if (registered.get()) {
-                    dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+                    dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
                 }
             }
         }
@@ -58,7 +58,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
                 pipeline.fireOpen();
             }
             if (!writeQueue.isEmpty()) {
-                this.dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+                this.dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
             }
         }
     }
@@ -126,7 +126,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
         }
 
         if (!writeQueue.isEmpty()) {
-            dispatcher.get().modifyRegistration(channel.unwrap(), SelectionKey.OP_WRITE);
+            dispatcher.get().modifyRegistration(javaChannel(), SelectionKey.OP_WRITE);
         } else if (status.get() == IoSessionStatus.PENDING_CLOSE) {
             closeConnection();
         }
@@ -143,6 +143,6 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
         if (!writeQueue.isEmpty()) {
             writeQueue.clear();
         }
-        dispatcher.get().unregister(channel.unwrap());
+        dispatcher.get().unregister(javaChannel());
     }
 }
