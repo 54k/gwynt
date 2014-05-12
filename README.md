@@ -11,6 +11,3 @@ Gwynt is a simple NIO-based networking framework for building protocol servers.
 # Usage:
 
 Refer to example project for basic usage
-
-
-
