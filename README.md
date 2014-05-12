@@ -4,7 +4,7 @@ Gwynt is a simple NIO-based networking framework for building protocol servers.
 
 #### Features:
 
-- session pipelines inspired by Netty
+- session pipelines
 - tcp support
 - udp support with connected abstraction
 
