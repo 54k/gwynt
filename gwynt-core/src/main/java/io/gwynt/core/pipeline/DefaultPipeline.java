@@ -321,6 +321,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
                 DefaultIoHandlerContext next = context.getNext();
                 return next != tail ? context = next : null;
             }
+
+            @Override
+            public void remove() {
+                DefaultPipeline.this.remove(context);
+            }
         };
     }
 
