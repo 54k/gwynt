@@ -5,6 +5,7 @@ import io.gwynt.core.Endpoint;
 import io.gwynt.core.TcpEndpoint;
 import io.gwynt.core.UdpEndpoint;
 import io.gwynt.core.pipeline.IoHandlerContext;
+import io.gwynt.core.transport.tcp.NioTcpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +34,16 @@ public class Main {
     }
 
     private static class MainHandler extends AbstractIoHandler<String, Object> {
+
         private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
         @Override
         public void onMessageReceived(IoHandlerContext context, String message) {
             context.fireMessageSent("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
             context.fireMessageSent(new Date().toString() + "\r\n");
-            context.fireClosing();
+            if (context.getIoSession() instanceof NioTcpSession) {
+                context.fireClosing();
+            }
         }
 
         @Override
