@@ -7,7 +7,6 @@ import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,8 +14,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractIoSession<T> implements SelectorEventListener, IoSession {
 
-    protected final ByteBuffer readBuffer = ByteBuffer.allocateDirect(150000);
     protected final Object registrationLock = new Object();
+
     protected final AtomicBoolean registered = new AtomicBoolean(false);
     protected final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
 

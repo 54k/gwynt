@@ -3,6 +3,7 @@ package io.gwynt.core.transport.udp;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.transport.AbstractIoSession;
+import io.gwynt.core.transport.ByteBufferAllocator;
 import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 
@@ -91,6 +92,8 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
     @Override
     public void onSelectedForRead(SelectionKey key) throws IOException {
         DatagramChannel channel = javaChannel();
+        ByteBuffer readBuffer = ByteBufferAllocator.allocate(150000);
+
         SocketAddress address = channel.receive(readBuffer);
 
         if (!address2session.containsKey(address)) {
@@ -103,6 +106,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
         readBuffer.get(message);
         readBuffer.clear();
         address2session.get(address).fireMessageReceived(message);
+        ByteBufferAllocator.release(readBuffer);
     }
 
     @Override

@@ -4,6 +4,7 @@ import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.transport.AbstractIoSession;
+import io.gwynt.core.transport.ByteBufferAllocator;
 import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 
@@ -87,7 +88,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
     public void onSelectedForRead(SelectionKey key) throws IOException {
         int totalBytesRead;
         boolean eof = false;
-
+        ByteBuffer readBuffer = ByteBufferAllocator.allocate(150000);
         try {
             totalBytesRead = channel.read(readBuffer);
         } catch (EofException e) {
@@ -99,13 +100,13 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
         if (totalBytesRead > 0) {
             byte[] message = new byte[readBuffer.limit()];
             readBuffer.get(message);
-            readBuffer.clear();
             pipeline.fireMessageReceived(message);
         }
 
         if (eof) {
             closeConnection();
         }
+        ByteBufferAllocator.release(readBuffer);
     }
 
     @Override
