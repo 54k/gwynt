@@ -108,7 +108,6 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
         private NioUpdSession parent;
         private SocketAddress address;
 
-        @SuppressWarnings("unchecked")
         private InternalNioUdpSession(Channel<DatagramChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
             super(channel, endpoint);
             this.parent = parent;
