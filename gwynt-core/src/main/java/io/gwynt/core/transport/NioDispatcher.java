@@ -2,7 +2,6 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.IoSessionFactory;
 import io.gwynt.core.transport.tcp.NioTcpSession;
-import io.gwynt.core.transport.tcp.SelectorEventListener;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;

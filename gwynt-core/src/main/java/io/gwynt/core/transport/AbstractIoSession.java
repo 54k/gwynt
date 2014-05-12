@@ -5,9 +5,6 @@ import io.gwynt.core.IoHandler;
 import io.gwynt.core.IoSession;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.pipeline.DefaultPipeline;
-import io.gwynt.core.transport.Channel;
-import io.gwynt.core.transport.Dispatcher;
-import io.gwynt.core.transport.tcp.SelectorEventListener;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;

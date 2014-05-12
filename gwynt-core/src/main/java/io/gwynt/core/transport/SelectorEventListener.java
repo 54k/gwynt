@@ -1,6 +1,4 @@
-package io.gwynt.core.transport.tcp;
-
-import io.gwynt.core.transport.Dispatcher;
+package io.gwynt.core.transport;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;

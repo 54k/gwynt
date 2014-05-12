@@ -1,9 +1,9 @@
 package io.gwynt.core.transport.tcp;
 
-import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.exception.EofException;
+import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 

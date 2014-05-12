@@ -2,7 +2,6 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
-import io.gwynt.core.transport.tcp.SelectorEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

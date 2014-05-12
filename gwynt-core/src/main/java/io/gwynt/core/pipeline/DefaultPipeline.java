@@ -1,8 +1,8 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.AbstractIoHandler;
-import io.gwynt.core.transport.AbstractIoSession;
 import io.gwynt.core.IoHandler;
+import io.gwynt.core.transport.AbstractIoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
