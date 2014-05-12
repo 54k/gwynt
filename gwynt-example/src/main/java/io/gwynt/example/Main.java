@@ -5,6 +5,8 @@ import io.gwynt.core.Endpoint;
 import io.gwynt.core.TcpEndpoint;
 import io.gwynt.core.UdpEndpoint;
 import io.gwynt.core.pipeline.IoHandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
@@ -31,6 +33,7 @@ public class Main {
     }
 
     private static class MainHandler extends AbstractIoHandler<String, Object> {
+        private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
 
         @Override
         public void onMessageReceived(IoHandlerContext context, String message) {
@@ -41,7 +44,7 @@ public class Main {
 
         @Override
         public void onExceptionCaught(IoHandlerContext context, Throwable e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
     }
 }

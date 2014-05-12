@@ -1,11 +1,16 @@
-#### Description:
+# Description:
 
-Gwynt is a simple asynchronous websocket server inspired by NodeJS.
-Gwynt implements RFC 6455 WebSocket Protocol. Project is very young and there is a lot work to do so any help will be appreciated.
+Gwynt is a simple NIO-based networking framework for building protocol servers.
 
-#### Usage:
+# Features:
 
-Please refer to examples project
+- pipelines inspired by Netty
+- tcp support
+- connected udp support
+
+# Usage:
+
+Refer to example project for basic usage
 
 
 
