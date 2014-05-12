@@ -1,16 +1,22 @@
 package io.gwynt.core;
 
 import io.gwynt.core.pipeline.DefaultPipeline;
+import io.gwynt.core.transport.Dispatcher;
+import io.gwynt.core.transport.tcp.SelectorEventListener;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class AbstractIoSession<T> implements IoSession {
+public abstract class AbstractIoSession<T> implements SelectorEventListener, IoSession {
 
     protected final ByteBuffer readBuffer = ByteBuffer.allocateDirect(150000);
+    protected final Object registrationLock = new Object();
+    protected final AtomicBoolean registered = new AtomicBoolean(false);
+    protected final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
 
     protected final AtomicReference<IoSessionStatus> status = new AtomicReference<>(IoSessionStatus.CLOSED);
     protected final AtomicReference<Object> attachment = new AtomicReference<>();
@@ -30,8 +36,9 @@ public abstract class AbstractIoSession<T> implements IoSession {
         }
     }
 
-    public Object getChannel() {
-        return channel;
+    @Override
+    public boolean isRegistered() {
+        return registered.get();
     }
 
     @Override

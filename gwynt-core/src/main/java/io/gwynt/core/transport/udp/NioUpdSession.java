@@ -5,24 +5,21 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.transport.Dispatcher;
-import io.gwynt.core.transport.tcp.NioTcpSession;
 
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-public class NioUpdSession extends NioTcpSession {
+public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
 
-    private Map<SocketAddress, InternalNioUdpSession> address2session =
-            Collections.synchronizedMap(new WeakHashMap<SocketAddress, InternalNioUdpSession>());
+    private Map<SocketAddress, InternalNioUdpSession> address2session = Collections.synchronizedMap(new WeakHashMap<SocketAddress, InternalNioUdpSession>());
 
-    public NioUpdSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
+    public NioUpdSession(Channel<DatagramChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
     }
 
@@ -106,13 +103,13 @@ public class NioUpdSession extends NioTcpSession {
         pipeline.fireExceptionCaught(e);
     }
 
-    private static class InternalNioUdpSession extends AbstractIoSession {
+    private static class InternalNioUdpSession extends NioUpdSession {
 
         private NioUpdSession parent;
         private SocketAddress address;
 
         @SuppressWarnings("unchecked")
-        private InternalNioUdpSession(Channel<SelectableChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
+        private InternalNioUdpSession(Channel<DatagramChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
             super(channel, endpoint);
             this.parent = parent;
             this.address = address;

@@ -25,7 +25,7 @@ public class NioDatagramChannel extends AbstractSelectableChannel<DatagramChanne
 
     @Override
     public void close() throws IOException {
-        throw new UnsupportedOperationException();
+        channel.close();
     }
 
     @Override

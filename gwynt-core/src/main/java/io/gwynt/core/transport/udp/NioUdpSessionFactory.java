@@ -1,13 +1,11 @@
 package io.gwynt.core.transport.udp;
 
-import io.gwynt.core.Channel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionFactory;
-import io.gwynt.core.transport.tcp.NioTcpSession;
 
 import java.nio.channels.DatagramChannel;
 
-public class NioUdpSessionFactory implements IoSessionFactory<DatagramChannel, NioTcpSession> {
+public class NioUdpSessionFactory implements IoSessionFactory<DatagramChannel, NioUpdSession> {
 
     private Endpoint endpoint;
 
@@ -16,14 +14,8 @@ public class NioUdpSessionFactory implements IoSessionFactory<DatagramChannel, N
     }
 
     @Override
-    public NioTcpSession createConnection(DatagramChannel channel) {
-        return new SessionImpl(new NioDatagramChannel(channel), endpoint);
+    public NioUpdSession createConnection(DatagramChannel channel) {
+        return new NioUpdSession(new NioDatagramChannel(channel), endpoint);
     }
 
-    @SuppressWarnings("unchecked")
-    private static class SessionImpl extends NioUpdSession {
-        private SessionImpl(Channel channel, Endpoint endpoint) {
-            super(channel, endpoint);
-        }
-    }
 }

@@ -9,18 +9,12 @@ import io.gwynt.core.transport.Dispatcher;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.nio.channels.SocketChannel;
 
-public class NioTcpSession extends AbstractIoSession<SelectableChannel> implements SelectorEventListener {
+public class NioTcpSession extends AbstractIoSession<SocketChannel> {
 
-    protected final Object registrationLock = new Object();
-    protected final AtomicBoolean registered = new AtomicBoolean(false);
-    protected final AtomicReference<Dispatcher> dispatcher = new AtomicReference<>();
-
-    public NioTcpSession(Channel<SelectableChannel> channel, Endpoint endpoint) {
+    public NioTcpSession(Channel<SocketChannel> channel, Endpoint endpoint) {
         super(channel, endpoint);
     }
 
@@ -49,11 +43,6 @@ public class NioTcpSession extends AbstractIoSession<SelectableChannel> implemen
                 }
             }
         }
-    }
-
-    @Override
-    public boolean isRegistered() {
-        return registered.get();
     }
 
     @Override

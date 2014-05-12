@@ -88,7 +88,6 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
         context.getIoHandler().onExceptionCaught(context, e);
     }
 
-
     @Override
     public void invokeOnHandlerAdded(final IoHandlerContext context) {
         if (scheduler.inSchedulerThread()) {
