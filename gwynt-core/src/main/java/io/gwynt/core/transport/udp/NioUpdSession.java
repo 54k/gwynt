@@ -1,9 +1,9 @@
 package io.gwynt.core.transport.udp;
 
 import io.gwynt.core.AbstractIoSession;
-import io.gwynt.core.transport.Channel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
+import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
     @Override
     public void write(Object data) {
         if (!(data instanceof Datagram)) {
-            throw new IllegalArgumentException("data is not instanceof " + Datagram.class.getCanonicalName());
+            throw new IllegalArgumentException("Data is not instanceof " + Datagram.class.getCanonicalName());
         }
         if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
             writeQueue.add(data);
@@ -70,7 +70,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
         SocketAddress address = channel.receive(readBuffer);
 
         if (!address2session.containsKey(address)) {
-            InternalNioUdpSession session = new InternalNioUdpSession(this.channel, endpoint, this, address);
+            InternalNioUdpSession session = new InternalNioUdpSession(this, address);
             address2session.put(address, session);
         }
 
@@ -87,7 +87,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
 
         if (data != null) {
             DatagramChannel channel = (DatagramChannel) key.channel();
-            channel.send(data.getMessage(), data.getAddress());
+            channel.send(data.getMessage(), data.getRecipient());
             if (!data.getMessage().hasRemaining()) {
                 writeQueue.poll();
             }
@@ -106,17 +106,17 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
     private static class InternalNioUdpSession extends NioUpdSession {
 
         private NioUpdSession parent;
-        private SocketAddress address;
+        private SocketAddress recipient;
 
-        private InternalNioUdpSession(Channel<DatagramChannel> channel, Endpoint endpoint, NioUpdSession parent, SocketAddress address) {
-            super(channel, endpoint);
+        private InternalNioUdpSession(NioUpdSession parent, SocketAddress recipient) {
+            super(parent.channel, parent.endpoint);
             this.parent = parent;
-            this.address = address;
+            this.recipient = recipient;
         }
 
         @Override
         public void write(Object data) {
-            parent.write(new Datagram(address, ByteBuffer.wrap((byte[]) data)));
+            parent.write(new Datagram(recipient, ByteBuffer.wrap((byte[]) data)));
         }
 
         @Override
@@ -131,7 +131,7 @@ public class NioUpdSession extends AbstractIoSession<DatagramChannel> {
 
         @Override
         public SocketAddress getRemoteAddress() {
-            return address;
+            return recipient;
         }
 
         void fireMessageReceived(byte[] message) {

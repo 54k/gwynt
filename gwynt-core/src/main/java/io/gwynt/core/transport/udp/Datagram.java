@@ -5,16 +5,16 @@ import java.nio.ByteBuffer;
 
 final class Datagram {
 
-    private SocketAddress address;
+    private SocketAddress recipient;
     private ByteBuffer message;
 
-    public Datagram(SocketAddress address, ByteBuffer message) {
-        this.address = address;
+    public Datagram(SocketAddress recipient, ByteBuffer message) {
+        this.recipient = recipient;
         this.message = message;
     }
 
-    public SocketAddress getAddress() {
-        return address;
+    public SocketAddress getRecipient() {
+        return recipient;
     }
 
     public ByteBuffer getMessage() {

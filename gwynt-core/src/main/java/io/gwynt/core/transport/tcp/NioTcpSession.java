@@ -21,7 +21,7 @@ public class NioTcpSession extends AbstractIoSession<SocketChannel> {
     @Override
     public void write(Object data) {
         if (!(data instanceof byte[])) {
-            throw new IllegalArgumentException("data is not instanceof byte[]");
+            throw new IllegalArgumentException("Data is not instanceof byte[]");
         }
         if (status.get() != IoSessionStatus.PENDING_CLOSE && status.get() != IoSessionStatus.CLOSED) {
             writeQueue.add(ByteBuffer.wrap((byte[]) data));
