@@ -3,7 +3,7 @@ package io.gwynt.core.transport.udp;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.IoSessionStatus;
 import io.gwynt.core.transport.AbstractIoSession;
-import io.gwynt.core.transport.ByteBufferAllocator;
+import io.gwynt.core.util.ByteBufferAllocator;
 import io.gwynt.core.transport.Channel;
 import io.gwynt.core.transport.Dispatcher;
 

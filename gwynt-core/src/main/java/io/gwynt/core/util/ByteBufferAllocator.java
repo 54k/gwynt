@@ -1,8 +1,8 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.util;
 
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Deque;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public final class ByteBufferAllocator {
 
@@ -16,13 +16,13 @@ public final class ByteBufferAllocator {
         BYTE_BUFFER_POOL.release(byteBuffer);
     }
 
-    private static class ByteBufferPool {
+    private static final class ByteBufferPool {
 
-        private Queue<ByteBuffer> byteBufferQueue = new ConcurrentLinkedQueue<>();
+        private Deque<ByteBuffer> buffers = new ConcurrentLinkedDeque<>();
 
         public ByteBuffer allocate(int capacity) {
-            ByteBuffer buffer = byteBufferQueue.poll();
-            if (buffer == null) {
+            ByteBuffer buffer = buffers.pollFirst();
+            if (buffer == null || buffer.capacity() < capacity) {
                 buffer = ByteBuffer.allocateDirect(capacity);
             }
             return buffer;
@@ -30,7 +30,7 @@ public final class ByteBufferAllocator {
 
         public void release(ByteBuffer byteBuffer) {
             byteBuffer.clear();
-            byteBufferQueue.add(byteBuffer);
+            buffers.addLast(byteBuffer);
         }
     }
 }
