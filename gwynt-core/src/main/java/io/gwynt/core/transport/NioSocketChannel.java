@@ -145,7 +145,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         public void doConnect() throws IOException {
             if (javaChannel().finishConnect()) {
-                active = true;
                 dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
                 pipeline().fireOpen();
             }

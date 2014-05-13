@@ -83,8 +83,7 @@ public abstract class AbstractNioChannel implements Channel {
     protected abstract class AbstractUnsafe<T extends SelectableChannel> implements Unsafe<T> {
 
         private final Object lock = new Object();
-
-        protected volatile boolean active;
+        private volatile boolean pendingClose;
 
         private List<Object> messages = new ArrayList<>();
         private Queue<Object> pendingWrites = new ConcurrentLinkedQueue<>();
@@ -116,7 +115,7 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void write(Object message) {
-            if (active) {
+            if (!pendingClose && isActive()) {
                 pendingWrites.add(message);
                 synchronized (lock) {
                     if (isRegistered()) {
@@ -128,7 +127,7 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void read() {
-            if (active) {
+            if (!pendingClose && isActive()) {
                 synchronized (lock) {
                     if (isRegistered()) {
                         AbstractNioChannel.this.dispatcher.modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ);
@@ -139,8 +138,8 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void close() {
-            if (active) {
-                active = false;
+            if (!pendingClose) {
+                pendingClose = true;
                 synchronized (lock) {
                     if (isRegistered()) {
                         AbstractNioChannel.this.dispatcher.modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
@@ -176,7 +175,6 @@ public abstract class AbstractNioChannel implements Channel {
             List<AbstractNioChannel> channels = new ArrayList<>();
             doAccept0(channels);
             for (AbstractNioChannel channel : channels) {
-                ((AbstractUnsafe) channel.unsafe()).active = true;
                 AbstractNioChannel.this.dispatcher.next().register(channel);
             }
         }
@@ -185,7 +183,7 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void doRead() throws IOException {
-            boolean shouldClose = !active;
+            boolean shouldClose = pendingClose;
             try {
                 doRead0(messages);
             } catch (EofException e) {
@@ -206,7 +204,7 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void doWrite() throws IOException {
-            boolean shouldClose = !active;
+            boolean shouldClose = pendingClose;
             Object message = pendingWrites.peek();
             if (message != null) {
                 try {
@@ -237,11 +235,10 @@ public abstract class AbstractNioChannel implements Channel {
         }
 
         protected final boolean isActive() {
-            return active;
+            return javaChannel().isOpen();
         }
 
         protected void close0() {
-            active = false;
             pendingWrites.clear();
             try {
                 ch.close();
