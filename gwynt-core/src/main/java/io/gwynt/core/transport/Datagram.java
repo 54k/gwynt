@@ -1,9 +1,9 @@
-package io.gwynt.core.transport.udp;
+package io.gwynt.core.transport;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 
-final class Datagram {
+public class Datagram {
 
     private SocketAddress recipient;
     private ByteBuffer message;

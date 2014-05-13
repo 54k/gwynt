@@ -2,94 +2,94 @@ package io.gwynt.core.pipeline;
 
 import io.gwynt.core.scheduler.EventScheduler;
 
-public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
+public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     private EventScheduler scheduler;
 
-    public DefaultIoHandlerInvoker(EventScheduler scheduler) {
+    public DefaultHandlerContextInvoker(EventScheduler scheduler) {
         this.scheduler = scheduler;
     }
 
-    private static void invokeOnHandlerAddedNow(IoHandlerContext context) {
+    private static void invokeOnHandlerAddedNow(HandlerContext context) {
         try {
-            context.getIoHandler().onHandlerAdded(context);
+            context.getHandler().onHandlerAdded(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnHandlerRemovedNow(IoHandlerContext context) {
+    private static void invokeOnHandlerRemovedNow(HandlerContext context) {
         try {
-            context.getIoHandler().onHandlerRemoved(context);
+            context.getHandler().onHandlerRemoved(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnRegisteredNow(IoHandlerContext context) {
+    private static void invokeOnRegisteredNow(HandlerContext context) {
         try {
-            context.getIoHandler().onRegistered(context);
+            context.getHandler().onRegistered(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnUnregisteredNow(IoHandlerContext context) {
+    private static void invokeOnUnregisteredNow(HandlerContext context) {
         try {
-            context.getIoHandler().onUnregistered(context);
+            context.getHandler().onUnregistered(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnOpenNow(IoHandlerContext context) {
+    private static void invokeOnOpenNow(HandlerContext context) {
         try {
-            context.getIoHandler().onOpen(context);
+            context.getHandler().onOpen(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void invokeOnMessageReceivedNow(IoHandlerContext context, Object message) {
-        try {
-            context.getIoHandler().onMessageReceived(context, message);
-        } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private static void invokeOnMessageSentNow(IoHandlerContext context, Object message) {
+    private static void invokeOnMessageReceivedNow(HandlerContext context, Object message) {
         try {
-            context.getIoHandler().onMessageSent(context, message);
+            context.getHandler().onMessageReceived(context, message);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnClosingNow(IoHandlerContext context) {
+    @SuppressWarnings("unchecked")
+    private static void invokeOnMessageSentNow(HandlerContext context, Object message) {
         try {
-            context.getIoHandler().onClosing(context);
+            context.getHandler().onMessageSent(context, message);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnCloseNow(IoHandlerContext context) {
+    private static void invokeOnClosingNow(HandlerContext context) {
         try {
-            context.getIoHandler().onClose(context);
+            context.getHandler().onClosing(context);
         } catch (Throwable e) {
-            context.getIoHandler().onExceptionCaught(context, e);
+            context.getHandler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnExceptionCaughtNow(IoHandlerContext context, Throwable e) {
-        context.getIoHandler().onExceptionCaught(context, e);
+    private static void invokeOnCloseNow(HandlerContext context) {
+        try {
+            context.getHandler().onClose(context);
+        } catch (Throwable e) {
+            context.getHandler().onExceptionCaught(context, e);
+        }
+    }
+
+    private static void invokeOnExceptionCaughtNow(HandlerContext context, Throwable e) {
+        context.getHandler().onExceptionCaught(context, e);
     }
 
     @Override
-    public void invokeOnHandlerAdded(final IoHandlerContext context) {
+    public void invokeOnHandlerAdded(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnHandlerAddedNow(context);
         } else {
@@ -103,7 +103,7 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnHandlerRemoved(final IoHandlerContext context) {
+    public void invokeOnHandlerRemoved(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnHandlerRemovedNow(context);
         } else {
@@ -117,11 +117,11 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnRegistered(final IoHandlerContext context) {
+    public void invokeOnRegistered(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnRegisteredNow(context);
         } else {
-            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
             Runnable event = dctx.registeredEvent;
             if (event == null) {
                 dctx.registeredEvent = event = new Runnable() {
@@ -136,11 +136,11 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnUnregistered(final IoHandlerContext context) {
+    public void invokeOnUnregistered(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnUnregisteredNow(context);
         } else {
-            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
             Runnable event = dctx.unregisteredEvent;
             if (event == null) {
                 dctx.unregisteredEvent = event = new Runnable() {
@@ -155,11 +155,11 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnOpen(final IoHandlerContext context) {
+    public void invokeOnOpen(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnOpenNow(context);
         } else {
-            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
             Runnable event = dctx.openEvent;
             if (event == null) {
                 dctx.openEvent = event = new Runnable() {
@@ -175,7 +175,7 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void invokeOnMessageReceived(final IoHandlerContext context, final Object message) {
+    public void invokeOnMessageReceived(final HandlerContext context, final Object message) {
         if (scheduler.inSchedulerThread()) {
             invokeOnMessageReceivedNow(context, message);
         } else {
@@ -190,7 +190,7 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void invokeOnMessageSent(final IoHandlerContext context, final Object message) {
+    public void invokeOnMessageSent(final HandlerContext context, final Object message) {
         if (scheduler.inSchedulerThread()) {
             invokeOnMessageSentNow(context, message);
         } else {
@@ -204,7 +204,7 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnClosing(final IoHandlerContext context) {
+    public void invokeOnClosing(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnClosingNow(context);
         } else {
@@ -218,11 +218,11 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnClosed(final IoHandlerContext context) {
+    public void invokeOnClosed(final HandlerContext context) {
         if (scheduler.inSchedulerThread()) {
             invokeOnCloseNow(context);
         } else {
-            DefaultIoHandlerContext dctx = (DefaultIoHandlerContext) context;
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
             Runnable event = dctx.closeEvent;
             if (event == null) {
                 dctx.closeEvent = event = new Runnable() {
@@ -237,7 +237,7 @@ public class DefaultIoHandlerInvoker implements IoHandlerInvoker {
     }
 
     @Override
-    public void invokeOnExceptionCaught(final IoHandlerContext context, final Throwable e) {
+    public void invokeOnExceptionCaught(final HandlerContext context, final Throwable e) {
         if (scheduler.inSchedulerThread()) {
             invokeOnExceptionCaughtNow(context, e);
         } else {

@@ -1,34 +1,34 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.IoHandler;
+import io.gwynt.core.Handler;
 
 public interface Pipeline {
 
-    void addFirst(IoHandler ioHandler);
+    void addFirst(Handler handler);
 
-    void addFirst(String name, IoHandler ioHandler);
+    void addFirst(String name, Handler handler);
 
-    void addLast(IoHandler ioHandler);
+    void addLast(Handler handler);
 
-    void addLast(String name, IoHandler ioHandler);
+    void addLast(String name, Handler handler);
 
-    void addBefore(IoHandler ioHandler, IoHandler before);
+    void addBefore(Handler handler, Handler before);
 
-    void addBefore(IoHandler ioHandler, String beforeName);
+    void addBefore(Handler handler, String beforeName);
 
-    void addBefore(String name, IoHandler ioHandler, IoHandler before);
+    void addBefore(String name, Handler handler, Handler before);
 
-    void addBefore(String name, IoHandler ioHandler, String beforeName);
+    void addBefore(String name, Handler handler, String beforeName);
 
-    void addAfter(IoHandler ioHandler, IoHandler after);
+    void addAfter(Handler handler, Handler after);
 
-    void addAfter(IoHandler ioHandler, String afterName);
+    void addAfter(Handler handler, String afterName);
 
-    void addAfter(String name, IoHandler ioHandler, IoHandler after);
+    void addAfter(String name, Handler handler, Handler after);
 
-    void addAfter(String name, IoHandler ioHandler, String afterName);
+    void addAfter(String name, Handler handler, String afterName);
 
-    void remove(IoHandler ioHandler);
+    void remove(Handler handler);
 
     void remove(String name);
 }

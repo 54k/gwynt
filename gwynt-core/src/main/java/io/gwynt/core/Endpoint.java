@@ -5,52 +5,52 @@ import io.gwynt.core.scheduler.EventScheduler;
 public interface Endpoint {
 
     /**
-     * Add handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
+     * Add handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link Channel}s
      *
-     * @param ioHandler {@link IoHandler} implementation
+     * @param handler {@link Handler} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint addHandler(IoHandler ioHandler);
+    Endpoint addHandler(Handler handler);
 
     /**
-     * Remove handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link IoSession}s
+     * Remove handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link Channel}s
      *
-     * @param ioHandler {@link IoHandler} implementation
+     * @param handler {@link Handler} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint removeHandler(IoHandler ioHandler);
+    Endpoint removeHandler(Handler handler);
 
     /**
-     * Retrieve all attached {@link IoHandler} for this {@link Endpoint}
+     * Retrieve all attached {@link Handler} for this {@link Endpoint}
      *
      * @return current attached filters
      */
-    Iterable<IoHandler> getHandlers();
+    Iterable<Handler> getHandlers();
 
     /**
-     * Get specific {@link IoSessionFactory} implementation
+     * Get specific {@link ChannelFactory} implementation
      *
-     * @return current {@link IoSessionFactory}
+     * @return current {@link ChannelFactory}
      */
-    IoSessionFactory getSessionFactory();
+    ChannelFactory getChannelFactory();
 
     /**
-     * Set specific {@link IoSessionFactory} implementation
+     * Set specific {@link ChannelFactory} implementation
      *
-     * @param ioSessionFactory {@link IoSessionFactory} implementation
+     * @param channelFactory {@link ChannelFactory} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint setSessionFactory(IoSessionFactory ioSessionFactory);
+    Endpoint setChannelFactory(ChannelFactory channelFactory);
 
     /**
-     * Returns instance of {@link io.gwynt.core.scheduler.EventScheduler} in which all {@link IoHandler} events dispatched
+     * Returns instance of {@link io.gwynt.core.scheduler.EventScheduler} in which all {@link Handler} events dispatched
      *
      * @return current {@link io.gwynt.core.scheduler.EventScheduler}
      */
     EventScheduler getScheduler();
 
     /**
-     * Set specific {@link io.gwynt.core.scheduler.EventScheduler} implementation, which will dispatch all events to {@link IoHandler}
+     * Set specific {@link io.gwynt.core.scheduler.EventScheduler} implementation, which will dispatch all events to {@link Handler}
      *
      * @param eventScheduler {@link io.gwynt.core.scheduler.EventScheduler} implementation
      * @return current {@link Endpoint}
@@ -58,14 +58,14 @@ public interface Endpoint {
     Endpoint setScheduler(EventScheduler eventScheduler);
 
     /**
-     * Synchronously start listening incoming connections
+     * Synchronously runThread listening incoming connections
      *
      * @param port desired port
      */
     Endpoint bind(int port);
 
     /**
-     * Synchronously stop listening incoming connections
+     * Synchronously shutdownThread listening incoming connections
      */
     Endpoint unbind();
 }

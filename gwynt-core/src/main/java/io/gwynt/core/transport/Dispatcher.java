@@ -1,16 +1,14 @@
 package io.gwynt.core.transport;
 
-import java.nio.channels.SelectableChannel;
+import io.gwynt.core.Channel;
 
 public interface Dispatcher {
 
-    void register(SelectableChannel channel);
+    Dispatcher next();
 
-    void unregister(SelectableChannel channel);
+    void register(Channel channel);
 
-    void modifyRegistration(SelectableChannel channel, int interestOps);
+    void unregister(Channel channel);
 
-    void start();
-
-    void stop();
+    void modifyRegistration(Channel channel, int interestOps);
 }

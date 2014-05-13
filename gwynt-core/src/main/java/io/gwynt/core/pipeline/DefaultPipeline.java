@@ -1,8 +1,8 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.AbstractIoHandler;
-import io.gwynt.core.IoHandler;
-import io.gwynt.core.transport.AbstractIoSession;
+import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Handler;
+import io.gwynt.core.transport.AbstractNioChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,30 +10,30 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerContext> {
+public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPipeline.class);
 
-    private static final IoHandler HEAD_HANDLER = new HeadHandler();
-    private static final IoHandler TAIL_HANDLER = new TailHandler();
+    private static final Handler HEAD_HANDLER = new HeadHandler();
+    private static final Handler TAIL_HANDLER = new TailHandler();
 
     private final Object lock = new Object();
-    private final DefaultIoHandlerContext head;
-    private final DefaultIoHandlerContext tail;
+    private final DefaultHandlerContext head;
+    private final DefaultHandlerContext tail;
 
-    private final AbstractIoSession ioSession;
-    private final Map<String, DefaultIoHandlerContext> name2context = new ConcurrentHashMap<>();
+    private final AbstractNioChannel channel;
+    private final Map<String, DefaultHandlerContext> name2context = new ConcurrentHashMap<>();
 
-    public DefaultPipeline(AbstractIoSession ioSession) {
-        this.ioSession = ioSession;
-        head = new DefaultIoHandlerContext(ioSession, HEAD_HANDLER);
-        tail = new DefaultIoHandlerContext(ioSession, TAIL_HANDLER);
+    public DefaultPipeline(AbstractNioChannel channel) {
+        this.channel = channel;
+        head = new DefaultHandlerContext(channel, HEAD_HANDLER);
+        tail = new DefaultHandlerContext(channel, TAIL_HANDLER);
         head.setNext(tail);
         tail.setPrev(head);
     }
 
-    private static String generateName(IoHandler ioHandler) {
-        return ioHandler.getClass() + "@" + ioHandler.hashCode();
+    private static String generateName(Handler handler) {
+        return handler.getClass() + "@" + handler.hashCode();
     }
 
     public void fireRegistered() {
@@ -61,21 +61,21 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addFirst(IoHandler ioHandler) {
-        if (ioHandler == null) {
+    public void addFirst(Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        addFirst(generateName(ioHandler), ioHandler);
+        addFirst(generateName(handler), handler);
     }
 
     @Override
-    public void addFirst(String name, IoHandler ioHandler) {
-        if (name == null || ioHandler == null) {
+    public void addFirst(String name, Handler handler) {
+        if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+        DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
         synchronized (lock) {
-            DefaultIoHandlerContext next = head.getNext();
+            DefaultHandlerContext next = head.getNext();
             next.setPrev(context);
             context.setNext(next);
             context.setPrev(head);
@@ -88,21 +88,21 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addLast(IoHandler ioHandler) {
-        if (ioHandler == null) {
+    public void addLast(Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        addLast(generateName(ioHandler), ioHandler);
+        addLast(generateName(handler), handler);
     }
 
     @Override
-    public void addLast(String name, IoHandler ioHandler) {
-        if (name == null || ioHandler == null) {
+    public void addLast(String name, Handler handler) {
+        if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+        DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
         synchronized (lock) {
-            DefaultIoHandlerContext prev = tail.getPrev();
+            DefaultHandlerContext prev = tail.getPrev();
             prev.setNext(context);
             context.setNext(tail);
             context.setPrev(prev);
@@ -115,14 +115,14 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addBefore(IoHandler ioHandler, IoHandler before) {
-        if (ioHandler == null || before == null) {
+    public void addBefore(Handler handler, Handler before) {
+        if (handler == null || before == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext beforeContext = getContext(before);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
-            context.setName(generateName(ioHandler));
+            DefaultHandlerContext beforeContext = getContext(before);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            context.setName(generateName(handler));
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
             }
@@ -130,14 +130,14 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addBefore(IoHandler ioHandler, String beforeName) {
-        if (ioHandler == null || beforeName == null) {
+    public void addBefore(Handler handler, String beforeName) {
+        if (handler == null || beforeName == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext beforeContext = getContext(beforeName);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
-            context.setName(generateName(ioHandler));
+            DefaultHandlerContext beforeContext = getContext(beforeName);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            context.setName(generateName(handler));
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
             }
@@ -145,13 +145,13 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addBefore(String name, IoHandler ioHandler, IoHandler before) {
-        if (name == null || ioHandler == null || before == null) {
+    public void addBefore(String name, Handler handler, Handler before) {
+        if (name == null || handler == null || before == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext beforeContext = getContext(before);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+            DefaultHandlerContext beforeContext = getContext(before);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -160,13 +160,13 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addBefore(String name, IoHandler ioHandler, String beforeName) {
-        if (name == null || ioHandler == null || beforeName == null) {
+    public void addBefore(String name, Handler handler, String beforeName) {
+        if (name == null || handler == null || beforeName == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext beforeContext = getContext(beforeName);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+            DefaultHandlerContext beforeContext = getContext(beforeName);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -174,8 +174,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
         }
     }
 
-    private void addBefore(DefaultIoHandlerContext context, DefaultIoHandlerContext before) {
-        DefaultIoHandlerContext prev = before.getPrev();
+    private void addBefore(DefaultHandlerContext context, DefaultHandlerContext before) {
+        DefaultHandlerContext prev = before.getPrev();
         prev.setNext(context);
         context.setNext(before);
         context.setPrev(prev);
@@ -186,14 +186,14 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addAfter(IoHandler ioHandler, IoHandler after) {
-        if (ioHandler == null || after == null) {
+    public void addAfter(Handler handler, Handler after) {
+        if (handler == null || after == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext afterContext = getContext(after);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
-            context.setName(generateName(ioHandler));
+            DefaultHandlerContext afterContext = getContext(after);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            context.setName(generateName(handler));
             if (afterContext != null) {
                 addAfter(context, afterContext);
             }
@@ -201,14 +201,14 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addAfter(IoHandler ioHandler, String afterName) {
-        if (ioHandler == null || afterName == null) {
+    public void addAfter(Handler handler, String afterName) {
+        if (handler == null || afterName == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext afterContext = getContext(afterName);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
-            context.setName(generateName(ioHandler));
+            DefaultHandlerContext afterContext = getContext(afterName);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            context.setName(generateName(handler));
             if (afterContext != null) {
                 addAfter(context, afterContext);
             }
@@ -216,13 +216,13 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addAfter(String name, IoHandler ioHandler, IoHandler after) {
-        if (name == null || ioHandler == null || after == null) {
+    public void addAfter(String name, Handler handler, Handler after) {
+        if (name == null || handler == null || after == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext afterContext = getContext(after);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+            DefaultHandlerContext afterContext = getContext(after);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -231,13 +231,13 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void addAfter(String name, IoHandler ioHandler, String afterName) {
-        if (name == null || ioHandler == null || afterName == null) {
+    public void addAfter(String name, Handler handler, String afterName) {
+        if (name == null || handler == null || afterName == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultIoHandlerContext afterContext = getContext(afterName);
-            DefaultIoHandlerContext context = new DefaultIoHandlerContext(ioSession, ioHandler);
+            DefaultHandlerContext afterContext = getContext(afterName);
+            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -245,8 +245,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
         }
     }
 
-    private void addAfter(DefaultIoHandlerContext context, DefaultIoHandlerContext after) {
-        DefaultIoHandlerContext next = after.getNext();
+    private void addAfter(DefaultHandlerContext context, DefaultHandlerContext after) {
+        DefaultHandlerContext next = after.getNext();
         next.setPrev(context);
         context.setNext(next);
         context.setPrev(after);
@@ -267,19 +267,19 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
     }
 
     @Override
-    public void remove(IoHandler ioHandler) {
-        if (ioHandler == null) {
+    public void remove(Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            remove(getContext(ioHandler));
+            remove(getContext(handler));
         }
     }
 
-    private void remove(DefaultIoHandlerContext context) {
+    private void remove(DefaultHandlerContext context) {
         if (context != null) {
-            DefaultIoHandlerContext prev = context.getPrev();
-            DefaultIoHandlerContext next = context.getNext();
+            DefaultHandlerContext prev = context.getPrev();
+            DefaultHandlerContext next = context.getNext();
             prev.setNext(context.getNext());
             next.setPrev(context.getPrev());
             context.removed = true;
@@ -288,28 +288,28 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
         }
     }
 
-    private DefaultIoHandlerContext getContext(IoHandler ioHandler) {
-        DefaultIoHandlerContext contextByName;
-        if ((contextByName = getContext(generateName(ioHandler))) != null) {
+    private DefaultHandlerContext getContext(Handler handler) {
+        DefaultHandlerContext contextByName;
+        if ((contextByName = getContext(generateName(handler))) != null) {
             return contextByName;
         }
-        for (DefaultIoHandlerContext context : this) {
-            if (context.getIoHandler() == ioHandler) {
+        for (DefaultHandlerContext context : this) {
+            if (context.getHandler() == handler) {
                 return context;
             }
         }
         return null;
     }
 
-    private DefaultIoHandlerContext getContext(String name) {
+    private DefaultHandlerContext getContext(String name) {
         return name2context.get(name);
     }
 
     @Override
-    public Iterator<DefaultIoHandlerContext> iterator() {
-        return new Iterator<DefaultIoHandlerContext>() {
+    public Iterator<DefaultHandlerContext> iterator() {
+        return new Iterator<DefaultHandlerContext>() {
 
-            private DefaultIoHandlerContext context = head;
+            private DefaultHandlerContext context = head;
 
             @Override
             public boolean hasNext() {
@@ -317,8 +317,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
             }
 
             @Override
-            public DefaultIoHandlerContext next() {
-                DefaultIoHandlerContext next = context.getNext();
+            public DefaultHandlerContext next() {
+                DefaultHandlerContext next = context.getNext();
                 return next != tail ? context = next : null;
             }
 
@@ -329,51 +329,51 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultIoHandlerConte
         };
     }
 
-    private static class HeadHandler extends AbstractIoHandler {
+    private static class HeadHandler extends AbstractHandler {
 
         @Override
-        public void onMessageSent(IoHandlerContext context, Object message) {
-            context.getIoSession().write(message);
+        public void onMessageSent(HandlerContext context, Object message) {
+            context.getChannel().unsafe().write(message);
         }
 
         @Override
-        public void onClosing(IoHandlerContext context) {
-            context.getIoSession().close();
+        public void onClosing(HandlerContext context) {
+            context.getChannel().unsafe().close();
         }
     }
 
-    private static class TailHandler extends AbstractIoHandler {
+    private static class TailHandler extends AbstractHandler {
 
         @Override
-        public void onRegistered(IoHandlerContext context) {
+        public void onRegistered(HandlerContext context) {
         }
 
         @Override
-        public void onUnregistered(IoHandlerContext context) {
+        public void onUnregistered(HandlerContext context) {
         }
 
         @Override
-        public void onOpen(IoHandlerContext context) {
+        public void onOpen(HandlerContext context) {
         }
 
         @Override
-        public void onMessageReceived(IoHandlerContext context, Object message) {
+        public void onMessageReceived(HandlerContext context, Object message) {
         }
 
         @Override
-        public void onMessageSent(IoHandlerContext context, Object message) {
+        public void onMessageSent(HandlerContext context, Object message) {
         }
 
         @Override
-        public void onClosing(IoHandlerContext context) {
+        public void onClosing(HandlerContext context) {
         }
 
         @Override
-        public void onClose(IoHandlerContext context) {
+        public void onClose(HandlerContext context) {
         }
 
         @Override
-        public void onExceptionCaught(IoHandlerContext context, Throwable e) {
+        public void onExceptionCaught(HandlerContext context, Throwable e) {
             logger.warn("Uncaught exception reached end of pipeline, check your pipeline configuration");
         }
     }

@@ -4,16 +4,17 @@ import io.gwynt.core.scheduler.SingleThreadedEventScheduler;
 import io.gwynt.core.transport.DispatcherPool;
 import io.gwynt.core.transport.NioEventLoop;
 import io.gwynt.core.transport.NioServerSocketChannel;
+import io.gwynt.core.transport.NioSocketChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-public class TcpEndpoint extends AbstractEndpoint {
+public class TcpConnector extends AbstractEndpoint {
 
     private DispatcherPool dispatcherPool;
     //    private Acceptor acceptor;
 
-    public TcpEndpoint() {
+    public TcpConnector() {
         //        ioSessionFactory = new NioTcpSessionFactory(this);
         eventScheduler = new SingleThreadedEventScheduler();
     }
@@ -30,8 +31,7 @@ public class TcpEndpoint extends AbstractEndpoint {
             //            channel.socket().setReuseAddress(true);
             //            channel.socket().setPerformancePreferences(0, 1, 2);
             //            channel.bind(new InetSocketAddress(port));
-            NioServerSocketChannel channel = new NioServerSocketChannel(this);
-            channel.unsafe().bind(new InetSocketAddress(port));
+            NioSocketChannel channel = new NioSocketChannel(this);
             initialize(channel);
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -40,7 +40,7 @@ public class TcpEndpoint extends AbstractEndpoint {
     }
 
     @SuppressWarnings("unchecked")
-    private void initialize(NioServerSocketChannel channel) throws IOException {
+    private void initialize(NioSocketChannel channel) throws IOException {
 
         NioEventLoop eventLoop = new NioEventLoop();
         eventLoop.runThread();

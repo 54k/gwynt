@@ -8,47 +8,47 @@ import java.util.List;
 
 public abstract class AbstractEndpoint implements Endpoint {
 
-    protected List<IoHandler> ioHandlers = new ArrayList<>();
-    protected IoSessionFactory ioSessionFactory;
+    protected List<Handler> handlers = new ArrayList<>();
+    protected ChannelFactory channelFactory;
     protected EventScheduler eventScheduler;
 
     @Override
-    public Endpoint addHandler(IoHandler ioHandler) {
-        if (ioHandler == null) {
+    public Endpoint addHandler(Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("filter");
         }
 
-        ioHandlers.add(ioHandler);
+        handlers.add(handler);
         return this;
     }
 
     @Override
-    public Endpoint removeHandler(IoHandler ioHandler) {
-        if (ioHandler == null) {
+    public Endpoint removeHandler(Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("filter");
         }
 
-        ioHandlers.remove(ioHandler);
+        handlers.remove(handler);
         return this;
     }
 
     @Override
-    public Iterable<IoHandler> getHandlers() {
-        return Collections.unmodifiableList(ioHandlers);
+    public Iterable<Handler> getHandlers() {
+        return Collections.unmodifiableList(handlers);
     }
 
     @Override
-    public IoSessionFactory getSessionFactory() {
-        return ioSessionFactory;
+    public ChannelFactory getChannelFactory() {
+        return channelFactory;
     }
 
     @Override
-    public Endpoint setSessionFactory(IoSessionFactory ioSessionFactory) {
-        if (ioSessionFactory == null) {
+    public Endpoint setChannelFactory(ChannelFactory channelFactory) {
+        if (channelFactory == null) {
             throw new IllegalArgumentException("connectionFactory");
         }
 
-        this.ioSessionFactory = ioSessionFactory;
+        this.channelFactory = channelFactory;
         return this;
     }
 
