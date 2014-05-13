@@ -84,7 +84,7 @@ public abstract class AbstractNioChannel implements Channel {
 
         private final Object lock = new Object();
 
-        private volatile boolean active;
+        protected volatile boolean active;
 
         private List<Object> messages = new ArrayList<>();
         private Queue<Object> pendingWrites = new ConcurrentLinkedQueue<>();
@@ -153,31 +153,30 @@ public abstract class AbstractNioChannel implements Channel {
         public void doRegister(Dispatcher dispatcher) {
             synchronized (lock) {
                 AbstractNioChannel.this.dispatcher = dispatcher;
-                active = true;
-                doRegister0(dispatcher);
+                doRegister0();
             }
             AbstractNioChannel.this.pipeline.fireRegistered();
         }
 
-        protected abstract void doRegister0(Dispatcher dispatcher);
+        protected abstract void doRegister0();
 
         @Override
         public void doUnregister(Dispatcher dispatcher) {
             synchronized (lock) {
                 AbstractNioChannel.this.dispatcher = null;
-                active = false;
-                doUnregister0(dispatcher);
+                doUnregister0();
             }
             AbstractNioChannel.this.pipeline.fireUnregistered();
         }
 
-        protected abstract void doUnregister0(Dispatcher dispatcher);
+        protected abstract void doUnregister0();
 
         @Override
         public void doAccept() throws IOException {
             List<AbstractNioChannel> channels = new ArrayList<>();
             doAccept0(channels);
             for (AbstractNioChannel channel : channels) {
+                ((AbstractUnsafe) channel.unsafe()).active = true;
                 AbstractNioChannel.this.dispatcher.next().register(channel);
             }
         }

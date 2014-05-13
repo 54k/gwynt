@@ -73,15 +73,15 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doRegister0(Dispatcher dispatcher) {
-            dispatcher.modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
+        protected void doRegister0() {
             if (isActive()) {
+                dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
                 pipeline().fireOpen();
             }
         }
 
         @Override
-        protected void doUnregister0(Dispatcher dispatcher) {
+        protected void doUnregister0() {
             if (!isActive()) {
                 pipeline().fireClose();
             }
@@ -144,8 +144,11 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public void doConnect() throws IOException {
-            javaChannel().finishConnect();
-            pipeline().fireOpen();
+            if (javaChannel().finishConnect()) {
+                active = true;
+                dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
+                pipeline().fireOpen();
+            }
         }
     }
 }

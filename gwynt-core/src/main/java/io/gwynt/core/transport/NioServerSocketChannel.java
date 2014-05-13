@@ -63,12 +63,12 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doRegister0(Dispatcher dispatcher) {
-            dispatcher.modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
+        protected void doRegister0() {
+            dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
         }
 
         @Override
-        protected void doUnregister0(Dispatcher dispatcher) {
+        protected void doUnregister0() {
             // NO-OP
         }
 

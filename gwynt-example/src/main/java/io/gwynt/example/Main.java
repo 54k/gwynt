@@ -1,10 +1,6 @@
 package io.gwynt.example;
 
-import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.TcpConnector;
-import io.gwynt.core.TcpEndpoint;
-import io.gwynt.core.UdpEndpoint;
+import io.gwynt.core.*;
 import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
@@ -22,13 +18,35 @@ public class Main {
         StringConverter sc = new StringConverter();
         MainHandler mh = new MainHandler();
         Endpoint tcpEndpoint = new TcpEndpoint().addHandler(sc).addHandler(mh).bind(3000);
+
         new TcpConnector()
                 .addHandler(new AbstractHandler() {
+                    @Override
+                    public void onOpen(HandlerContext context) {
+                        context.fireMessageSent("wtf".getBytes());
+                    }
+
                     @Override
                     public void onRegistered(HandlerContext context) {
                         context.getChannel().unsafe().connect(new InetSocketAddress(3000));
                     }
+
+                    @Override
+                    public void onMessageReceived(HandlerContext context, Object message) {
+                        System.out.println(new String((byte[]) message));
+                    }
+
+                    @Override
+                    public void onClose(HandlerContext context) {
+                        context.getChannel().unsafe().connect(new InetSocketAddress(3000));
+                    }
+
+                    @Override
+                    public void onExceptionCaught(HandlerContext context, Throwable e) {
+                        e.printStackTrace();
+                    }
                 }).addHandler(sc).addHandler(mh).bind(3000);
+
         new UdpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
