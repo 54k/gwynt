@@ -2,7 +2,6 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelListener;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
 import org.slf4j.Logger;
@@ -21,15 +20,6 @@ import java.util.concurrent.CountDownLatch;
 public class NioEventLoop implements Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
-    private static final ChannelListener voidCallback = new ChannelListener() {
-        @Override
-        public void onComplete(Channel channel) {
-        }
-
-        @Override
-        public void onError(Channel channel, Throwable e) {
-        }
-    };
 
     private volatile boolean running;
     private CountDownLatch shutdownLock = new CountDownLatch(1);

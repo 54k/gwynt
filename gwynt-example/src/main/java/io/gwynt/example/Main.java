@@ -6,6 +6,7 @@ import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.transport.Datagram;
 import io.gwynt.core.transport.NioDatagramChannel;
+import io.gwynt.core.transport.NioEventLoopGroup;
 import io.gwynt.core.transport.NioServerSocketChannel;
 import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
@@ -24,9 +25,12 @@ public class Main {
         LoggingHandler lh = new LoggingHandler();
         EchoHandler eh = new EchoHandler();
 
-        Endpoint tcpEndpoint = new EndpointBootstrap().setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+        NioEventLoopGroup dispatcher = new NioEventLoopGroup();
+        dispatcher.runThread();
 
-        new EndpointBootstrap().setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
+        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(new AbstractHandler<String, String>() {
                     private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -47,27 +51,30 @@ public class Main {
                     }
                 }).connect("localhost", 3000);
 
-        new EndpointBootstrap().setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(mh).bind(3001);
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc)/*.addHandler(lh)*/
+                .addHandler(mh).bind(3001);
 
-        new EndpointBootstrap().setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
-            @Override
-            public void onMessageReceived(HandlerContext context, Object message) {
-                context.fireMessageSent(message);
-            }
-        }).bind(3001);
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
+                .addHandler(new AbstractHandler() {
+                    @Override
+                    public void onMessageReceived(HandlerContext context, Object message) {
+                        context.fireMessageSent(message);
+                    }
+                }).bind(3001);
 
-        new EndpointBootstrap().setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
-            @Override
-            public void onOpen(HandlerContext context) {
-                context.fireMessageSent(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
-            }
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
+                .addHandler(new AbstractHandler() {
+                    @Override
+                    public void onOpen(HandlerContext context) {
+                        context.fireMessageSent(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
+                    }
 
-            @Override
-            public void onMessageReceived(HandlerContext context, Object message) {
-                context.fireMessageSent(message);
-                context.fireClosing();
-            }
-        }).connect("localhost", 3001);
+                    @Override
+                    public void onMessageReceived(HandlerContext context, Object message) {
+                        context.fireMessageSent(message);
+                        context.fireClosing();
+                    }
+                }).connect("localhost", 3001);
     }
 
     private static class StringConverter extends AbstractHandler<byte[], String> {

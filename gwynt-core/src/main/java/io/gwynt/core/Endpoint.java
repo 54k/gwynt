@@ -1,6 +1,7 @@
 package io.gwynt.core;
 
 import io.gwynt.core.scheduler.EventScheduler;
+import io.gwynt.core.transport.Dispatcher;
 
 public interface Endpoint {
 
@@ -72,6 +73,21 @@ public interface Endpoint {
     Endpoint setScheduler(EventScheduler eventScheduler);
 
     /**
+     * Returns instance of {@link Dispatcher} in which all {@link Channel} io events dispatched
+     *
+     * @return current {@link Dispatcher}
+     */
+    Dispatcher getDispatcher();
+
+    /**
+     * Set specific {@link Dispatcher} implementation, which will dispatch all io events to {@link Channel}
+     *
+     * @param dispatcher {@link Dispatcher} implementation
+     * @return current {@link Endpoint}
+     */
+    Endpoint setDispatcher(Dispatcher dispatcher);
+
+    /**
      * Start listening for incoming connections
      *
      * @param port desired port
@@ -88,5 +104,5 @@ public interface Endpoint {
     /**
      * Stop listening for incoming connections
      */
-    Endpoint unbind();
+    Endpoint shutdown();
 }

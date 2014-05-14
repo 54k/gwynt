@@ -3,6 +3,7 @@ package io.gwynt.core;
 import io.gwynt.core.scheduler.EventScheduler;
 import io.gwynt.core.scheduler.SingleThreadedEventScheduler;
 import io.gwynt.core.transport.AbstractNioChannel;
+import io.gwynt.core.transport.Dispatcher;
 import io.gwynt.core.transport.NioEventLoop;
 
 import java.lang.reflect.Constructor;
@@ -14,7 +15,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class EndpointBootstrap implements Endpoint {
 
-    protected NioEventLoop eventLoop = new NioEventLoop();
+    protected Dispatcher eventLoop = new NioEventLoop();
     protected List<Handler> handlers = new ArrayList<>();
     protected ChannelFactory channelFactory = new DefaultChannelFactory();
     protected EventScheduler eventScheduler = new SingleThreadedEventScheduler();
@@ -73,6 +74,20 @@ public class EndpointBootstrap implements Endpoint {
         }
 
         this.eventScheduler = eventScheduler;
+        return this;
+    }
+
+    @Override
+    public Dispatcher getDispatcher() {
+        return eventLoop;
+    }
+
+    @Override
+    public Endpoint setDispatcher(Dispatcher dispatcher) {
+        if (dispatcher == null) {
+            throw new IllegalArgumentException("dispatcher");
+        }
+        this.eventLoop = dispatcher;
         return this;
     }
 
@@ -142,14 +157,12 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     private void startEventLoop() {
-        eventLoop.runThread();
         eventScheduler.runThread();
     }
 
     @Override
-    public Endpoint unbind() {
+    public Endpoint shutdown() {
         eventScheduler.shutdownThread();
-        eventLoop.shutdownThread();
         return this;
     }
 
