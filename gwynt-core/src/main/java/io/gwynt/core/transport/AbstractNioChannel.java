@@ -209,6 +209,11 @@ public abstract class AbstractNioChannel implements Channel {
                     if (doWrite0(message)) {
                         pendingWrites.poll();
                     }
+
+                    if (!pendingWrites.isEmpty()) {
+                        shouldClose = false;
+                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
+                    }
                 } catch (EofException e) {
                     shouldClose = true;
                 }
