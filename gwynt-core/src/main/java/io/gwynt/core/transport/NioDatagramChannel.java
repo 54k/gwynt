@@ -1,5 +1,6 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
@@ -53,18 +54,25 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void bind(InetSocketAddress address) {
+        public ChannelFuture bind(InetSocketAddress address) {
+            ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().bind(address);
+                channelFuture.complete();
+                return channelFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         @Override
-        public void connect(InetSocketAddress address) {
+        public ChannelFuture connect(InetSocketAddress address) {
+            ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().connect(address);
+                channelFuture.complete();
+                pipeline().fireOpen();
+                return channelFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -73,9 +81,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
         @Override
         protected void doRegister0() {
             pipeline().fireRegistered();
-            if (isActive()) {
-                pipeline().fireOpen();
-            }
             dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_READ);
         }
 

@@ -1,5 +1,6 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
@@ -57,17 +58,23 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     private class NioSocketUnsafe extends AbstractUnsafe<SocketChannel> {
 
+        private volatile ChannelFuture connectFuture = VOID_FUTURE;
+
         private NioSocketUnsafe(SocketChannel ch) {
             super(ch);
         }
 
         @Override
-        public void connect(InetSocketAddress address) {
+        public ChannelFuture connect(InetSocketAddress address) {
+            connectFuture = newChannelFuture();
             try {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
                     dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_CONNECT);
+                } else {
+                    connectFuture.complete();
                 }
+                return connectFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -122,8 +129,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void write(Object message) {
-            super.write(ByteBuffer.wrap((byte[]) message));
+        public void write(Object message, ChannelFuture channelFuture) {
+            super.write(ByteBuffer.wrap((byte[]) message), channelFuture);
         }
 
         @Override
@@ -149,6 +156,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         public void doConnect() throws IOException {
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {
+                connectFuture.complete();
                 if (!wasActive && isActive()) {
                     dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
                     pipeline().fireOpen();

@@ -1,5 +1,6 @@
 package io.gwynt.core.pipeline;
 
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.scheduler.EventScheduler;
 
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
@@ -68,17 +69,17 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
     }
 
     @SuppressWarnings("unchecked")
-    private static void invokeOnMessageSentNow(HandlerContext context, Object message) {
+    private static void invokeOnMessageSentNow(HandlerContext context, Object message, ChannelFuture channelFuture) {
         try {
-            context.handler().onMessageSent(context, message);
+            context.handler().onMessageSent(context, message, channelFuture);
         } catch (Throwable e) {
             context.handler().onExceptionCaught(context, e);
         }
     }
 
-    private static void invokeOnClosingNow(HandlerContext context) {
+    private static void invokeOnClosingNow(HandlerContext context, ChannelFuture channelFuture) {
         try {
-            context.handler().onClosing(context);
+            context.handler().onClosing(context, channelFuture);
         } catch (Throwable e) {
             context.handler().onExceptionCaught(context, e);
         }
@@ -217,28 +218,28 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void invokeOnMessageSent(final HandlerContext context, final Object message) {
+    public void invokeOnMessageSent(final HandlerContext context, final Object message, final ChannelFuture channelFuture) {
         if (scheduler.inSchedulerThread()) {
-            invokeOnMessageSentNow(context, message);
+            invokeOnMessageSentNow(context, message, channelFuture);
         } else {
             scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    invokeOnMessageSentNow(context, message);
+                    invokeOnMessageSentNow(context, message, channelFuture);
                 }
             });
         }
     }
 
     @Override
-    public void invokeOnClosing(final HandlerContext context) {
+    public void invokeOnClosing(final HandlerContext context, final ChannelFuture channelFuture) {
         if (scheduler.inSchedulerThread()) {
-            invokeOnClosingNow(context);
+            invokeOnClosingNow(context, channelFuture);
         } else {
             scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    invokeOnClosingNow(context);
+                    invokeOnClosingNow(context, channelFuture);
                 }
             });
         }

@@ -1,11 +1,7 @@
 package io.gwynt.core;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultChannelFuture implements ChannelFuture {
@@ -49,14 +45,26 @@ public class DefaultChannelFuture implements ChannelFuture {
     @SuppressWarnings("unchecked")
     private void notifyListenersOnComplete() {
         while (listeners.peek() != null) {
-            listeners.poll().onComplete(channel);
+            final ChannelListener channelListener = listeners.poll();
+            channel.scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    channelListener.onComplete(channel);
+                }
+            });
         }
     }
 
     @SuppressWarnings("unchecked")
     private void notifyListenersOnError() {
         while (listeners.peek() != null) {
-            listeners.poll().onError(channel, error);
+            final ChannelListener channelListener = listeners.poll();
+            channel.scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    channelListener.onError(channel, error);
+                }
+            });
         }
     }
 

@@ -1,14 +1,8 @@
 package io.gwynt.example;
 
-import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.EndpointBootstrap;
+import io.gwynt.core.*;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.transport.Datagram;
-import io.gwynt.core.transport.NioDatagramChannel;
-import io.gwynt.core.transport.NioEventLoopGroup;
-import io.gwynt.core.transport.NioServerSocketChannel;
-import io.gwynt.core.transport.NioSocketChannel;
+import io.gwynt.core.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +45,7 @@ public class Main {
                     }
                 }).connect("localhost", 3000);
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc)/*.addHandler(lh)*/
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(mh).bind(3001);
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
@@ -90,12 +84,12 @@ public class Main {
         }
 
         @Override
-        public void onMessageSent(HandlerContext context, String message) {
+        public void onMessageSent(HandlerContext context, String message, ChannelFuture channelFuture) {
             ByteBuffer buffer = charset.encode(message);
             byte[] messageBytes = new byte[buffer.limit()];
             buffer.get(messageBytes);
             buffer.clear();
-            context.fireMessageSent(messageBytes);
+            context.fireMessageSent(messageBytes, channelFuture);
         }
     }
 
@@ -139,20 +133,41 @@ public class Main {
 
         @Override
         public void onClose(HandlerContext context) {
-            logger.info("Channel closed: " + context.channel());
+            logger.info("Channel closed: {}", context.channel());
             context.fireClose();
         }
 
         @Override
-        public void onClosing(HandlerContext context) {
-            logger.info("Channel closing: " + context.channel());
-            context.fireClosing();
+        public void onClosing(HandlerContext context, ChannelFuture channelFuture) {
+            logger.info("Channel closing: {}", context.channel());
+            channelFuture.addListener(new ChannelListener<Channel>() {
+                @Override
+                public void onComplete(Channel channel) {
+                    logger.info("Channel closed for remote client: {}", channel);
+                }
+
+                @Override
+                public void onError(Channel channel, Throwable e) {
+                }
+            });
+            context.fireClosing(channelFuture);
         }
 
         @Override
-        public void onMessageSent(HandlerContext context, Object message) {
-            logger.info("Message sent: " + message);
-            context.fireMessageSent(message);
+        public void onMessageSent(HandlerContext context, final Object message, ChannelFuture channelFuture) {
+            logger.info("Message sent: {}", message);
+            channelFuture.addListener(new ChannelListener<Channel>() {
+                @Override
+                public void onComplete(Channel channel) {
+                    logger.info("Message sent to remote client: {}", message);
+                }
+
+                @Override
+                public void onError(Channel channel, Throwable e) {
+
+                }
+            });
+            context.fireMessageSent(message, channelFuture);
         }
 
         @Override

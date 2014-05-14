@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
 public class EndpointBootstrap implements Endpoint {
 
@@ -110,8 +111,11 @@ public class EndpointBootstrap implements Endpoint {
         initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
-                channel.unsafe().bind(new InetSocketAddress(port));
-                latch.countDown();
+                try {
+                    channel.unsafe().bind(new InetSocketAddress(port)).get();
+                    latch.countDown();
+                } catch (InterruptedException | ExecutionException ignore) {
+                }
             }
 
             @Override
@@ -132,8 +136,11 @@ public class EndpointBootstrap implements Endpoint {
         initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
-                channel.unsafe().connect(new InetSocketAddress(host, port));
-                latch.countDown();
+                try {
+                    channel.unsafe().connect(new InetSocketAddress(host, port)).get();
+                    latch.countDown();
+                } catch (InterruptedException | ExecutionException ignore) {
+                }
             }
 
             @Override

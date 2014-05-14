@@ -12,4 +12,10 @@ public interface Dispatcher {
     ChannelFuture unregister(Channel channel);
 
     ChannelFuture modifyRegistration(Channel channel, int interestOps);
+
+    ChannelFuture register(Channel channel, ChannelFuture channelFuture);
+
+    ChannelFuture unregister(Channel channel, ChannelFuture channelFuture);
+
+    ChannelFuture modifyRegistration(Channel channel, int interestOps, ChannelFuture channelFuture);
 }

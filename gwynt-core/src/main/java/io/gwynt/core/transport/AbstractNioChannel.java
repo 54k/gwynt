@@ -1,13 +1,10 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.DefaultChannelFuture;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.Handler;
+import io.gwynt.core.*;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 import io.gwynt.core.scheduler.EventScheduler;
+import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,6 +16,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractNioChannel implements Channel {
+
+    protected static final ChannelFuture VOID_FUTURE = new DefaultChannelFuture(null);
 
     protected Unsafe unsafe;
     protected Endpoint endpoint;
@@ -91,9 +90,9 @@ public abstract class AbstractNioChannel implements Channel {
 
         private final Object lock = new Object();
         private volatile boolean pendingClose;
-
         private List<Object> messages = new ArrayList<>();
-        private Queue<Object> pendingWrites = new ConcurrentLinkedQueue<>();
+        private Queue<Pair<Object, ChannelFuture>> pendingWrites = new ConcurrentLinkedQueue<>();
+        private volatile ChannelFuture closeFuture = VOID_FUTURE;
         private T ch;
 
         protected AbstractUnsafe(T ch) {
@@ -111,19 +110,19 @@ public abstract class AbstractNioChannel implements Channel {
         }
 
         @Override
-        public void bind(InetSocketAddress address) {
+        public ChannelFuture bind(InetSocketAddress address) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void connect(InetSocketAddress address) {
+        public ChannelFuture connect(InetSocketAddress address) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void write(Object message) {
+        public void write(Object message, ChannelFuture channelFuture) {
             if (!pendingClose && isActive()) {
-                pendingWrites.add(message);
+                pendingWrites.add(new Pair<>(message, channelFuture));
                 synchronized (lock) {
                     if (isRegistered()) {
                         dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
@@ -144,11 +143,12 @@ public abstract class AbstractNioChannel implements Channel {
         }
 
         @Override
-        public void close() {
+        public void close(ChannelFuture channelFuture) {
             if (!pendingClose) {
                 pendingClose = true;
                 synchronized (lock) {
                     if (isRegistered()) {
+                        closeFuture = channelFuture;
                         dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
                     }
                 }
@@ -210,11 +210,12 @@ public abstract class AbstractNioChannel implements Channel {
         @Override
         public void doWrite() throws IOException {
             boolean shouldClose = pendingClose;
-            Object message = pendingWrites.peek();
+            Pair<Object, ChannelFuture> message = pendingWrites.peek();
             if (message != null) {
                 try {
-                    if (doWrite0(message)) {
+                    if (doWrite0(message.getFirst())) {
                         pendingWrites.poll();
+                        message.getSecond().complete();
                     }
 
                     if (!pendingWrites.isEmpty()) {
@@ -223,6 +224,7 @@ public abstract class AbstractNioChannel implements Channel {
                     }
                 } catch (EofException e) {
                     shouldClose = true;
+                    message.getSecond().complete();
                 }
             }
 
@@ -255,7 +257,9 @@ public abstract class AbstractNioChannel implements Channel {
             } catch (IOException e) {
                 // ignore
             }
-            dispatcher().unregister(AbstractNioChannel.this);
+            dispatcher().unregister(AbstractNioChannel.this, closeFuture);
         }
+
+
     }
 }

@@ -74,7 +74,21 @@ public class NioEventLoop implements Dispatcher {
 
     @Override
     public ChannelFuture register(final Channel channel) {
-        final ChannelFuture channelFuture = channel.newChannelFuture();
+        return register(channel, channel.newChannelFuture());
+    }
+
+    @Override
+    public ChannelFuture unregister(Channel channel) {
+        return unregister(channel, channel.newChannelFuture());
+    }
+
+    @Override
+    public ChannelFuture modifyRegistration(Channel channel, int interestOps) {
+        return modifyRegistration(channel, interestOps, channel.newChannelFuture());
+    }
+
+    @Override
+    public ChannelFuture register(final Channel channel, final ChannelFuture channelFuture) {
         addTask(new Runnable() {
             @Override
             public void run() {
@@ -91,12 +105,11 @@ public class NioEventLoop implements Dispatcher {
     }
 
     @Override
-    public ChannelFuture unregister(final Channel channel) {
+    public ChannelFuture unregister(final Channel channel, final ChannelFuture channelFuture) {
         final SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
         if (key == null) {
             throw new RegistrationException("unregistered unsafe");
         }
-        final ChannelFuture channelFuture = channel.newChannelFuture();
 
         addTask(new Runnable() {
             @Override
@@ -111,11 +124,10 @@ public class NioEventLoop implements Dispatcher {
     }
 
     @Override
-    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps) {
+    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps, final ChannelFuture channelFuture) {
         if ((interestOps & ~channel.unsafe().javaChannel().validOps()) != 0) {
             throw new IllegalArgumentException("interestOps are not valid");
         }
-        final ChannelFuture channelFuture = channel.newChannelFuture();
 
         addTask(new Runnable() {
             @Override

@@ -1,5 +1,6 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Endpoint;
 
 import java.io.IOException;
@@ -55,9 +56,12 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void bind(InetSocketAddress address) {
+        public ChannelFuture bind(InetSocketAddress address) {
+            ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().bind(address);
+                channelFuture.complete();
+                return channelFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

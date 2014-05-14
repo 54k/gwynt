@@ -38,13 +38,13 @@ public abstract class AbstractHandler<I, O> implements Handler<I, O> {
     }
 
     @Override
-    public void onMessageSent(HandlerContext context, O message) {
-        context.fireMessageSent(message);
+    public void onMessageSent(HandlerContext context, O message, ChannelFuture channelFuture) {
+        context.fireMessageSent(message, channelFuture);
     }
 
     @Override
-    public void onClosing(HandlerContext context) {
-        context.fireClosing();
+    public void onClosing(HandlerContext context, ChannelFuture channelFuture) {
+        context.fireClosing(channelFuture);
     }
 
     @Override

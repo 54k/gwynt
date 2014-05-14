@@ -1,6 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Handler;
 import io.gwynt.core.transport.AbstractNioChannel;
 import org.slf4j.Logger;
@@ -337,13 +338,13 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
 
         @Override
-        public void onMessageSent(HandlerContext context, Object message) {
-            context.channel().unsafe().write(message);
+        public void onMessageSent(HandlerContext context, Object message, ChannelFuture channelFuture) {
+            context.channel().unsafe().write(message, channelFuture);
         }
 
         @Override
-        public void onClosing(HandlerContext context) {
-            context.channel().unsafe().close();
+        public void onClosing(HandlerContext context, ChannelFuture channelFuture) {
+            context.channel().unsafe().close(channelFuture);
         }
     }
 
@@ -366,11 +367,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
 
         @Override
-        public void onMessageSent(HandlerContext context, Object message) {
+        public void onMessageSent(HandlerContext context, Object message, ChannelFuture channelFuture) {
         }
 
         @Override
-        public void onClosing(HandlerContext context) {
+        public void onClosing(HandlerContext context, ChannelFuture channelFuture) {
         }
 
         @Override

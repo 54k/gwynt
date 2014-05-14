@@ -1,6 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Handler;
 
 public interface HandlerContext {
@@ -23,7 +24,11 @@ public interface HandlerContext {
 
     void fireMessageSent(Object message);
 
+    void fireMessageSent(Object message, ChannelFuture channelFuture);
+
     void fireClosing();
+
+    void fireClosing(ChannelFuture channelFuture);
 
     void fireClose();
 

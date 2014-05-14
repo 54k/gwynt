@@ -37,15 +37,15 @@ public interface Channel {
 
         T javaChannel();
 
-        void bind(InetSocketAddress address);
+        ChannelFuture bind(InetSocketAddress address);
 
-        void connect(InetSocketAddress address);
+        ChannelFuture connect(InetSocketAddress address);
 
         void read();
 
-        void write(Object message);
+        void write(Object message, ChannelFuture channelFuture);
 
-        void close();
+        void close(ChannelFuture channelFuture);
 
         void doRegister(Dispatcher dispatcher);
 
