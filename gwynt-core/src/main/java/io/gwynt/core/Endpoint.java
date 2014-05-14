@@ -43,6 +43,20 @@ public interface Endpoint {
     Endpoint setChannelFactory(ChannelFactory channelFactory);
 
     /**
+     * Get specific {@link io.gwynt.core.Channel} class
+     *
+     * @return current {@link io.gwynt.core.Channel class}
+     */
+    Class<? extends Channel> getChannel();
+
+    /**
+     * Set specific {@link io.gwynt.core.Channel} class
+     *
+     * @return current {@link Endpoint}
+     */
+    Endpoint setChannel(Class<? extends Channel> channel);
+
+    /**
      * Returns instance of {@link io.gwynt.core.scheduler.EventScheduler} in which all {@link Handler} events dispatched
      *
      * @return current {@link io.gwynt.core.scheduler.EventScheduler}
@@ -58,14 +72,21 @@ public interface Endpoint {
     Endpoint setScheduler(EventScheduler eventScheduler);
 
     /**
-     * Synchronously runThread listening incoming connections
+     * Start listening for incoming connections
      *
      * @param port desired port
      */
     Endpoint bind(int port);
 
     /**
-     * Synchronously shutdownThread listening incoming connections
+     * Connect {@link io.gwynt.core.Channel} to specified host and port
+     *
+     * @param port desired port
+     */
+    Endpoint connect(String host, int port);
+
+    /**
+     * Stop listening for incoming connections
      */
     Endpoint unbind();
 }

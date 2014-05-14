@@ -1,6 +1,6 @@
 package io.gwynt.core;
 
-public interface ChannelFactory<I, O extends Channel> {
+public interface ChannelFactory<I extends Channel> {
 
-    O createChannel(I channel);
+    I createChannel(Class<? extends I> channelClazz);
 }

@@ -57,7 +57,7 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
     }
 
     @Override
-    public void start() {
+    public void runThread() {
         if (running.get()) {
             return;
         }
@@ -75,7 +75,7 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
     }
 
     @Override
-    public void stop() {
+    public void shutdownThread() {
         if (!running.get()) {
             return;
         }
@@ -88,5 +88,6 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
         } catch (InterruptedException e) {
             // ignore
         }
+        schedulerThread = null;
     }
 }

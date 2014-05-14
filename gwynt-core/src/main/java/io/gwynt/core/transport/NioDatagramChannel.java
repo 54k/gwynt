@@ -10,7 +10,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.ServerSocketChannel;
 import java.util.List;
 
 public class NioDatagramChannel extends AbstractNioChannel {
@@ -27,7 +26,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
     @Override
     public SocketAddress getLocalAddress() {
         try {
-            return ((ServerSocketChannel) unsafe.javaChannel()).getLocalAddress();
+            return ((DatagramChannel) unsafe.javaChannel()).getLocalAddress();
         } catch (IOException e) {
             return null;
         }
@@ -35,7 +34,11 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
     @Override
     public SocketAddress getRemoteAddress() {
-        return null;
+        try {
+            return ((DatagramChannel) unsafe.javaChannel()).getRemoteAddress();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     private class NioDatagramUnsafe extends AbstractUnsafe<DatagramChannel> {
@@ -48,6 +51,15 @@ public class NioDatagramChannel extends AbstractNioChannel {
         public void bind(InetSocketAddress address) {
             try {
                 javaChannel().bind(address);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void connect(InetSocketAddress address) {
+            try {
+                javaChannel().connect(address);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

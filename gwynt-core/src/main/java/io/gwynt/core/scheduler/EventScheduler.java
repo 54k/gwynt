@@ -6,7 +6,7 @@ public interface EventScheduler {
 
     void schedule(Runnable task);
 
-    void start();
+    void runThread();
 
-    void stop();
+    void shutdownThread();
 }

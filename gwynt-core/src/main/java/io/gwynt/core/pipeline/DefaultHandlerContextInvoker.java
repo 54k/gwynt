@@ -49,6 +49,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
             context.getHandler().onExceptionCaught(context, e);
         }
     }
+
     private static void invokeOnReadNow(HandlerContext context) {
         try {
             context.getHandler().onRead(context);
@@ -56,6 +57,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
             context.getHandler().onExceptionCaught(context, e);
         }
     }
+
     @SuppressWarnings("unchecked")
     private static void invokeOnMessageReceivedNow(HandlerContext context, Object message) {
         try {

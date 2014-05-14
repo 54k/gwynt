@@ -2,10 +2,11 @@ package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.Endpoint;
-import io.gwynt.core.TcpConnector;
-import io.gwynt.core.TcpEndpoint;
-import io.gwynt.core.UdpEndpoint;
+import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
+import io.gwynt.core.transport.Datagram;
+import io.gwynt.core.transport.NioDatagramChannel;
+import io.gwynt.core.transport.NioServerSocketChannel;
 import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,38 +24,50 @@ public class Main {
         LoggingHandler lh = new LoggingHandler();
         EchoHandler eh = new EchoHandler();
 
-        Endpoint tcpEndpoint = new TcpEndpoint().addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+        Endpoint tcpEndpoint = new EndpointBootstrap().setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
 
-        new UdpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
+        new EndpointBootstrap().setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
+                .addHandler(new AbstractHandler<String, String>() {
+                    private Logger logger = LoggerFactory.getLogger(getClass());
+
+                    @Override
+                    public void onOpen(HandlerContext context) {
+                        context.fireMessageSent("echo echo echo");
+                    }
+
+                    @Override
+                    public void onMessageReceived(HandlerContext context, String message) {
+                        context.fireMessageSent(message);
+                        context.fireClosing();
+                    }
+
+                    @Override
+                    public void onExceptionCaught(HandlerContext context, Throwable e) {
+                        logger.error(e.getMessage(), e);
+                    }
+                }).connect("localhost", 3000);
+
+        new EndpointBootstrap().setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(mh).bind(3001);
+
+        new EndpointBootstrap().setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 context.fireMessageSent(message);
             }
         }).bind(3001);
 
-        new TcpConnector().setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(new AbstractHandler<String, String>() {
-
-            private Logger logger = LoggerFactory.getLogger(getClass());
-
+        new EndpointBootstrap().setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onOpen(HandlerContext context) {
-                context.fireMessageSent("wazzup");
+                context.fireMessageSent(new Datagram(context.getChannel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
             }
 
             @Override
-            public void onMessageReceived(HandlerContext context, String message) {
+            public void onMessageReceived(HandlerContext context, Object message) {
                 context.fireMessageSent(message);
                 context.fireClosing();
             }
-
-            @Override
-            public void onExceptionCaught(HandlerContext context, Throwable e) {
-                logger.error(e.getMessage(), e);
-            }
-
-        }).bind(3000);
-
-        new TcpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(mh).bind(3001);
+        }).connect("localhost", 3001);
     }
 
     private static class StringConverter extends AbstractHandler<byte[], String> {
@@ -113,6 +126,7 @@ public class Main {
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
             logger.info("Exception caught on channel {}: {} ", context.getChannel(), e);
+            logger.error(e.getMessage(), e);
             context.fireExceptionCaught(e);
         }
 
