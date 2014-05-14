@@ -12,88 +12,88 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     private static void invokeOnHandlerAddedNow(HandlerContext context) {
         try {
-            context.getHandler().onHandlerAdded(context);
+            context.handler().onHandlerAdded(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnHandlerRemovedNow(HandlerContext context) {
         try {
-            context.getHandler().onHandlerRemoved(context);
+            context.handler().onHandlerRemoved(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnRegisteredNow(HandlerContext context) {
         try {
-            context.getHandler().onRegistered(context);
+            context.handler().onRegistered(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnUnregisteredNow(HandlerContext context) {
         try {
-            context.getHandler().onUnregistered(context);
+            context.handler().onUnregistered(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnOpenNow(HandlerContext context) {
         try {
-            context.getHandler().onOpen(context);
+            context.handler().onOpen(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnReadNow(HandlerContext context) {
         try {
-            context.getHandler().onRead(context);
+            context.handler().onRead(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private static void invokeOnMessageReceivedNow(HandlerContext context, Object message) {
         try {
-            context.getHandler().onMessageReceived(context, message);
+            context.handler().onMessageReceived(context, message);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     @SuppressWarnings("unchecked")
     private static void invokeOnMessageSentNow(HandlerContext context, Object message) {
         try {
-            context.getHandler().onMessageSent(context, message);
+            context.handler().onMessageSent(context, message);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnClosingNow(HandlerContext context) {
         try {
-            context.getHandler().onClosing(context);
+            context.handler().onClosing(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnCloseNow(HandlerContext context) {
         try {
-            context.getHandler().onClose(context);
+            context.handler().onClose(context);
         } catch (Throwable e) {
-            context.getHandler().onExceptionCaught(context, e);
+            context.handler().onExceptionCaught(context, e);
         }
     }
 
     private static void invokeOnExceptionCaughtNow(HandlerContext context, Throwable e) {
-        context.getHandler().onExceptionCaught(context, e);
+        context.handler().onExceptionCaught(context, e);
     }
 
     @Override

@@ -5,29 +5,29 @@ import io.gwynt.core.Handler;
 
 public interface HandlerContext {
 
-    String getName();
+    String name();
 
-    Handler getHandler();
+    Handler handler();
 
-    Channel getChannel();
+    Channel channel();
 
-    HandlerContext fireRegistered();
+    void fireRegistered();
 
-    HandlerContext fireUnregistered();
+    void fireUnregistered();
 
-    HandlerContext fireOpen();
+    void fireOpen();
 
-    HandlerContext fireRead();
+    void fireRead();
 
-    HandlerContext fireMessageReceived(Object message);
+    void fireMessageReceived(Object message);
 
-    HandlerContext fireMessageSent(Object message);
+    void fireMessageSent(Object message);
 
-    HandlerContext fireClosing();
+    void fireClosing();
 
-    HandlerContext fireClose();
+    void fireClose();
 
-    HandlerContext fireExceptionCaught(Throwable e);
+    void fireExceptionCaught(Throwable e);
 
     boolean isRemoved();
 }

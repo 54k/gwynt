@@ -59,7 +59,7 @@ public class Main {
         new EndpointBootstrap().setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onOpen(HandlerContext context) {
-                context.fireMessageSent(new Datagram(context.getChannel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
+                context.fireMessageSent(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
             }
 
             @Override
@@ -100,7 +100,7 @@ public class Main {
         public void onMessageReceived(HandlerContext context, String message) {
             context.fireMessageSent("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
             context.fireMessageSent(new Date().toString() + "\r\n");
-            if (context.getChannel() instanceof NioSocketChannel) {
+            if (context.channel() instanceof NioSocketChannel) {
                 context.fireClosing();
             }
         }
@@ -125,20 +125,20 @@ public class Main {
 
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
-            logger.info("Exception caught on channel {}: {} ", context.getChannel(), e);
+            logger.info("Exception caught on channel {}: {} ", context.channel(), e);
             logger.error(e.getMessage(), e);
             context.fireExceptionCaught(e);
         }
 
         @Override
         public void onClose(HandlerContext context) {
-            logger.info("Channel closed: " + context.getChannel());
+            logger.info("Channel closed: " + context.channel());
             context.fireClose();
         }
 
         @Override
         public void onClosing(HandlerContext context) {
-            logger.info("Channel closing: " + context.getChannel());
+            logger.info("Channel closing: " + context.channel());
             context.fireClosing();
         }
 
@@ -156,19 +156,19 @@ public class Main {
 
         @Override
         public void onOpen(HandlerContext context) {
-            logger.info("Channel opened: {}", context.getChannel());
+            logger.info("Channel opened: {}", context.channel());
             context.fireOpen();
         }
 
         @Override
         public void onUnregistered(HandlerContext context) {
-            logger.info("Channel unregistered: {}", context.getChannel());
+            logger.info("Channel unregistered: {}", context.channel());
             context.fireUnregistered();
         }
 
         @Override
         public void onRegistered(HandlerContext context) {
-            logger.info("Channel registered: {}", context.getChannel());
+            logger.info("Channel registered: {}", context.channel());
             context.fireRegistered();
         }
     }

@@ -181,7 +181,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         context.setPrev(prev);
         before.setPrev(context);
         context.removed = false;
-        name2context.put(context.getName(), context);
+        name2context.put(context.name(), context);
         context.fireOnAdded();
     }
 
@@ -252,7 +252,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         context.setPrev(after);
         after.setNext(context);
         context.removed = false;
-        name2context.put(context.getName(), context);
+        name2context.put(context.name(), context);
         context.fireOnAdded();
     }
 
@@ -283,7 +283,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             prev.setNext(context.getNext());
             next.setPrev(context.getPrev());
             context.removed = true;
-            name2context.remove(context.getName());
+            name2context.remove(context.name());
             context.fireOnRemoved();
         }
     }
@@ -294,7 +294,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             return contextByName;
         }
         for (DefaultHandlerContext context : this) {
-            if (context.getHandler() == handler) {
+            if (context.handler() == handler) {
                 return context;
             }
         }
@@ -333,17 +333,17 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
         @Override
         public void onRead(HandlerContext context) {
-            context.getChannel().unsafe().read();
+            context.channel().unsafe().read();
         }
 
         @Override
         public void onMessageSent(HandlerContext context, Object message) {
-            context.getChannel().unsafe().write(message);
+            context.channel().unsafe().write(message);
         }
 
         @Override
         public void onClosing(HandlerContext context) {
-            context.getChannel().unsafe().close();
+            context.channel().unsafe().close();
         }
     }
 

@@ -14,6 +14,7 @@ public class DefaultHandlerContext implements HandlerContext {
 
     private volatile DefaultHandlerContext prev;
     private volatile DefaultHandlerContext next;
+
     private HandlerContextInvoker invoker;
     private Channel channel;
     private Handler handler;
@@ -26,7 +27,7 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -55,12 +56,12 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public Handler getHandler() {
+    public Handler handler() {
         return handler;
     }
 
     @Override
-    public Channel getChannel() {
+    public Channel channel() {
         return channel;
     }
 
@@ -73,66 +74,57 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public HandlerContext fireRegistered() {
+    public void fireRegistered() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnRegistered(next);
-        return this;
     }
 
     @Override
-    public HandlerContext fireUnregistered() {
+    public void fireUnregistered() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnUnregistered(next);
-        return this;
     }
 
     @Override
-    public HandlerContext fireOpen() {
+    public void fireOpen() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnOpen(next);
-        return this;
     }
 
     @Override
-    public HandlerContext fireRead() {
+    public void fireRead() {
         DefaultHandlerContext prev = findContextOutbound();
         prev.getInvoker().invokeOnRead(prev);
-        return this;
     }
 
     @Override
-    public HandlerContext fireMessageReceived(Object message) {
+    public void fireMessageReceived(Object message) {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnMessageReceived(next, message);
-        return this;
     }
 
     @Override
-    public HandlerContext fireMessageSent(Object message) {
+    public void fireMessageSent(Object message) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.getInvoker().invokeOnMessageSent(prev, message);
-        return this;
     }
 
     @Override
-    public HandlerContext fireClosing() {
+    public void fireClosing() {
         DefaultHandlerContext prev = findContextOutbound();
         prev.getInvoker().invokeOnClosing(prev);
-        return this;
     }
 
     @Override
-    public HandlerContext fireClose() {
+    public void fireClose() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnClosed(next);
-        return this;
     }
 
     @Override
-    public HandlerContext fireExceptionCaught(Throwable e) {
+    public void fireExceptionCaught(Throwable e) {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnExceptionCaught(next, e);
-        return this;
     }
 
     @Override

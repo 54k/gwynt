@@ -92,7 +92,7 @@ public class EndpointBootstrap implements Endpoint {
 
     @Override
     public Endpoint bind(final int port) {
-        initAndRegisterChannel(new ChannelCallback() {
+        initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 channel.unsafe().bind(new InetSocketAddress(port));
@@ -103,6 +103,7 @@ public class EndpointBootstrap implements Endpoint {
             public void onError(Channel channel, Throwable e) {
             }
         });
+
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -113,7 +114,7 @@ public class EndpointBootstrap implements Endpoint {
 
     @Override
     public Endpoint connect(final String host, final int port) {
-        initAndRegisterChannel(new ChannelCallback() {
+        initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 channel.unsafe().connect(new InetSocketAddress(host, port));
@@ -124,6 +125,7 @@ public class EndpointBootstrap implements Endpoint {
             public void onError(Channel channel, Throwable e) {
             }
         });
+
         try {
             latch.await();
         } catch (InterruptedException e) {
@@ -133,11 +135,10 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @SuppressWarnings("unchecked")
-    private Channel initAndRegisterChannel(ChannelCallback callback) {
+    private ChannelFuture initAndRegisterChannel() {
         startEventLoop();
         Channel channel = channelFactory.createChannel(channelClazz);
-        eventLoop.register(channel, callback);
-        return channel;
+        return eventLoop.register(channel);
     }
 
     private void startEventLoop() {

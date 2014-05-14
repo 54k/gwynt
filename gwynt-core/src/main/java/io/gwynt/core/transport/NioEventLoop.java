@@ -1,7 +1,8 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelCallback;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelListener;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
 import org.slf4j.Logger;
@@ -20,7 +21,7 @@ import java.util.concurrent.CountDownLatch;
 public class NioEventLoop implements Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
-    private static final ChannelCallback voidCallback = new ChannelCallback() {
+    private static final ChannelListener voidCallback = new ChannelListener() {
         @Override
         public void onComplete(Channel channel) {
         }
@@ -81,72 +82,62 @@ public class NioEventLoop implements Dispatcher {
         return this;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void register(final Channel channel, final ChannelCallback callback) {
+    public ChannelFuture register(final Channel channel) {
+        final ChannelFuture channelFuture = channel.newChannelFuture();
         addTask(new Runnable() {
             @Override
             public void run() {
                 try {
                     channel.unsafe().javaChannel().register(selector, 0, channel);
                     channel.unsafe().doRegister(NioEventLoop.this);
-                    callback.onComplete(channel);
+                    channelFuture.complete();
                 } catch (IOException e) {
-                    callback.onError(channel, e);
+                    channelFuture.complete(e);
                 }
             }
         });
+        return channelFuture;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void unregister(final Channel channel, final ChannelCallback callback) {
+    public ChannelFuture unregister(final Channel channel) {
         final SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
         if (key == null) {
             throw new RegistrationException("unregistered unsafe");
         }
+        final ChannelFuture channelFuture = channel.newChannelFuture();
+
         addTask(new Runnable() {
             @Override
             public void run() {
                 key.cancel();
                 key.attach(null);
                 channel.unsafe().doUnregister(NioEventLoop.this);
-                callback.onComplete(channel);
+                channelFuture.complete();
             }
         });
+        return channelFuture;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public void modifyRegistration(final Channel channel, final int interestOps, final ChannelCallback callback) {
+    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps) {
         if ((interestOps & ~channel.unsafe().javaChannel().validOps()) != 0) {
             throw new IllegalArgumentException("interestOps are not valid");
         }
+        final ChannelFuture channelFuture = channel.newChannelFuture();
+
         addTask(new Runnable() {
             @Override
             public void run() {
                 SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     key.interestOps(key.interestOps() | interestOps);
-                    callback.onComplete(channel);
+                    channelFuture.complete();
                 }
             }
         });
-    }
-
-    @Override
-    public void register(Channel channel) {
-        register(channel, voidCallback);
-    }
-
-    @Override
-    public void unregister(Channel channel) {
-        unregister(channel, voidCallback);
-    }
-
-    @Override
-    public void modifyRegistration(Channel channel, int interestOps) {
-        modifyRegistration(channel, interestOps, voidCallback);
+        return channelFuture;
     }
 
     protected void addTask(Runnable task) {

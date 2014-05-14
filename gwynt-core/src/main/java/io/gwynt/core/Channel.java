@@ -31,6 +31,8 @@ public interface Channel {
 
     Dispatcher dispatcher();
 
+    ChannelFuture newChannelFuture();
+
     interface Unsafe<T extends SelectableChannel> {
 
         T javaChannel();

@@ -13,11 +13,11 @@ public abstract class ChannelInitializer extends AbstractHandler {
     @Override
     public void onRegistered(HandlerContext context) {
         try {
-            initialize(context.getChannel());
-            context.getChannel().pipeline().remove(context.getName());
+            initialize(context.channel());
+            context.channel().pipeline().remove(context.name());
             super.onRegistered(context);
         } catch (Throwable e) {
-            logger.error("Exception caught while initializing session. {} will be closed.", context.getChannel());
+            logger.error("Exception caught while initializing session. {} will be closed.", context.channel());
             context.fireClosing();
         }
     }

@@ -1,6 +1,6 @@
 package io.gwynt.core;
 
-public interface ChannelCallback<T extends Channel> {
+public interface ChannelListener<T extends Channel> {
 
     void onComplete(T channel);
 

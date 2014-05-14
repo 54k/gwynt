@@ -1,6 +1,8 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.DefaultChannelFuture;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
@@ -78,6 +80,11 @@ public abstract class AbstractNioChannel implements Channel {
     @Override
     public Dispatcher dispatcher() {
         return dispatcher;
+    }
+
+    @Override
+    public ChannelFuture newChannelFuture() {
+        return new DefaultChannelFuture(this);
     }
 
     protected abstract class AbstractUnsafe<T extends SelectableChannel> implements Unsafe<T> {
