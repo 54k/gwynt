@@ -20,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
 public class NioEventLoop implements Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
-    private static ChannelCallback voidCallback = new ChannelCallback() {
+    private static final ChannelCallback voidCallback = new ChannelCallback() {
         @Override
         public void onComplete(Channel channel) {
         }
