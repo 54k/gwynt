@@ -46,12 +46,16 @@ public class DefaultChannelFuture implements ChannelFuture {
     private void notifyListenersOnComplete() {
         while (listeners.peek() != null) {
             final ChannelListener channelListener = listeners.poll();
-            channel.scheduler().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    channelListener.onComplete(channel);
-                }
-            });
+            if (channel.scheduler().inSchedulerThread()) {
+                channelListener.onComplete(channel);
+            } else {
+                channel.scheduler().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        channelListener.onComplete(channel);
+                    }
+                });
+            }
         }
     }
 
@@ -59,12 +63,16 @@ public class DefaultChannelFuture implements ChannelFuture {
     private void notifyListenersOnError() {
         while (listeners.peek() != null) {
             final ChannelListener channelListener = listeners.poll();
-            channel.scheduler().schedule(new Runnable() {
-                @Override
-                public void run() {
-                    channelListener.onError(channel, error);
-                }
-            });
+            if (channel.scheduler().inSchedulerThread()) {
+                channelListener.onError(channel, error);
+            } else {
+                channel.scheduler().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        channelListener.onError(channel, error);
+                    }
+                });
+            }
         }
     }
 
