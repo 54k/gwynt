@@ -9,6 +9,7 @@ public class DefaultHandlerContext implements HandlerContext {
     volatile Runnable unregisteredEvent;
     volatile Runnable openEvent;
     volatile Runnable closeEvent;
+    volatile Runnable readEvent;
     volatile boolean removed = true;
 
     private volatile DefaultHandlerContext prev;
@@ -72,14 +73,14 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public HandlerContext fireOnRegistered() {
+    public HandlerContext fireRegistered() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnRegistered(next);
         return this;
     }
 
     @Override
-    public HandlerContext fireOnUnregistered() {
+    public HandlerContext fireUnregistered() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnUnregistered(next);
         return this;
@@ -89,6 +90,13 @@ public class DefaultHandlerContext implements HandlerContext {
     public HandlerContext fireOpen() {
         DefaultHandlerContext next = findContextInbound();
         next.getInvoker().invokeOnOpen(next);
+        return this;
+    }
+
+    @Override
+    public HandlerContext fireRead() {
+        DefaultHandlerContext prev = findContextOutbound();
+        prev.getInvoker().invokeOnRead(prev);
         return this;
     }
 

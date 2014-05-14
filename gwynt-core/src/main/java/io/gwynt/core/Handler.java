@@ -48,6 +48,13 @@ public interface Handler<I, O> {
     void onOpen(HandlerContext context);
 
     /**
+     * Called when read operation requested on {@link Channel}
+     *
+     * @param context {@link io.gwynt.core.pipeline.HandlerContext}
+     */
+    void onRead(HandlerContext context);
+
+    /**
      * Called when inbound message received
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}

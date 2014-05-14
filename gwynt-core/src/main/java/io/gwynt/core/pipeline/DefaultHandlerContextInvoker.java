@@ -49,7 +49,13 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
             context.getHandler().onExceptionCaught(context, e);
         }
     }
-
+    private static void invokeOnReadNow(HandlerContext context) {
+        try {
+            context.getHandler().onRead(context);
+        } catch (Throwable e) {
+            context.getHandler().onExceptionCaught(context, e);
+        }
+    }
     @SuppressWarnings("unchecked")
     private static void invokeOnMessageReceivedNow(HandlerContext context, Object message) {
         try {
@@ -166,6 +172,25 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     @Override
                     public void run() {
                         invokeOnOpenNow(context);
+                    }
+                };
+            }
+            scheduler.schedule(event);
+        }
+    }
+
+    @Override
+    public void invokeOnRead(final HandlerContext context) {
+        if (scheduler.inSchedulerThread()) {
+            invokeOnReadNow(context);
+        } else {
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            Runnable event = dctx.readEvent;
+            if (event == null) {
+                dctx.readEvent = event = new Runnable() {
+                    @Override
+                    public void run() {
+                        invokeOnReadNow(context);
                     }
                 };
             }

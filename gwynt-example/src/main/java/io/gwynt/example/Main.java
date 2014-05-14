@@ -1,12 +1,15 @@
 package io.gwynt.example;
 
-import io.gwynt.core.*;
+import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.TcpConnector;
+import io.gwynt.core.TcpEndpoint;
+import io.gwynt.core.UdpEndpoint;
 import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -17,42 +20,41 @@ public class Main {
     public static void main(String[] args) throws Exception {
         StringConverter sc = new StringConverter();
         MainHandler mh = new MainHandler();
-        Endpoint tcpEndpoint = new TcpEndpoint().addHandler(sc).addHandler(mh).bind(3000);
+        LoggingHandler lh = new LoggingHandler();
+        EchoHandler eh = new EchoHandler();
 
-        new TcpConnector()
-                .addHandler(new AbstractHandler() {
-                    @Override
-                    public void onOpen(HandlerContext context) {
-                        context.fireMessageSent("wtf".getBytes());
-                    }
+        Endpoint tcpEndpoint = new TcpEndpoint().addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
 
-                    @Override
-                    public void onRegistered(HandlerContext context) {
-                        context.getChannel().unsafe().connect(new InetSocketAddress(3000));
-                    }
-
-                    @Override
-                    public void onMessageReceived(HandlerContext context, Object message) {
-                        System.out.println(new String((byte[]) message));
-                    }
-
-                    @Override
-                    public void onClose(HandlerContext context) {
-                        context.getChannel().unsafe().connect(new InetSocketAddress(3000));
-                    }
-
-                    @Override
-                    public void onExceptionCaught(HandlerContext context, Throwable e) {
-                        e.printStackTrace();
-                    }
-                }).addHandler(sc).addHandler(mh).bind(3000);
-
-        new UdpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(new AbstractHandler() {
+        new UdpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 context.fireMessageSent(message);
             }
         }).bind(3001);
+
+        new TcpConnector().setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(new AbstractHandler<String, String>() {
+
+            private Logger logger = LoggerFactory.getLogger(getClass());
+
+            @Override
+            public void onOpen(HandlerContext context) {
+                context.fireMessageSent("wazzup");
+            }
+
+            @Override
+            public void onMessageReceived(HandlerContext context, String message) {
+                context.fireMessageSent(message);
+                context.fireClosing();
+            }
+
+            @Override
+            public void onExceptionCaught(HandlerContext context, Throwable e) {
+                logger.error(e.getMessage(), e);
+            }
+
+        }).bind(3000);
+
+        new TcpEndpoint().setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh).addHandler(mh).bind(3001);
     }
 
     private static class StringConverter extends AbstractHandler<byte[], String> {
@@ -93,6 +95,67 @@ public class Main {
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
             logger.error(e.getMessage(), e);
+        }
+    }
+
+    private static class EchoHandler extends AbstractHandler<String, Object> {
+
+        @Override
+        public void onMessageReceived(HandlerContext context, String message) {
+            context.fireMessageSent(message);
+        }
+    }
+
+    private static class LoggingHandler extends AbstractHandler {
+
+        private static final Logger logger = LoggerFactory.getLogger(LoggingHandler.class);
+
+        @Override
+        public void onExceptionCaught(HandlerContext context, Throwable e) {
+            logger.info("Exception caught on channel {}: {} ", context.getChannel(), e);
+            context.fireExceptionCaught(e);
+        }
+
+        @Override
+        public void onClose(HandlerContext context) {
+            logger.info("Channel closed: " + context.getChannel());
+            context.fireClose();
+        }
+
+        @Override
+        public void onClosing(HandlerContext context) {
+            logger.info("Channel closing: " + context.getChannel());
+            context.fireClosing();
+        }
+
+        @Override
+        public void onMessageSent(HandlerContext context, Object message) {
+            logger.info("Message sent: " + message);
+            context.fireMessageSent(message);
+        }
+
+        @Override
+        public void onMessageReceived(HandlerContext context, Object message) {
+            logger.info("Message received: {}", message);
+            context.fireMessageReceived(message);
+        }
+
+        @Override
+        public void onOpen(HandlerContext context) {
+            logger.info("Channel opened: {}", context.getChannel());
+            context.fireOpen();
+        }
+
+        @Override
+        public void onUnregistered(HandlerContext context) {
+            logger.info("Channel unregistered: {}", context.getChannel());
+            context.fireUnregistered();
+        }
+
+        @Override
+        public void onRegistered(HandlerContext context) {
+            logger.info("Channel registered: {}", context.getChannel());
+            context.fireRegistered();
         }
     }
 }

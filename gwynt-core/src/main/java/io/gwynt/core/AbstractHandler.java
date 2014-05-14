@@ -14,17 +14,22 @@ public abstract class AbstractHandler<I, O> implements Handler<I, O> {
 
     @Override
     public void onRegistered(HandlerContext context) {
-        context.fireOnRegistered();
+        context.fireRegistered();
     }
 
     @Override
     public void onUnregistered(HandlerContext context) {
-        context.fireOnUnregistered();
+        context.fireUnregistered();
     }
 
     @Override
     public void onOpen(HandlerContext context) {
         context.fireOpen();
+    }
+
+    @Override
+    public void onRead(HandlerContext context) {
+        context.fireRead();
     }
 
     @Override

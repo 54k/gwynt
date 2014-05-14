@@ -37,11 +37,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     public void fireRegistered() {
-        head.fireOnRegistered();
+        head.fireRegistered();
     }
 
     public void fireUnregistered() {
-        head.fireOnUnregistered();
+        head.fireUnregistered();
     }
 
     public void fireOpen() {
@@ -330,6 +330,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     private static class HeadHandler extends AbstractHandler {
+
+        @Override
+        public void onRead(HandlerContext context) {
+            context.getChannel().unsafe().read();
+        }
 
         @Override
         public void onMessageSent(HandlerContext context, Object message) {

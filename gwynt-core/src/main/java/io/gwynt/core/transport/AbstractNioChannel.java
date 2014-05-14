@@ -119,7 +119,7 @@ public abstract class AbstractNioChannel implements Channel {
                 pendingWrites.add(message);
                 synchronized (lock) {
                     if (isRegistered()) {
-                        AbstractNioChannel.this.dispatcher.modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
+                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
                     }
                 }
             }
@@ -130,7 +130,7 @@ public abstract class AbstractNioChannel implements Channel {
             if (!pendingClose && isActive()) {
                 synchronized (lock) {
                     if (isRegistered()) {
-                        AbstractNioChannel.this.dispatcher.modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ);
+                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ);
                     }
                 }
             }
@@ -142,7 +142,7 @@ public abstract class AbstractNioChannel implements Channel {
                 pendingClose = true;
                 synchronized (lock) {
                     if (isRegistered()) {
-                        AbstractNioChannel.this.dispatcher.modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
+                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
                     }
                 }
             }
@@ -154,7 +154,6 @@ public abstract class AbstractNioChannel implements Channel {
                 AbstractNioChannel.this.dispatcher = dispatcher;
                 doRegister0();
             }
-            AbstractNioChannel.this.pipeline.fireRegistered();
         }
 
         protected abstract void doRegister0();
@@ -165,7 +164,6 @@ public abstract class AbstractNioChannel implements Channel {
                 AbstractNioChannel.this.dispatcher = null;
                 doUnregister0();
             }
-            AbstractNioChannel.this.pipeline.fireUnregistered();
         }
 
         protected abstract void doUnregister0();
@@ -175,7 +173,7 @@ public abstract class AbstractNioChannel implements Channel {
             List<AbstractNioChannel> channels = new ArrayList<>();
             doAccept0(channels);
             for (AbstractNioChannel channel : channels) {
-                AbstractNioChannel.this.dispatcher.next().register(channel);
+                dispatcher().next().register(channel);
             }
         }
 
@@ -191,7 +189,7 @@ public abstract class AbstractNioChannel implements Channel {
             }
 
             for (Object message : messages) {
-                AbstractNioChannel.this.pipeline.fireMessageReceived(message);
+                pipeline().fireMessageReceived(message);
             }
             messages.clear();
 
@@ -230,11 +228,11 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void exceptionCaught(Throwable e) {
-            AbstractNioChannel.this.pipeline.fireExceptionCaught(e);
+            pipeline().fireExceptionCaught(e);
             close0();
         }
 
-        protected final boolean isActive() {
+        protected boolean isActive() {
             return javaChannel().isOpen();
         }
 
@@ -245,7 +243,7 @@ public abstract class AbstractNioChannel implements Channel {
             } catch (IOException e) {
                 // ignore
             }
-            AbstractNioChannel.this.dispatcher.unregister(AbstractNioChannel.this);
+            dispatcher().unregister(AbstractNioChannel.this);
         }
     }
 }

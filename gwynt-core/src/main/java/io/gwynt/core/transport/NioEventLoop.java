@@ -1,6 +1,7 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelCallback;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
 import org.slf4j.Logger;
@@ -18,7 +19,17 @@ import java.util.concurrent.CountDownLatch;
 
 public class NioEventLoop implements Dispatcher {
 
-    protected static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
+    private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
+    private static ChannelCallback voidCallback = new ChannelCallback() {
+        @Override
+        public void onComplete(Channel channel) {
+        }
+
+        @Override
+        public void onError(Channel channel, Throwable e) {
+        }
+    };
+
     private volatile boolean running;
     private CountDownLatch shutdownLock = new CountDownLatch(1);
     private Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
@@ -70,24 +81,26 @@ public class NioEventLoop implements Dispatcher {
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void register(final Channel channel) {
+    public void register(final Channel channel, final ChannelCallback callback) {
         addTask(new Runnable() {
             @Override
             public void run() {
                 try {
-                    //noinspection MagicConstant
                     channel.unsafe().javaChannel().register(selector, 0, channel);
                     channel.unsafe().doRegister(NioEventLoop.this);
+                    callback.onComplete(channel);
                 } catch (IOException e) {
-                    throw new RegistrationException(e.getMessage(), e);
+                    callback.onError(channel, e);
                 }
             }
         });
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void unregister(final Channel channel) {
+    public void unregister(final Channel channel, final ChannelCallback callback) {
         final SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
         if (key == null) {
             throw new RegistrationException("unregistered unsafe");
@@ -96,14 +109,16 @@ public class NioEventLoop implements Dispatcher {
             @Override
             public void run() {
                 key.cancel();
-                channel.unsafe().doUnregister(NioEventLoop.this);
                 key.attach(null);
+                channel.unsafe().doUnregister(NioEventLoop.this);
+                callback.onComplete(channel);
             }
         });
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public void modifyRegistration(final Channel channel, final int interestOps) {
+    public void modifyRegistration(final Channel channel, final int interestOps, final ChannelCallback callback) {
         if ((interestOps & ~channel.unsafe().javaChannel().validOps()) != 0) {
             throw new IllegalArgumentException("interestOps are not valid");
         }
@@ -113,9 +128,25 @@ public class NioEventLoop implements Dispatcher {
                 SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     key.interestOps(key.interestOps() | interestOps);
+                    callback.onComplete(channel);
                 }
             }
         });
+    }
+
+    @Override
+    public void register(Channel channel) {
+        register(channel, voidCallback);
+    }
+
+    @Override
+    public void unregister(Channel channel) {
+        unregister(channel, voidCallback);
+    }
+
+    @Override
+    public void modifyRegistration(Channel channel, int interestOps) {
+        modifyRegistration(channel, interestOps, voidCallback);
     }
 
     protected void addTask(Runnable task) {

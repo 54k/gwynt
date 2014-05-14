@@ -12,6 +12,8 @@ public interface HandlerContextInvoker {
 
     void invokeOnOpen(HandlerContext context);
 
+    void invokeOnRead(HandlerContext context);
+
     void invokeOnMessageReceived(HandlerContext context, Object message);
 
     void invokeOnMessageSent(HandlerContext context, Object message);

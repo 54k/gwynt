@@ -3,7 +3,6 @@ package io.gwynt.core;
 import io.gwynt.core.scheduler.SingleThreadedEventScheduler;
 import io.gwynt.core.transport.DispatcherPool;
 import io.gwynt.core.transport.NioEventLoop;
-import io.gwynt.core.transport.NioServerSocketChannel;
 import io.gwynt.core.transport.NioSocketChannel;
 
 import java.io.IOException;
@@ -45,7 +44,16 @@ public class TcpConnector extends AbstractEndpoint {
         NioEventLoop eventLoop = new NioEventLoop();
         eventLoop.runThread();
 
-        eventLoop.register(channel);
+        eventLoop.register(channel, new ChannelCallback() {
+            @Override
+            public void onComplete(Channel channel) {
+                channel.unsafe().connect(new InetSocketAddress(3000));
+            }
+
+            @Override
+            public void onError(Channel channel, Throwable e) {
+            }
+        });
         //        DispatcherPool dispatcherPool = new NioDispatcherPool(ioSessionFactory);
         //        this.dispatcherPool = dispatcherPool;
         //

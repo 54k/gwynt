@@ -11,11 +11,13 @@ public interface HandlerContext {
 
     Channel getChannel();
 
-    HandlerContext fireOnRegistered();
+    HandlerContext fireRegistered();
 
-    HandlerContext fireOnUnregistered();
+    HandlerContext fireUnregistered();
 
     HandlerContext fireOpen();
+
+    HandlerContext fireRead();
 
     HandlerContext fireMessageReceived(Object message);
 

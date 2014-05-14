@@ -55,14 +55,16 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected void doRegister0() {
-            dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_READ);
+            pipeline().fireRegistered();
             if (isActive()) {
                 pipeline().fireOpen();
             }
+            dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_READ);
         }
 
         @Override
         protected void doUnregister0() {
+            pipeline().fireUnregistered();
             if (!isActive()) {
                 pipeline().fireClose();
             }
