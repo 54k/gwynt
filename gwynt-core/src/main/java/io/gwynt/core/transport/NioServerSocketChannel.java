@@ -12,6 +12,7 @@ import java.util.List;
 
 public class NioServerSocketChannel extends AbstractNioChannel {
 
+    @SuppressWarnings("unused")
     public NioServerSocketChannel(Endpoint endpoint) {
         super(endpoint);
         try {

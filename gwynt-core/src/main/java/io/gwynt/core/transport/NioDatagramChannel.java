@@ -14,8 +14,13 @@ import java.util.List;
 
 public class NioDatagramChannel extends AbstractNioChannel {
 
+    @SuppressWarnings("unused")
     public NioDatagramChannel(Endpoint endpoint) {
-        super(endpoint);
+        this(null, endpoint);
+    }
+
+    public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) {
+        super(parent, endpoint);
         try {
             unsafe = new NioDatagramUnsafe(DatagramChannel.open());
         } catch (IOException e) {
