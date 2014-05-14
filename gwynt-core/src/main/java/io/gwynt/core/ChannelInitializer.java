@@ -17,7 +17,7 @@ public abstract class ChannelInitializer extends AbstractHandler {
             context.getChannel().pipeline().remove(context.getName());
             super.onRegistered(context);
         } catch (Throwable e) {
-            logger.error("Error occurred while initializing session. {} will be closed.", context.getChannel());
+            logger.error("Exception caught while initializing session. {} will be closed.", context.getChannel());
             context.fireClosing();
         }
     }
