@@ -31,8 +31,7 @@ public class Main {
         NioEventLoopGroup dispatcher = new NioEventLoopGroup();
         dispatcher.runThread();
 
-        Endpoint tcpEndpoint =
-                new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(new AbstractHandler<String, String>() {
@@ -136,14 +135,14 @@ public class Main {
 
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
-            logger.info("Exception [{}] caught on channel [{}]", e, context.channel());
+            logger.info("Caught exception [{}] on channel [{}]", e, context.channel());
             logger.error(e.getMessage(), e);
             context.fireExceptionCaught(e);
         }
 
         @Override
         public void onClose(HandlerContext context) {
-            logger.info("Channel [{}] closed", context.channel());
+            logger.info("Closed channel [{}]", context.channel());
             context.fireClose();
         }
 
@@ -153,7 +152,7 @@ public class Main {
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("ChannelFuture [{}] notified: channel [{}] closed", channelFuture, channel);
+                    logger.info("ChannelFuture [{}]: channel [{}] closed", channelFuture, channel);
                 }
 
                 @Override
@@ -169,7 +168,7 @@ public class Main {
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("ChannelFuture [{}] notified: message [{}] sent to channel [{}]", channelFuture, message, context.channel());
+                    logger.info("ChannelFuture [{}]: message [{}] sent to channel [{}]", channelFuture, message, channel);
                 }
 
                 @Override
@@ -188,19 +187,19 @@ public class Main {
 
         @Override
         public void onOpen(HandlerContext context) {
-            logger.info("Channel [{}] opened", context.channel());
+            logger.info("Opened channel [{}]", context.channel());
             context.fireOpen();
         }
 
         @Override
         public void onUnregistered(HandlerContext context) {
-            logger.info("Channel [{}] unregistered", context.channel());
+            logger.info("Unregistered channel [{}]", context.channel());
             context.fireUnregistered();
         }
 
         @Override
         public void onRegistered(HandlerContext context) {
-            logger.info("Channel [{}] registered", context.channel());
+            logger.info("Registered Channel [{}]", context.channel());
             context.fireRegistered();
         }
     }
