@@ -1,7 +1,10 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelListener;
 import io.gwynt.core.Endpoint;
+import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -44,12 +47,23 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<AbstractNioChannel> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
             try {
                 SocketChannel ch = javaChannel().accept();
                 ch.configureBlocking(false);
                 NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint, ch);
-                channels.add(channel);
+                ChannelFuture channelFuture = channel.newChannelFuture();
+                channelFuture.addListener(new ChannelListener<Channel>() {
+                    @Override
+                    public void onComplete(Channel channel) {
+                        channel.unsafe().read();
+                    }
+
+                    @Override
+                    public void onError(Channel channel, Throwable e) {
+                    }
+                });
+                channels.add(new Pair<AbstractNioChannel, ChannelFuture>(channel, channelFuture));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -60,7 +74,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
             ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().bind(address);
-                channelFuture.complete();
+                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT, channelFuture);
                 return channelFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -69,7 +83,6 @@ public class NioServerSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doRegister0() {
-            dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
         }
 
         @Override

@@ -31,6 +31,8 @@ public interface Channel {
 
     Dispatcher dispatcher();
 
+    Endpoint endpoint();
+
     ChannelFuture newChannelFuture();
 
     interface Unsafe<T extends SelectableChannel> {

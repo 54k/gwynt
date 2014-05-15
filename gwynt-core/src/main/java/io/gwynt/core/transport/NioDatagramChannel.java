@@ -4,6 +4,7 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
+import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -58,7 +59,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
             ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().bind(address);
-                channelFuture.complete();
+                channelFuture.success();
                 return channelFuture;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -70,7 +71,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
             ChannelFuture channelFuture = newChannelFuture();
             try {
                 javaChannel().connect(address);
-                channelFuture.complete();
+                channelFuture.success();
                 pipeline().fireOpen();
                 return channelFuture;
             } catch (IOException e) {
@@ -93,7 +94,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<AbstractNioChannel> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
             throw new UnsupportedOperationException();
         }
 

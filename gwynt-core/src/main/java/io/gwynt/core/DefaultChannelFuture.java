@@ -1,7 +1,11 @@
 package io.gwynt.core;
 
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultChannelFuture implements ChannelFuture {
@@ -96,6 +100,27 @@ public class DefaultChannelFuture implements ChannelFuture {
     }
 
     @Override
+    public Channel await() throws Throwable {
+        try {
+            lock.await();
+            if (error != null) {
+                throw error;
+            }
+            return channel;
+        } catch (InterruptedException ignore) {
+        }
+        return null;
+    }
+
+    @Override
+    public Channel await(long timeout, TimeUnit unit) throws Throwable {
+        if (lock.await(timeout, unit)) {
+            return get();
+        }
+        return null;
+    }
+
+    @Override
     public Channel get() throws InterruptedException, ExecutionException {
         lock.await();
         if (error != null) {
@@ -113,7 +138,7 @@ public class DefaultChannelFuture implements ChannelFuture {
     }
 
     @Override
-    public void complete(Throwable error) {
+    public void fail(Throwable error) {
         if (!done.getAndSet(true)) {
             this.error = error;
             lock.countDown();
@@ -122,7 +147,7 @@ public class DefaultChannelFuture implements ChannelFuture {
     }
 
     @Override
-    public void complete() {
-        complete(null);
+    public void success() {
+        fail(null);
     }
 }

@@ -1,6 +1,7 @@
 package io.gwynt.core;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 public interface ChannelFuture extends Future<Channel> {
 
@@ -8,7 +9,11 @@ public interface ChannelFuture extends Future<Channel> {
 
     void addListener(ChannelListener<? extends Channel> callback);
 
-    void complete();
+    void success();
 
-    void complete(Throwable error);
+    void fail(Throwable error);
+
+    Channel await() throws Throwable;
+
+    Channel await(long timeout, TimeUnit unit) throws Throwable;
 }

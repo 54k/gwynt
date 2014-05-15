@@ -1,6 +1,10 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.*;
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.DefaultChannelFuture;
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 import io.gwynt.core.scheduler.EventScheduler;
@@ -82,6 +86,11 @@ public abstract class AbstractNioChannel implements Channel {
     }
 
     @Override
+    public Endpoint endpoint() {
+        return endpoint;
+    }
+
+    @Override
     public ChannelFuture newChannelFuture() {
         return new DefaultChannelFuture(this);
     }
@@ -92,7 +101,6 @@ public abstract class AbstractNioChannel implements Channel {
         private volatile boolean pendingClose;
         private List<Object> messages = new ArrayList<>();
         private Queue<Pair<Object, ChannelFuture>> pendingWrites = new ConcurrentLinkedQueue<>();
-        private volatile ChannelFuture closeFuture = VOID_FUTURE;
         private T ch;
 
         protected AbstractUnsafe(T ch) {
@@ -103,6 +111,8 @@ public abstract class AbstractNioChannel implements Channel {
                 throw new RuntimeException(e);
             }
         }
+
+        private volatile ChannelFuture closeFuture = VOID_FUTURE;
 
         @Override
         public T javaChannel() {
@@ -177,14 +187,14 @@ public abstract class AbstractNioChannel implements Channel {
 
         @Override
         public void doAccept() throws IOException {
-            List<AbstractNioChannel> channels = new ArrayList<>();
+            List<Pair<AbstractNioChannel, ChannelFuture>> channels = new ArrayList<>();
             doAccept0(channels);
-            for (AbstractNioChannel channel : channels) {
-                dispatcher().next().register(channel);
+            for (Pair<AbstractNioChannel, ChannelFuture> pair : channels) {
+                dispatcher().next().register(pair.getFirst(), pair.getSecond());
             }
         }
 
-        protected abstract void doAccept0(List<AbstractNioChannel> channels);
+        protected abstract void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels);
 
         @Override
         public void doRead() throws IOException {
@@ -215,7 +225,7 @@ public abstract class AbstractNioChannel implements Channel {
                 try {
                     if (doWrite0(message.getFirst())) {
                         pendingWrites.poll();
-                        message.getSecond().complete();
+                        message.getSecond().success();
                     }
 
                     if (!pendingWrites.isEmpty()) {
@@ -224,7 +234,7 @@ public abstract class AbstractNioChannel implements Channel {
                     }
                 } catch (EofException e) {
                     shouldClose = true;
-                    message.getSecond().complete();
+                    message.getSecond().success();
                 }
             }
 
@@ -259,7 +269,6 @@ public abstract class AbstractNioChannel implements Channel {
             }
             dispatcher().unregister(AbstractNioChannel.this, closeFuture);
         }
-
 
     }
 }

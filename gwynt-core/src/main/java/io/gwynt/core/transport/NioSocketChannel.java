@@ -4,6 +4,7 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
+import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -72,7 +73,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 if (!connected) {
                     dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_CONNECT);
                 } else {
-                    connectFuture.complete();
+                    connectFuture.success();
                 }
                 return connectFuture;
             } catch (IOException e) {
@@ -83,7 +84,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected void doRegister0() {
             pipeline().fireRegistered();
-            dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
             if (isActive()) {
                 pipeline().fireOpen();
             }
@@ -98,7 +98,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<AbstractNioChannel> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
             throw new UnsupportedOperationException();
         }
 
@@ -156,9 +156,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         public void doConnect() throws IOException {
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {
-                connectFuture.complete();
                 if (!wasActive && isActive()) {
-                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
+                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ, connectFuture);
                     pipeline().fireOpen();
                 }
             } else {

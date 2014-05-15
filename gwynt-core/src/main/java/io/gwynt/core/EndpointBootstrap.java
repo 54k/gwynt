@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 
 public class EndpointBootstrap implements Endpoint {
 
@@ -112,9 +111,9 @@ public class EndpointBootstrap implements Endpoint {
             @Override
             public void onComplete(Channel channel) {
                 try {
-                    channel.unsafe().bind(new InetSocketAddress(port)).get();
+                    channel.unsafe().bind(new InetSocketAddress(port)).await();
                     latch.countDown();
-                } catch (InterruptedException | ExecutionException ignore) {
+                } catch (Throwable ignore) {
                 }
             }
 
@@ -137,9 +136,9 @@ public class EndpointBootstrap implements Endpoint {
             @Override
             public void onComplete(Channel channel) {
                 try {
-                    channel.unsafe().connect(new InetSocketAddress(host, port)).get();
+                    channel.unsafe().connect(new InetSocketAddress(host, port)).await();
                     latch.countDown();
-                } catch (InterruptedException | ExecutionException ignore) {
+                } catch (Throwable ignore) {
                 }
             }
 

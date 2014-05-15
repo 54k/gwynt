@@ -95,9 +95,9 @@ public class NioEventLoop implements Dispatcher {
                 try {
                     channel.unsafe().javaChannel().register(selector, 0, channel);
                     channel.unsafe().doRegister(NioEventLoop.this);
-                    channelFuture.complete();
+                    channelFuture.success();
                 } catch (IOException e) {
-                    channelFuture.complete(e);
+                    channelFuture.fail(e);
                 }
             }
         });
@@ -117,7 +117,7 @@ public class NioEventLoop implements Dispatcher {
                 key.cancel();
                 key.attach(null);
                 channel.unsafe().doUnregister(NioEventLoop.this);
-                channelFuture.complete();
+                channelFuture.success();
             }
         });
         return channelFuture;
@@ -135,7 +135,7 @@ public class NioEventLoop implements Dispatcher {
                 SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     key.interestOps(key.interestOps() | interestOps);
-                    channelFuture.complete();
+                    channelFuture.success();
                 }
             }
         });
