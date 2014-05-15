@@ -96,6 +96,26 @@ public abstract class AbstractNioChannel implements Channel {
         return new DefaultChannelPromise(this);
     }
 
+    @Override
+    public ChannelFuture bind(InetSocketAddress address) {
+        return unsafe.bind(address, newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture connect(InetSocketAddress address) {
+        return unsafe.connect(address, newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture write(Object message) {
+        return unsafe.write(message, newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture close() {
+        return unsafe.close(newChannelPromise());
+    }
+
     protected abstract class AbstractUnsafe<T extends SelectableChannel> implements Unsafe<T> {
 
         private final Object lock = new Object();
@@ -119,12 +139,12 @@ public abstract class AbstractNioChannel implements Channel {
         }
 
         @Override
-        public ChannelFuture bind(InetSocketAddress address) {
+        public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address) {
+        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
             throw new UnsupportedOperationException();
         }
 
@@ -152,8 +172,6 @@ public abstract class AbstractNioChannel implements Channel {
             }
         }
 
-        private volatile ChannelPromise closePromise = VOID_FUTURE;
-
         @Override
         public ChannelFuture close(ChannelPromise channelPromise) {
             if (!pendingClose) {
@@ -167,6 +185,8 @@ public abstract class AbstractNioChannel implements Channel {
             }
             return channelPromise;
         }
+
+        private volatile ChannelPromise closePromise = VOID_FUTURE;
 
         @Override
         public void doRegister(Dispatcher dispatcher) {

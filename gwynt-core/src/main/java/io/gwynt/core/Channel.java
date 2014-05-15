@@ -35,13 +35,21 @@ public interface Channel {
 
     ChannelPromise newChannelPromise();
 
+    ChannelFuture bind(InetSocketAddress address);
+
+    ChannelFuture connect(InetSocketAddress address);
+
+    ChannelFuture write(Object message);
+
+    ChannelFuture close();
+
     interface Unsafe<T extends SelectableChannel> {
 
         T javaChannel();
 
-        ChannelFuture bind(InetSocketAddress address);
+        ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise);
 
-        ChannelFuture connect(InetSocketAddress address);
+        ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise);
 
         void read();
 
