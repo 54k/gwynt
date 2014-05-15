@@ -152,7 +152,7 @@ public class Main {
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("ChannelFuture [{}]: channel [{}] closed", channelFuture, channel);
+                    logger.info("Closed channel [{}], channelFuture [{}]: ", channelFuture, channel);
                 }
 
                 @Override
@@ -168,7 +168,7 @@ public class Main {
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("ChannelFuture [{}]: message [{}] sent to channel [{}]", channelFuture, message, channel);
+                    logger.info("Sent to channel [{}], channelFuture [{}], message [{}] ", channel, channelFuture, message);
                 }
 
                 @Override
