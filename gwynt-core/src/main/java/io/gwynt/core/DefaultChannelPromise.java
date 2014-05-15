@@ -1,11 +1,7 @@
 package io.gwynt.core;
 
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultChannelPromise implements ChannelPromise {
@@ -20,6 +16,8 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private Throwable error;
     private Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
+    private Queue<ChannelPromise> promises = new ConcurrentLinkedQueue<>();
+
 
     public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
@@ -35,6 +33,14 @@ public class DefaultChannelPromise implements ChannelPromise {
         listeners.add(callback);
         if (isDone()) {
             notifyListeners();
+        }
+    }
+
+    @Override
+    public void addListener(ChannelPromise channelPromise) {
+        promises.add(channelPromise);
+        if (isDone()) {
+            notifyPromises();
         }
     }
 
@@ -77,6 +83,26 @@ public class DefaultChannelPromise implements ChannelPromise {
                     }
                 });
             }
+        }
+    }
+
+    private void notifyPromises() {
+        if (error == null) {
+            notifyPromisesOnComplete();
+        } else {
+            notifyPromiseOnError();
+        }
+    }
+
+    private void notifyPromisesOnComplete() {
+        while (promises.peek() != null) {
+            promises.poll().success();
+        }
+    }
+
+    private void notifyPromiseOnError() {
+        while (promises.peek() != null) {
+            promises.poll().fail(error);
         }
     }
 
@@ -143,6 +169,7 @@ public class DefaultChannelPromise implements ChannelPromise {
             this.error = error;
             lock.countDown();
             notifyListeners();
+            notifyPromises();
         }
     }
 

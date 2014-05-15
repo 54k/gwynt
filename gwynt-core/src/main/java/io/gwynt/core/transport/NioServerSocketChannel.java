@@ -1,10 +1,6 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelFutureListener;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
+import io.gwynt.core.*;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -71,11 +67,11 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture bind(InetSocketAddress address) {
-            ChannelPromise channelPromise = newChannelPromise();
+        public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
-                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT, channelPromise);
+                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
+                channelPromise.success();
                 return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);

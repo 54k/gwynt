@@ -1,11 +1,6 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.DefaultChannelPromise;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.Handler;
+import io.gwynt.core.*;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 import io.gwynt.core.scheduler.EventScheduler;
@@ -22,9 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractNioChannel implements Channel {
 
-    protected static final ChannelPromise VOID_FUTURE = new DefaultChannelPromise(null);
-
-    protected Unsafe unsafe;
+    protected AbstractUnsafe unsafe;
     protected Endpoint endpoint;
 
     private Channel parent;
@@ -108,17 +101,28 @@ public abstract class AbstractNioChannel implements Channel {
 
     @Override
     public ChannelFuture write(Object message) {
-        return unsafe.write(message, newChannelPromise());
+        ChannelPromise channelPromise = newChannelPromise();
+        pipeline.fireMessageSent(message, channelPromise);
+        return channelPromise;
     }
 
     @Override
     public ChannelFuture close() {
-        return unsafe.close(newChannelPromise());
+        ChannelPromise channelPromise = newChannelPromise();
+        pipeline.fireClosing(channelPromise);
+        return channelPromise;
+    }
+
+    @Override
+    public ChannelFuture closeFuture() {
+        return unsafe.closePromise;
     }
 
     protected abstract class AbstractUnsafe<T extends SelectableChannel> implements Unsafe<T> {
 
         private final Object lock = new Object();
+        private final ChannelPromise closePromise = newChannelPromise();
+
         private volatile boolean pendingClose;
         private List<Object> messages = new ArrayList<>();
         private Queue<Pair<Object, ChannelPromise>> pendingWrites = new ConcurrentLinkedQueue<>();
@@ -178,15 +182,13 @@ public abstract class AbstractNioChannel implements Channel {
                 pendingClose = true;
                 synchronized (lock) {
                     if (isRegistered()) {
-                        closePromise = channelPromise;
+                        closePromise.addListener(channelPromise);
                         dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
                     }
                 }
             }
             return channelPromise;
         }
-
-        private volatile ChannelPromise closePromise = VOID_FUTURE;
 
         @Override
         public void doRegister(Dispatcher dispatcher) {
@@ -292,6 +294,7 @@ public abstract class AbstractNioChannel implements Channel {
             }
             dispatcher().unregister(AbstractNioChannel.this, closePromise);
         }
+
 
     }
 }

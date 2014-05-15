@@ -56,8 +56,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture bind(InetSocketAddress address) {
-            ChannelPromise channelPromise = newChannelPromise();
+        public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
                 channelPromise.success();
@@ -68,8 +67,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address) {
-            ChannelPromise channelPromise = newChannelPromise();
+        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().connect(address);
                 channelPromise.success();

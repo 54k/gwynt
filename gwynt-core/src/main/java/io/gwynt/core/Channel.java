@@ -43,6 +43,8 @@ public interface Channel {
 
     ChannelFuture close();
 
+    ChannelFuture closeFuture();
+
     interface Unsafe<T extends SelectableChannel> {
 
         T javaChannel();

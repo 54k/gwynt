@@ -1,17 +1,8 @@
 package io.gwynt.example;
 
-import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFutureListener;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.EndpointBootstrap;
+import io.gwynt.core.*;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.transport.Datagram;
-import io.gwynt.core.transport.NioDatagramChannel;
-import io.gwynt.core.transport.NioEventLoopGroup;
-import io.gwynt.core.transport.NioServerSocketChannel;
-import io.gwynt.core.transport.NioSocketChannel;
+import io.gwynt.core.transport.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,12 +74,23 @@ public class Main {
                 }).connect("localhost", 3001);
 
         Channel channel =
-                new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh).connect("192.168.1.2", 6379).channel();
+                new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh).connect("localhost", 3000).channel();
 
+        channel.closeFuture().addListener(new ChannelFutureListener<Channel>() {
+            @Override
+            public void onComplete(Channel channel) {
+                System.exit(0);
+            }
+
+            @Override
+            public void onError(Channel channel, Throwable e) {
+
+            }
+        });
         try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
             String line;
             while ((line = br.readLine()) != null) {
-                channel.unsafe().write((line + "\r\n").getBytes(), channel.newChannelPromise());
+                channel.write(line + "\r\n");
             }
         }
     }
@@ -138,6 +140,9 @@ public class Main {
 
         @Override
         public void onMessageReceived(HandlerContext context, String message) {
+            if ("exit\r\n".equals(message)) {
+                context.fireClosing();
+            }
             context.fireMessageSent(message);
         }
     }

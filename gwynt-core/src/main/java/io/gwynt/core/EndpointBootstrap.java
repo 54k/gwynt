@@ -112,7 +112,7 @@ public class EndpointBootstrap implements Endpoint {
             @Override
             public void onComplete(Channel channel) {
                 try {
-                    channel.unsafe().bind(new InetSocketAddress(port)).await();
+                    channel.bind(new InetSocketAddress(port)).await();
                     latch.countDown();
                 } catch (Throwable ignore) {
                 }
@@ -138,7 +138,7 @@ public class EndpointBootstrap implements Endpoint {
             @Override
             public void onComplete(Channel channel) {
                 try {
-                    channel.unsafe().connect(new InetSocketAddress(host, port)).await();
+                    channel.connect(new InetSocketAddress(host, port)).await();
                     latch.countDown();
                 } catch (Throwable ignore) {
                 }

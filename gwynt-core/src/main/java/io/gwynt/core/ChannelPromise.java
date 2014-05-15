@@ -5,4 +5,6 @@ public interface ChannelPromise extends ChannelFuture {
     void success();
 
     void fail(Throwable error);
+
+    void addListener(ChannelPromise channelPromise);
 }

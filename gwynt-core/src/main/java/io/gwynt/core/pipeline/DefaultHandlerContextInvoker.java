@@ -1,6 +1,5 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.scheduler.EventScheduler;
 

@@ -60,15 +60,15 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     private class NioSocketUnsafe extends AbstractUnsafe<SocketChannel> {
 
-        private volatile ChannelPromise connectFuture = VOID_FUTURE;
+        private final ChannelPromise connectFuture = newChannelPromise();
 
         private NioSocketUnsafe(SocketChannel ch) {
             super(ch);
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address) {
-            connectFuture = newChannelPromise();
+        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            connectFuture.addListener(channelPromise);
             try {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
@@ -76,7 +76,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 } else {
                     connectFuture.success();
                 }
-                return connectFuture;
+                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -157,8 +157,9 @@ public class NioSocketChannel extends AbstractNioChannel {
         public void doConnect() throws IOException {
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {
+                connectFuture.success();
                 if (!wasActive && isActive()) {
-                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ, connectFuture);
+                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
                     pipeline().fireOpen();
                 }
             } else {

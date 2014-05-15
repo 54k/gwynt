@@ -53,6 +53,14 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         head.fireMessageReceived(message);
     }
 
+    public void fireMessageSent(Object message, ChannelPromise channelPromise) {
+        tail.fireMessageSent(message, channelPromise);
+    }
+
+    public void fireClosing(ChannelPromise channelPromise) {
+        tail.fireClosing(channelPromise);
+    }
+
     public void fireClose() {
         head.fireClose();
     }
@@ -364,14 +372,6 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
         @Override
         public void onMessageReceived(HandlerContext context, Object message) {
-        }
-
-        @Override
-        public void onMessageSent(HandlerContext context, Object message, ChannelPromise channelPromise) {
-        }
-
-        @Override
-        public void onClosing(HandlerContext context, ChannelPromise channelPromise) {
         }
 
         @Override
