@@ -2,8 +2,7 @@ package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelListener;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
@@ -163,7 +162,7 @@ public class Main {
         @Override
         public void onClosing(HandlerContext context, final ChannelPromise channelPromise) {
             logger.info("Closing channel [{}]", context.channel());
-            channelPromise.addListener(new ChannelListener<Channel>() {
+            channelPromise.addListener(new ChannelFutureListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
                     logger.info("Closed channel [{}], channelPromise [{}]: ", channelPromise, channel);
@@ -179,7 +178,7 @@ public class Main {
         @Override
         public void onMessageSent(final HandlerContext context, final Object message, final ChannelPromise channelPromise) {
             logger.info("Sending message [{}] to channel [{}]", message, context.channel());
-            channelPromise.addListener(new ChannelListener<Channel>() {
+            channelPromise.addListener(new ChannelFutureListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
                     logger.info("Sent to channel [{}], channelPromise [{}], message [{}] ", channel, channelPromise, message);

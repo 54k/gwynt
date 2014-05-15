@@ -19,7 +19,7 @@ public class DefaultChannelPromise implements ChannelPromise {
     private final AtomicBoolean done = new AtomicBoolean();
 
     private Throwable error;
-    private Queue<ChannelListener> listeners = new ConcurrentLinkedQueue<>();
+    private Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
 
     public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
@@ -31,7 +31,7 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public void addListener(ChannelListener<? extends Channel> callback) {
+    public void addListener(ChannelFutureListener<? extends Channel> callback) {
         listeners.add(callback);
         if (isDone()) {
             notifyListeners();
@@ -49,14 +49,14 @@ public class DefaultChannelPromise implements ChannelPromise {
     @SuppressWarnings("unchecked")
     private void notifyListenersOnComplete() {
         while (listeners.peek() != null) {
-            final ChannelListener channelListener = listeners.poll();
+            final ChannelFutureListener channelFutureListener = listeners.poll();
             if (channel.scheduler().inSchedulerThread()) {
-                channelListener.onComplete(channel);
+                channelFutureListener.onComplete(channel);
             } else {
                 channel.scheduler().schedule(new Runnable() {
                     @Override
                     public void run() {
-                        channelListener.onComplete(channel);
+                        channelFutureListener.onComplete(channel);
                     }
                 });
             }
@@ -66,14 +66,14 @@ public class DefaultChannelPromise implements ChannelPromise {
     @SuppressWarnings("unchecked")
     private void notifyListenersOnError() {
         while (listeners.peek() != null) {
-            final ChannelListener channelListener = listeners.poll();
+            final ChannelFutureListener channelFutureListener = listeners.poll();
             if (channel.scheduler().inSchedulerThread()) {
-                channelListener.onError(channel, error);
+                channelFutureListener.onError(channel, error);
             } else {
                 channel.scheduler().schedule(new Runnable() {
                     @Override
                     public void run() {
-                        channelListener.onError(channel, error);
+                        channelFutureListener.onError(channel, error);
                     }
                 });
             }

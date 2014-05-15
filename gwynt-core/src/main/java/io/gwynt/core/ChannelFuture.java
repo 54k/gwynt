@@ -7,7 +7,7 @@ public interface ChannelFuture extends Future<Channel> {
 
     Channel channel();
 
-    void addListener(ChannelListener<? extends Channel> callback);
+    void addListener(ChannelFutureListener<? extends Channel> callback);
 
     Channel await() throws Throwable;
 

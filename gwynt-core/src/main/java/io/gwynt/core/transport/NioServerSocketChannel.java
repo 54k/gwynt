@@ -2,7 +2,7 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelListener;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.util.Pair;
@@ -54,7 +54,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
                 ch.configureBlocking(false);
                 NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint, ch);
                 ChannelPromise channelPromise = channel.newChannelPromise();
-                channelPromise.addListener(new ChannelListener<Channel>() {
+                channelPromise.addListener(new ChannelFutureListener<Channel>() {
                     @Override
                     public void onComplete(Channel channel) {
                         channel.unsafe().read();

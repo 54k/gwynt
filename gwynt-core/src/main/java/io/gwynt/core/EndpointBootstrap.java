@@ -108,7 +108,7 @@ public class EndpointBootstrap implements Endpoint {
     @Override
     public ChannelFuture bind(final int port) {
         ChannelFuture channelFuture = initAndRegisterChannel();
-        channelFuture.addListener(new ChannelListener<Channel>() {
+        channelFuture.addListener(new ChannelFutureListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 try {
@@ -134,7 +134,7 @@ public class EndpointBootstrap implements Endpoint {
     @Override
     public ChannelFuture connect(final String host, final int port) {
         ChannelFuture channelFuture = initAndRegisterChannel();
-        channelFuture.addListener(new ChannelListener<Channel>() {
+        channelFuture.addListener(new ChannelFutureListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 try {
