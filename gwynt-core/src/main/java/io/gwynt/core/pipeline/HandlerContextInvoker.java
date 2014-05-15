@@ -1,6 +1,6 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 
 public interface HandlerContextInvoker {
 
@@ -18,9 +18,9 @@ public interface HandlerContextInvoker {
 
     void invokeOnMessageReceived(HandlerContext context, Object message);
 
-    void invokeOnMessageSent(HandlerContext context, Object message, ChannelFuture channelFuture);
+    void invokeOnMessageSent(HandlerContext context, Object message, ChannelPromise channelPromise);
 
-    void invokeOnClosing(HandlerContext context, ChannelFuture channelFuture);
+    void invokeOnClosing(HandlerContext context, ChannelPromise channelPromise);
 
     void invokeOnClosed(HandlerContext context);
 

@@ -1,7 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 
 public class DefaultHandlerContext implements HandlerContext {
@@ -106,24 +106,24 @@ public class DefaultHandlerContext implements HandlerContext {
 
     @Override
     public void fireMessageSent(Object message) {
-        fireMessageSent(message, channel.newChannelFuture());
+        fireMessageSent(message, channel.newChannelPromise());
     }
 
     @Override
-    public void fireMessageSent(Object message, ChannelFuture channelFuture) {
+    public void fireMessageSent(Object message, ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.getInvoker().invokeOnMessageSent(prev, message, channelFuture);
+        prev.getInvoker().invokeOnMessageSent(prev, message, channelPromise);
     }
 
     @Override
     public void fireClosing() {
-        fireClosing(channel.newChannelFuture());
+        fireClosing(channel.newChannelPromise());
     }
 
     @Override
-    public void fireClosing(ChannelFuture channelFuture) {
+    public void fireClosing(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.getInvoker().invokeOnClosing(prev, channelFuture);
+        prev.getInvoker().invokeOnClosing(prev, channelPromise);
     }
 
     @Override

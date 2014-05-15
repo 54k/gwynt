@@ -1,6 +1,7 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
@@ -56,11 +57,11 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         public ChannelFuture bind(InetSocketAddress address) {
-            ChannelFuture channelFuture = newChannelFuture();
+            ChannelPromise channelPromise = newChannelPromise();
             try {
                 javaChannel().bind(address);
-                channelFuture.success();
-                return channelFuture;
+                channelPromise.success();
+                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -68,12 +69,12 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         public ChannelFuture connect(InetSocketAddress address) {
-            ChannelFuture channelFuture = newChannelFuture();
+            ChannelPromise channelPromise = newChannelPromise();
             try {
                 javaChannel().connect(address);
-                channelFuture.success();
+                channelPromise.success();
                 pipeline().fireOpen();
-                return channelFuture;
+                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -94,7 +95,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 

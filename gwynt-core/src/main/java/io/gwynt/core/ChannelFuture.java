@@ -9,10 +9,6 @@ public interface ChannelFuture extends Future<Channel> {
 
     void addListener(ChannelListener<? extends Channel> callback);
 
-    void success();
-
-    void fail(Throwable error);
-
     Channel await() throws Throwable;
 
     Channel await(long timeout, TimeUnit unit) throws Throwable;

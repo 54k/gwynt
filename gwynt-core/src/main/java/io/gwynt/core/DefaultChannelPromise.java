@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DefaultChannelFuture implements ChannelFuture {
+public class DefaultChannelPromise implements ChannelPromise {
 
     private static final TimeoutException timeoutException = new TimeoutException();
 
@@ -21,7 +21,7 @@ public class DefaultChannelFuture implements ChannelFuture {
     private Throwable error;
     private Queue<ChannelListener> listeners = new ConcurrentLinkedQueue<>();
 
-    public DefaultChannelFuture(Channel channel) {
+    public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
     }
 

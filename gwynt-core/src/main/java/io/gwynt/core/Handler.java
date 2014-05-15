@@ -68,14 +68,14 @@ public interface Handler<I, O> {
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}
      * @param message high level message
      */
-    void onMessageSent(HandlerContext context, O message, ChannelFuture channelFuture);
+    void onMessageSent(HandlerContext context, O message, ChannelPromise channelPromise);
 
     /**
      * Called when {@link Channel} is requested to close
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}
      */
-    void onClosing(HandlerContext context, ChannelFuture channelFuture);
+    void onClosing(HandlerContext context, ChannelPromise channelPromise);
 
     /**
      * Called when {@link Channel} is fully closed

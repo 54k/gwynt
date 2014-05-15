@@ -2,6 +2,7 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 
 public interface Dispatcher {
 
@@ -13,9 +14,9 @@ public interface Dispatcher {
 
     ChannelFuture modifyRegistration(Channel channel, int interestOps);
 
-    ChannelFuture register(Channel channel, ChannelFuture channelFuture);
+    ChannelFuture register(Channel channel, ChannelPromise channelPromise);
 
-    ChannelFuture unregister(Channel channel, ChannelFuture channelFuture);
+    ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
 
-    ChannelFuture modifyRegistration(Channel channel, int interestOps, ChannelFuture channelFuture);
+    ChannelFuture modifyRegistration(Channel channel, int interestOps, ChannelPromise channelPromise);
 }

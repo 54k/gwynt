@@ -2,6 +2,7 @@ package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
 import org.slf4j.Logger;
@@ -74,38 +75,38 @@ public class NioEventLoop implements Dispatcher {
 
     @Override
     public ChannelFuture register(final Channel channel) {
-        return register(channel, channel.newChannelFuture());
+        return register(channel, channel.newChannelPromise());
     }
 
     @Override
     public ChannelFuture unregister(Channel channel) {
-        return unregister(channel, channel.newChannelFuture());
+        return unregister(channel, channel.newChannelPromise());
     }
 
     @Override
     public ChannelFuture modifyRegistration(Channel channel, int interestOps) {
-        return modifyRegistration(channel, interestOps, channel.newChannelFuture());
+        return modifyRegistration(channel, interestOps, channel.newChannelPromise());
     }
 
     @Override
-    public ChannelFuture register(final Channel channel, final ChannelFuture channelFuture) {
+    public ChannelFuture register(final Channel channel, final ChannelPromise channelPromise) {
         addTask(new Runnable() {
             @Override
             public void run() {
                 try {
                     channel.unsafe().javaChannel().register(selector, 0, channel);
                     channel.unsafe().doRegister(NioEventLoop.this);
-                    channelFuture.success();
+                    channelPromise.success();
                 } catch (IOException e) {
-                    channelFuture.fail(e);
+                    channelPromise.fail(e);
                 }
             }
         });
-        return channelFuture;
+        return channelPromise;
     }
 
     @Override
-    public ChannelFuture unregister(final Channel channel, final ChannelFuture channelFuture) {
+    public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
         final SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
         if (key == null) {
             throw new RegistrationException("unregistered unsafe");
@@ -117,14 +118,14 @@ public class NioEventLoop implements Dispatcher {
                 key.cancel();
                 key.attach(null);
                 channel.unsafe().doUnregister(NioEventLoop.this);
-                channelFuture.success();
+                channelPromise.success();
             }
         });
-        return channelFuture;
+        return channelPromise;
     }
 
     @Override
-    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps, final ChannelFuture channelFuture) {
+    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps, final ChannelPromise channelPromise) {
         if ((interestOps & ~channel.unsafe().javaChannel().validOps()) != 0) {
             throw new IllegalArgumentException("interestOps are not valid");
         }
@@ -135,11 +136,11 @@ public class NioEventLoop implements Dispatcher {
                 SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
                 if (key != null && key.isValid()) {
                     key.interestOps(key.interestOps() | interestOps);
-                    channelFuture.success();
+                    channelPromise.success();
                 }
             }
         });
-        return channelFuture;
+        return channelPromise;
     }
 
     protected void addTask(Runnable task) {

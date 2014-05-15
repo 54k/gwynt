@@ -3,6 +3,7 @@ package io.gwynt.core.transport;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelListener;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.util.Pair;
 
@@ -47,13 +48,13 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
             try {
                 SocketChannel ch = javaChannel().accept();
                 ch.configureBlocking(false);
                 NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint, ch);
-                ChannelFuture channelFuture = channel.newChannelFuture();
-                channelFuture.addListener(new ChannelListener<Channel>() {
+                ChannelPromise channelPromise = channel.newChannelPromise();
+                channelPromise.addListener(new ChannelListener<Channel>() {
                     @Override
                     public void onComplete(Channel channel) {
                         channel.unsafe().read();
@@ -63,7 +64,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
                     public void onError(Channel channel, Throwable e) {
                     }
                 });
-                channels.add(new Pair<AbstractNioChannel, ChannelFuture>(channel, channelFuture));
+                channels.add(new Pair<AbstractNioChannel, ChannelPromise>(channel, channelPromise));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -71,11 +72,11 @@ public class NioServerSocketChannel extends AbstractNioChannel {
 
         @Override
         public ChannelFuture bind(InetSocketAddress address) {
-            ChannelFuture channelFuture = newChannelFuture();
+            ChannelPromise channelPromise = newChannelPromise();
             try {
                 javaChannel().bind(address);
-                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT, channelFuture);
-                return channelFuture;
+                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT, channelPromise);
+                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

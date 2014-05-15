@@ -33,7 +33,7 @@ public interface Channel {
 
     Endpoint endpoint();
 
-    ChannelFuture newChannelFuture();
+    ChannelPromise newChannelPromise();
 
     interface Unsafe<T extends SelectableChannel> {
 
@@ -45,9 +45,9 @@ public interface Channel {
 
         void read();
 
-        void write(Object message, ChannelFuture channelFuture);
+        ChannelFuture write(Object message, ChannelPromise channelPromise);
 
-        void close(ChannelFuture channelFuture);
+        ChannelFuture close(ChannelPromise channelFuture);
 
         void doRegister(Dispatcher dispatcher);
 

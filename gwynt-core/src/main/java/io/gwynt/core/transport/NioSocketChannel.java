@@ -1,6 +1,7 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
@@ -59,7 +60,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     private class NioSocketUnsafe extends AbstractUnsafe<SocketChannel> {
 
-        private volatile ChannelFuture connectFuture = VOID_FUTURE;
+        private volatile ChannelPromise connectFuture = VOID_FUTURE;
 
         private NioSocketUnsafe(SocketChannel ch) {
             super(ch);
@@ -67,7 +68,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public ChannelFuture connect(InetSocketAddress address) {
-            connectFuture = newChannelFuture();
+            connectFuture = newChannelPromise();
             try {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
@@ -98,7 +99,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelFuture>> channels) {
+        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 
@@ -129,8 +130,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void write(Object message, ChannelFuture channelFuture) {
-            super.write(ByteBuffer.wrap((byte[]) message), channelFuture);
+        public ChannelFuture write(Object message, ChannelPromise channelPromise) {
+            return super.write(ByteBuffer.wrap((byte[]) message), channelPromise);
         }
 
         @Override
