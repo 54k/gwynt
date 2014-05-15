@@ -31,7 +31,8 @@ public class Main {
         NioEventLoopGroup dispatcher = new NioEventLoopGroup();
         dispatcher.runThread();
 
-        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+        Endpoint tcpEndpoint =
+                new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(new AbstractHandler<String, String>() {
@@ -135,24 +136,24 @@ public class Main {
 
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
-            logger.info("Exception caught on channel {}: {} ", context.channel(), e);
+            logger.info("Exception [{}] caught on channel [{}]", e, context.channel());
             logger.error(e.getMessage(), e);
             context.fireExceptionCaught(e);
         }
 
         @Override
         public void onClose(HandlerContext context) {
-            logger.info("Channel closed: {}", context.channel());
+            logger.info("Channel [{}] closed", context.channel());
             context.fireClose();
         }
 
         @Override
-        public void onClosing(HandlerContext context, ChannelFuture channelFuture) {
-            logger.info("Channel closing: {}", context.channel());
+        public void onClosing(HandlerContext context, final ChannelFuture channelFuture) {
+            logger.info("Closing channel [{}]", context.channel());
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("Channel closed for remote client: {}", channel);
+                    logger.info("ChannelFuture [{}] notified: channel [{}] closed", channelFuture, channel);
                 }
 
                 @Override
@@ -163,12 +164,12 @@ public class Main {
         }
 
         @Override
-        public void onMessageSent(HandlerContext context, final Object message, ChannelFuture channelFuture) {
-            logger.info("Message sent: {}", message);
+        public void onMessageSent(final HandlerContext context, final Object message, final ChannelFuture channelFuture) {
+            logger.info("Sending message [{}] to channel [{}]", message, context.channel());
             channelFuture.addListener(new ChannelListener<Channel>() {
                 @Override
                 public void onComplete(Channel channel) {
-                    logger.info("Message sent to remote client: {}", message);
+                    logger.info("ChannelFuture [{}] notified: message [{}] sent to channel [{}]", channelFuture, message, context.channel());
                 }
 
                 @Override
@@ -181,25 +182,25 @@ public class Main {
 
         @Override
         public void onMessageReceived(HandlerContext context, Object message) {
-            logger.info("Message received: {}", message);
+            logger.info("Received message [{}] from channel [{}]", message, context.channel());
             context.fireMessageReceived(message);
         }
 
         @Override
         public void onOpen(HandlerContext context) {
-            logger.info("Channel opened: {}", context.channel());
+            logger.info("Channel [{}] opened", context.channel());
             context.fireOpen();
         }
 
         @Override
         public void onUnregistered(HandlerContext context) {
-            logger.info("Channel unregistered: {}", context.channel());
+            logger.info("Channel [{}] unregistered", context.channel());
             context.fireUnregistered();
         }
 
         @Override
         public void onRegistered(HandlerContext context) {
-            logger.info("Channel registered: {}", context.channel());
+            logger.info("Channel [{}] registered", context.channel());
             context.fireRegistered();
         }
     }
