@@ -48,14 +48,14 @@ public interface Endpoint {
      *
      * @return current {@link io.gwynt.core.Channel class}
      */
-    Class<? extends Channel> getChannel();
+    Class<? extends Channel> getChannelClass();
 
     /**
      * Set specific {@link io.gwynt.core.Channel} class
      *
      * @return current {@link Endpoint}
      */
-    Endpoint setChannel(Class<? extends Channel> channel);
+    Endpoint setChannelClass(Class<? extends Channel> channel);
 
     /**
      * Returns instance of {@link io.gwynt.core.scheduler.EventScheduler} in which all {@link Handler} events dispatched
@@ -92,14 +92,14 @@ public interface Endpoint {
      *
      * @param port desired port
      */
-    Endpoint bind(int port);
+    ChannelFuture bind(int port);
 
     /**
      * Connect {@link io.gwynt.core.Channel} to specified host and port
      *
      * @param port desired port
      */
-    Endpoint connect(String host, int port);
+    ChannelFuture connect(String host, int port);
 
     /**
      * Stop listening for incoming connections

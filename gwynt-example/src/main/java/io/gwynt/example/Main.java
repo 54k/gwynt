@@ -15,6 +15,8 @@ import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -31,9 +33,10 @@ public class Main {
         NioEventLoopGroup dispatcher = new NioEventLoopGroup();
         dispatcher.runThread();
 
-        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh).bind(3000);
+        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
+        tcpEndpoint.bind(3000);
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(new AbstractHandler<String, String>() {
                     private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -54,10 +57,10 @@ public class Main {
                     }
                 }).connect("localhost", 3000);
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(mh).bind(3001);
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
                 .addHandler(new AbstractHandler() {
                     @Override
                     public void onMessageReceived(HandlerContext context, Object message) {
@@ -65,7 +68,7 @@ public class Main {
                     }
                 }).bind(3001);
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannel(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
                 .addHandler(new AbstractHandler() {
                     @Override
                     public void onOpen(HandlerContext context) {
@@ -78,6 +81,16 @@ public class Main {
                         context.fireClosing();
                     }
                 }).connect("localhost", 3001);
+
+        Channel channel =
+                new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh).connect("192.168.1.2", 6379).channel();
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                channel.unsafe().write((line + "\r\n").getBytes(), channel.newChannelFuture());
+            }
+        }
     }
 
     private static class StringConverter extends AbstractHandler<byte[], String> {

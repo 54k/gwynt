@@ -92,7 +92,7 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public Endpoint setChannel(Class<? extends Channel> channel) {
+    public Endpoint setChannelClass(Class<? extends Channel> channel) {
         if (channel == null) {
             throw new IllegalArgumentException("channel");
         }
@@ -101,13 +101,14 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public Class<? extends Channel> getChannel() {
+    public Class<? extends Channel> getChannelClass() {
         return channelClazz;
     }
 
     @Override
-    public Endpoint bind(final int port) {
-        initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
+    public ChannelFuture bind(final int port) {
+        ChannelFuture channelFuture = initAndRegisterChannel();
+        channelFuture.addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 try {
@@ -127,12 +128,13 @@ public class EndpointBootstrap implements Endpoint {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return this;
+        return channelFuture;
     }
 
     @Override
-    public Endpoint connect(final String host, final int port) {
-        initAndRegisterChannel().addListener(new ChannelListener<Channel>() {
+    public ChannelFuture connect(final String host, final int port) {
+        ChannelFuture channelFuture = initAndRegisterChannel();
+        channelFuture.addListener(new ChannelListener<Channel>() {
             @Override
             public void onComplete(Channel channel) {
                 try {
@@ -152,7 +154,7 @@ public class EndpointBootstrap implements Endpoint {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return this;
+        return channelFuture;
     }
 
     @SuppressWarnings("unchecked")
