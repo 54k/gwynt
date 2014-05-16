@@ -6,5 +6,5 @@ public interface ChannelPromise extends ChannelFuture {
 
     void complete(Throwable error);
 
-    ChannelPromise chainPromise(ChannelPromise... channelPromise);
+    ChannelPromise chainPromise(ChannelPromise channelPromise, ChannelPromise... channelPromises);
 }

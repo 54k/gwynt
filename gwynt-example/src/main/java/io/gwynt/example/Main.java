@@ -35,7 +35,7 @@ public class Main {
         dispatcher.runThread();
 
         Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
-        tcpEndpoint.bind(3000);
+        tcpEndpoint.bind(3000).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
                 .addHandler(new AbstractHandler<String, String>() {
@@ -56,10 +56,10 @@ public class Main {
                     public void onExceptionCaught(HandlerContext context, Throwable e) {
                         logger.error(e.getMessage(), e);
                     }
-                }).connect("localhost", 3000);
+                }).connect("localhost", 3000).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
-                .addHandler(mh).bind(3001);
+                .addHandler(mh).bind(3001).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
                 .addHandler(new AbstractHandler() {
@@ -67,7 +67,7 @@ public class Main {
                     public void onMessageReceived(HandlerContext context, Object message) {
                         context.fireMessageSent(message);
                     }
-                }).bind(3001);
+                }).bind(3001).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
                 .addHandler(new AbstractHandler() {
@@ -81,14 +81,14 @@ public class Main {
                         context.fireMessageSent(message);
                         context.fireClosing();
                     }
-                }).connect("localhost", 3001);
+                }).connect("localhost", 3001).await();
 
         Channel channel = new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 System.out.println(message);
             }
-        }).connect("localhost", 3000).channel();
+        }).connect("localhost", 3000).await().channel();
 
         channel.closeFuture().addListener(new ChannelFutureListener() {
             @Override

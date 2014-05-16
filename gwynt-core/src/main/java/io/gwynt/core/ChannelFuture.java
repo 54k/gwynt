@@ -6,11 +6,11 @@ public interface ChannelFuture {
 
     Channel channel();
 
-    ChannelFuture addListener(ChannelFutureListener... callback);
+    ChannelFuture addListener(ChannelFutureListener callback, ChannelFutureListener... callbacks);
 
-    ChannelFuture await() throws Throwable;
+    ChannelFuture await();
 
-    ChannelFuture await(long timeout, TimeUnit unit) throws Throwable;
+    ChannelFuture await(long timeout, TimeUnit unit);
 
     boolean isDone();
 }

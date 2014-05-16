@@ -1,16 +1,19 @@
 package io.gwynt.core;
 
+import io.gwynt.core.exception.ChannelFutureFailedException;
+import io.gwynt.core.exception.ChannelFutureInterruptedException;
+import io.gwynt.core.exception.ChannelFutureTimeoutException;
+
 import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultChannelPromise implements ChannelPromise {
 
-    private static final TimeoutException timeoutException = new TimeoutException();
+    private static final ChannelFutureTimeoutException TIMEOUT_EXCEPTION = new ChannelFutureTimeoutException();
 
     private final Channel channel;
     private final CountDownLatch lock = new CountDownLatch(1);
@@ -31,8 +34,13 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public ChannelFuture addListener(ChannelFutureListener... callback) {
-        Collections.addAll(listeners, callback);
+    public ChannelFuture addListener(ChannelFutureListener callback, ChannelFutureListener... callbacks) {
+        if (callback == null) {
+            throw new IllegalArgumentException("callback");
+        }
+
+        listeners.add(callback);
+        Collections.addAll(listeners, callbacks);
         if (isDone()) {
             notifyListeners();
         }
@@ -40,8 +48,13 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public ChannelPromise chainPromise(ChannelPromise... channelPromise) {
-        Collections.addAll(promises, channelPromise);
+    public ChannelPromise chainPromise(ChannelPromise channelPromise, ChannelPromise... channelPromises) {
+        if (channelPromise == null) {
+            throw new IllegalArgumentException("channelPromise");
+        }
+
+        promises.add(channelPromise);
+        Collections.addAll(promises, channelPromises);
         if (isDone()) {
             notifyPromises();
         }
@@ -116,20 +129,29 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public ChannelFuture await() throws Throwable {
-        lock.await();
+    public ChannelFuture await() {
+        try {
+            lock.await();
+        } catch (InterruptedException e) {
+            throw new ChannelFutureInterruptedException();
+        }
+
         if (error != null) {
-            throw error;
+            throw new ChannelFutureFailedException(error);
         }
         return this;
     }
 
     @Override
-    public ChannelFuture await(long timeout, TimeUnit unit) throws Throwable {
-        if (lock.await(timeout, unit)) {
-            return await();
+    public ChannelFuture await(long timeout, TimeUnit unit) {
+        try {
+            if (lock.await(timeout, unit)) {
+                return await();
+            }
+        } catch (InterruptedException e) {
+            throw new ChannelFutureInterruptedException();
         }
-        throw timeoutException;
+        throw TIMEOUT_EXCEPTION;
     }
 
     @Override
