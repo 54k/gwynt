@@ -33,10 +33,6 @@ public abstract class AbstractChannel implements Channel {
     private volatile Object attachment;
     private volatile Dispatcher dispatcher;
 
-    protected AbstractChannel(Endpoint endpoint) {
-        this(null, endpoint);
-    }
-
     protected AbstractChannel(Channel parent, Endpoint endpoint) {
         this.parent = parent;
         this.endpoint = endpoint;
