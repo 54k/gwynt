@@ -25,7 +25,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
     public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) {
         super(parent, endpoint);
         try {
-            unsafe = new NioDatagramUnsafe(DatagramChannel.open());
+            unsafe = new NioDatagramNioUnsafe(DatagramChannel.open());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -49,9 +49,9 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
     }
 
-    private class NioDatagramUnsafe extends AbstractUnsafe<DatagramChannel> {
+    private class NioDatagramNioUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
-        private NioDatagramUnsafe(DatagramChannel ch) {
+        private NioDatagramNioUnsafe(DatagramChannel ch) {
             super(ch);
         }
 

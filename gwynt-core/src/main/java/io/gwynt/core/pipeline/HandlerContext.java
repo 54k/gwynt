@@ -20,6 +20,8 @@ public interface HandlerContext {
 
     void fireRead();
 
+    void fireRead(ChannelPromise channelPromise);
+
     void fireMessageReceived(Object message);
 
     void fireMessageSent(Object message);

@@ -39,11 +39,17 @@ public interface Channel {
 
     ChannelFuture connect(InetSocketAddress address);
 
+    ChannelFuture read();
+
     ChannelFuture write(Object message);
 
     ChannelFuture close();
 
     ChannelFuture closeFuture();
+
+    ChannelFuture register(Dispatcher dispatcher);
+
+    ChannelFuture unregister();
 
     interface Unsafe<T extends SelectableChannel> {
 
@@ -53,7 +59,7 @@ public interface Channel {
 
         ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise);
 
-        void read();
+        void read(ChannelPromise channelPromise);
 
         ChannelFuture write(Object message, ChannelPromise channelPromise);
 
@@ -72,5 +78,7 @@ public interface Channel {
         void doConnect() throws IOException;
 
         void exceptionCaught(Throwable e);
+
+        ChannelFuture closeFuture();
     }
 }

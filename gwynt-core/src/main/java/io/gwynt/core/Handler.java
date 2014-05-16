@@ -52,7 +52,7 @@ public interface Handler<I, O> {
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}
      */
-    void onRead(HandlerContext context);
+    void onRead(HandlerContext context, ChannelPromise channelPromise);
 
     /**
      * Called when inbound message received

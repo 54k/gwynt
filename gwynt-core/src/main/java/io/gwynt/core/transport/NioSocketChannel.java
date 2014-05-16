@@ -24,7 +24,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         try {
             SocketChannel ch = SelectorProvider.provider().openSocketChannel();
             ch.configureBlocking(false);
-            unsafe = new NioSocketUnsafe(ch);
+            unsafe = new NioSocketNioUnsafe(ch);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -34,7 +34,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         super(parent, endpoint);
         try {
             ch.configureBlocking(false);
-            unsafe = new NioSocketUnsafe(ch);
+            unsafe = new NioSocketNioUnsafe(ch);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -58,11 +58,11 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
     }
 
-    private class NioSocketUnsafe extends AbstractUnsafe<SocketChannel> {
+    private class NioSocketNioUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
         private final ChannelPromise connectFuture = newChannelPromise();
 
-        private NioSocketUnsafe(SocketChannel ch) {
+        private NioSocketNioUnsafe(SocketChannel ch) {
             super(ch);
         }
 

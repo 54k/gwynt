@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractNioChannel implements Channel {
 
-    protected AbstractUnsafe unsafe;
+    protected AbstractNioUnsafe unsafe;
     protected Endpoint endpoint;
 
     private Channel parent;
@@ -120,10 +120,20 @@ public abstract class AbstractNioChannel implements Channel {
 
     @Override
     public ChannelFuture closeFuture() {
-        return unsafe.closePromise;
+        return unsafe.closeFuture();
     }
 
-    protected abstract class AbstractUnsafe<T extends SelectableChannel> implements Unsafe<T> {
+    @Override
+    public ChannelFuture unregister() {
+        return dispatcher.unregister(this, newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture register(Dispatcher dispatcher) {
+        return dispatcher.register(this, newChannelPromise());
+    }
+
+    protected abstract class AbstractNioUnsafe<T extends SelectableChannel> implements Unsafe<T> {
 
         private final Object lock = new Object();
         private final ChannelPromise closePromise = newChannelPromise();
@@ -133,7 +143,7 @@ public abstract class AbstractNioChannel implements Channel {
         private Queue<Pair<Object, ChannelPromise>> pendingWrites = new ConcurrentLinkedQueue<>();
         private T ch;
 
-        protected AbstractUnsafe(T ch) {
+        protected AbstractNioUnsafe(T ch) {
             this.ch = ch;
             try {
                 ch.configureBlocking(false);
@@ -171,11 +181,11 @@ public abstract class AbstractNioChannel implements Channel {
         }
 
         @Override
-        public void read() {
+        public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 synchronized (lock) {
                     if (isRegistered()) {
-                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ);
+                        dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ, channelPromise);
                     }
                 }
             }
@@ -286,6 +296,11 @@ public abstract class AbstractNioChannel implements Channel {
             close0();
         }
 
+        @Override
+        public ChannelFuture closeFuture() {
+            return closePromise;
+        }
+
         protected boolean isActive() {
             return javaChannel().isOpen();
         }
@@ -299,6 +314,5 @@ public abstract class AbstractNioChannel implements Channel {
             }
             dispatcher().unregister(AbstractNioChannel.this, closePromise);
         }
-
     }
 }

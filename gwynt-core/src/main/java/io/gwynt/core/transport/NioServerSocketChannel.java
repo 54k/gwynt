@@ -20,7 +20,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
     public NioServerSocketChannel(Endpoint endpoint) {
         super(endpoint);
         try {
-            unsafe = new NioServerSocketUnsafe(ServerSocketChannel.open());
+            unsafe = new NioServerSocketNioUnsafe(ServerSocketChannel.open());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -40,9 +40,9 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         return null;
     }
 
-    private class NioServerSocketUnsafe extends AbstractUnsafe<ServerSocketChannel> {
+    private class NioServerSocketNioUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
-        private NioServerSocketUnsafe(ServerSocketChannel ch) {
+        private NioServerSocketNioUnsafe(ServerSocketChannel ch) {
             super(ch);
         }
 

@@ -1,9 +1,9 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
-import io.gwynt.core.transport.AbstractNioChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,10 +22,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     private final DefaultHandlerContext head;
     private final DefaultHandlerContext tail;
 
-    private final AbstractNioChannel channel;
+    private final Channel channel;
     private final Map<String, DefaultHandlerContext> name2context = new ConcurrentHashMap<>();
 
-    public DefaultPipeline(AbstractNioChannel channel) {
+    public DefaultPipeline(Channel channel) {
         this.channel = channel;
         head = new DefaultHandlerContext(channel, HEAD_HANDLER);
         tail = new DefaultHandlerContext(channel, TAIL_HANDLER);
@@ -51,6 +51,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
     public void fireMessageReceived(Object message) {
         head.fireMessageReceived(message);
+    }
+
+    public void fireRead(ChannelPromise channelPromise) {
+        tail.fireRead(channelPromise);
     }
 
     public void fireMessageSent(Object message, ChannelPromise channelPromise) {
@@ -341,8 +345,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     private static class HeadHandler extends AbstractHandler {
 
         @Override
-        public void onRead(HandlerContext context) {
-            context.channel().unsafe().read();
+        public void onRead(HandlerContext context, ChannelPromise channelPromise) {
+            context.channel().unsafe().read(channelPromise);
         }
 
         @Override

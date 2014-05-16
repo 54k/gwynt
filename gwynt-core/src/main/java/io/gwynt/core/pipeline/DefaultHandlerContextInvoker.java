@@ -51,9 +51,9 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         }
     }
 
-    private static void invokeOnReadNow(HandlerContext context) {
+    private static void invokeOnReadNow(HandlerContext context, ChannelPromise channelPromise) {
         try {
-            context.handler().onRead(context);
+            context.handler().onRead(context, channelPromise);
         } catch (Throwable e) {
             context.handler().onExceptionCaught(context, e);
         }
@@ -183,9 +183,9 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
     }
 
     @Override
-    public void invokeOnRead(final HandlerContext context) {
+    public void invokeOnRead(final HandlerContext context, final ChannelPromise channelPromise) {
         if (scheduler.inSchedulerThread()) {
-            invokeOnReadNow(context);
+            invokeOnReadNow(context, channelPromise);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
             Runnable event = dctx.readEvent;
@@ -193,7 +193,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                 dctx.readEvent = event = new Runnable() {
                     @Override
                     public void run() {
-                        invokeOnReadNow(context);
+                        invokeOnReadNow(context, channelPromise);
                     }
                 };
             }
