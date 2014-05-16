@@ -68,6 +68,15 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
+        protected void closeImpl() {
+            synchronized (registrationLock()) {
+                if (isRegistered()) {
+                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_WRITE);
+                }
+            }
+        }
+
+        @Override
         public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
             connectFuture.chainPromise(channelPromise);
             try {
@@ -94,9 +103,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected void doAfterUnregister() {
             pipeline().fireUnregistered();
-            if (!isActive()) {
-                pipeline().fireClose();
-            }
         }
 
         @Override
@@ -173,6 +179,13 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected boolean isActive() {
             return javaChannel().isOpen() && javaChannel().isConnected();
+        }
+
+        @Override
+        protected void doCloseImpl() {
+            super.doCloseImpl();
+            closePromise().complete();
+            pipeline().fireClose();
         }
     }
 }

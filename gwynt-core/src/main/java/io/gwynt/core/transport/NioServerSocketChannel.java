@@ -58,6 +58,11 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
+        protected void closeImpl() {
+            // NO OP
+        }
+
+        @Override
         protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
             SocketChannel ch;
             try {

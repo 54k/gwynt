@@ -58,6 +58,15 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
+        protected void closeImpl() {
+            synchronized (registrationLock()) {
+                if (isRegistered()) {
+                    dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_WRITE);
+                }
+            }
+        }
+
+        @Override
         public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
@@ -73,7 +82,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
             try {
                 javaChannel().connect(address);
                 channelPromise.complete();
-                pipeline().fireOpen();
                 return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -92,9 +100,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
         @Override
         protected void doAfterUnregister() {
             pipeline().fireUnregistered();
-            if (!isActive()) {
-                pipeline().fireClose();
-            }
         }
 
         @Override
@@ -142,6 +147,13 @@ public class NioDatagramChannel extends AbstractNioChannel {
             }
 
             return !src.hasRemaining();
+        }
+
+        @Override
+        protected void doCloseImpl() {
+            super.doCloseImpl();
+            closePromise().complete();
+            pipeline().fireClose();
         }
     }
 }

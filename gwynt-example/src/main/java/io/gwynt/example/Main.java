@@ -185,7 +185,7 @@ public class Main {
             channelPromise.addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
-                    logger.info("Closed channel [{}], channelPromise [{}]: ", channelFuture.channel(), channelFuture);
+                    logger.info("Closed channel [{}], channelPromise [{}]", channelFuture.channel(), channelFuture);
                 }
 
                 @Override
@@ -201,7 +201,7 @@ public class Main {
             channelPromise.addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
-                    logger.info("Sent to channel [{}], channelPromise [{}], message [{}] ", channelFuture.channel(), channelPromise, message);
+                    logger.info("Sent to channel [{}], channelPromise [{}], message [{}]", channelFuture.channel(), channelPromise, message);
                 }
 
                 @Override

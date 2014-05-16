@@ -172,6 +172,10 @@ public abstract class AbstractChannel implements Channel {
             return registrationLock;
         }
 
+        protected ChannelPromise closePromise() {
+            return closePromise;
+        }
+
         @Override
         public T javaChannel() {
             return ch;
@@ -218,15 +222,13 @@ public abstract class AbstractChannel implements Channel {
         public ChannelFuture close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
-                synchronized (registrationLock) {
-                    if (isRegistered()) {
-                        dispatcher().modifyRegistration(AbstractChannel.this, SelectionKey.OP_WRITE);
-                    }
-                }
+                closeImpl();
             }
             closePromise.chainPromise(channelPromise);
             return channelPromise;
         }
+
+        protected abstract void closeImpl();
 
         @Override
         public void doRegister(Dispatcher dispatcher) {
@@ -327,7 +329,6 @@ public abstract class AbstractChannel implements Channel {
         protected void doClose() {
             pendingClose = true;
             doCloseImpl();
-            closePromise.complete();
             pendingWrites.clear();
             if (isRegistered()) {
                 unregister();
