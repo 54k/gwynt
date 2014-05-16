@@ -69,7 +69,6 @@ public class DefaultChannelPromise implements ChannelPromise {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void notifyListenersOnComplete() {
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
@@ -86,7 +85,6 @@ public class DefaultChannelPromise implements ChannelPromise {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void notifyListenersOnError() {
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();

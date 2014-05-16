@@ -7,7 +7,6 @@ import io.gwynt.core.transport.Dispatcher;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.SelectableChannel;
 
 public interface Channel {
 
@@ -51,7 +50,7 @@ public interface Channel {
 
     ChannelFuture unregister();
 
-    interface Unsafe<T extends SelectableChannel> {
+    interface Unsafe<T> {
 
         T javaChannel();
 
@@ -67,7 +66,7 @@ public interface Channel {
 
         void doRegister(Dispatcher dispatcher);
 
-        void doUnregister(Dispatcher dispatcher);
+        void doUnregister();
 
         void doAccept() throws IOException;
 
