@@ -52,7 +52,7 @@ public class DefaultHandlerContext implements HandlerContext {
         this.next = next;
     }
 
-    public HandlerContextInvoker getInvoker() {
+    public HandlerContextInvoker invoker() {
         return invoker;
     }
 
@@ -67,41 +67,41 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     public void fireOnAdded() {
-        getInvoker().invokeOnHandlerAdded(this);
+        invoker().invokeOnHandlerAdded(this);
     }
 
     public void fireOnRemoved() {
-        getInvoker().invokeOnHandlerRemoved(this);
+        invoker().invokeOnHandlerRemoved(this);
     }
 
     @Override
     public void fireRegistered() {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnRegistered(next);
+        next.invoker().invokeOnRegistered(next);
     }
 
     @Override
     public void fireUnregistered() {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnUnregistered(next);
+        next.invoker().invokeOnUnregistered(next);
     }
 
     @Override
     public void fireOpen() {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnOpen(next);
+        next.invoker().invokeOnOpen(next);
     }
 
     @Override
     public void fireRead() {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.getInvoker().invokeOnRead(prev);
+        prev.invoker().invokeOnRead(prev);
     }
 
     @Override
     public void fireMessageReceived(Object message) {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnMessageReceived(next, message);
+        next.invoker().invokeOnMessageReceived(next, message);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class DefaultHandlerContext implements HandlerContext {
     @Override
     public void fireMessageSent(Object message, ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.getInvoker().invokeOnMessageSent(prev, message, channelPromise);
+        prev.invoker().invokeOnMessageSent(prev, message, channelPromise);
     }
 
     @Override
@@ -123,19 +123,19 @@ public class DefaultHandlerContext implements HandlerContext {
     @Override
     public void fireClosing(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.getInvoker().invokeOnClosing(prev, channelPromise);
+        prev.invoker().invokeOnClosing(prev, channelPromise);
     }
 
     @Override
     public void fireClose() {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnClosed(next);
+        next.invoker().invokeOnClosed(next);
     }
 
     @Override
     public void fireExceptionCaught(Throwable e) {
         DefaultHandlerContext next = findContextInbound();
-        next.getInvoker().invokeOnExceptionCaught(next, e);
+        next.invoker().invokeOnExceptionCaught(next, e);
     }
 
     @Override
