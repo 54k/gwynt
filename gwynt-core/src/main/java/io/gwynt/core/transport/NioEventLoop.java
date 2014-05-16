@@ -23,11 +23,11 @@ public class NioEventLoop implements Dispatcher {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
 
+    Selector selector;
+
     private volatile boolean running;
     private CountDownLatch shutdownLock = new CountDownLatch(1);
     private Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
-
-    private Selector selector;
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {

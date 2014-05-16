@@ -1,10 +1,12 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 
 public abstract class AbstractNioChannel extends AbstractChannel {
 
@@ -36,6 +38,24 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 ch.configureBlocking(false);
             } catch (IOException e) {
                 throw new ChannelException(e);
+            }
+        }
+
+        @Override
+        protected void writeImpl() {
+            synchronized (registrationLock()) {
+                if (isRegistered()) {
+                    dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
+                }
+            }
+        }
+
+        @Override
+        protected void readImpl(ChannelPromise channelPromise) {
+            synchronized (registrationLock()) {
+                if (isRegistered()) {
+                    dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ, channelPromise);
+                }
             }
         }
 

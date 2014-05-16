@@ -28,6 +28,16 @@ public class NioServerSocketChannel extends AbstractNioChannel {
     }
 
     @Override
+    public ChannelFuture read() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ChannelFuture write(Object message) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public SocketAddress getLocalAddress() {
         try {
             return ((ServerSocketChannel) unsafe.javaChannel()).getLocalAddress();
@@ -92,6 +102,16 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         @Override
         protected void doAfterRegister() {
             // NO OP
+        }
+
+        @Override
+        public ChannelFuture read(ChannelPromise channelPromise) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ChannelFuture write(Object message, ChannelPromise channelPromise) {
+            throw new UnsupportedOperationException();
         }
 
         @Override

@@ -6,6 +6,7 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.DefaultChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.Handler;
+import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
@@ -155,7 +156,7 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
-        private final Object lock = new Object();
+        private final Object registrationLock = new Object();
         private final ChannelPromise closePromise = newChannelPromise();
         private final List<Object> messages = new ArrayList<>();
 
@@ -165,6 +166,10 @@ public abstract class AbstractChannel implements Channel {
 
         protected AbstractUnsafe(T ch) {
             this.ch = ch;
+        }
+
+        protected Object registrationLock() {
+            return registrationLock;
         }
 
         @Override
@@ -183,28 +188,29 @@ public abstract class AbstractChannel implements Channel {
         }
 
         @Override
-        public void read(ChannelPromise channelPromise) {
+        public ChannelFuture read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
-                synchronized (lock) {
-                    if (isRegistered()) {
-                        dispatcher().modifyRegistration(AbstractChannel.this, SelectionKey.OP_READ, channelPromise);
-                    }
-                }
+                readImpl(channelPromise);
+            } else {
+                channelPromise.complete(new ChannelException("Channel is closed"));
             }
+            return channelPromise;
         }
+
+        protected abstract void readImpl(ChannelPromise channelPromise);
 
         @Override
         public ChannelFuture write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 pendingWrites.add(new Pair<>(message, channelPromise));
-                synchronized (lock) {
-                    if (isRegistered()) {
-                        dispatcher().modifyRegistration(AbstractChannel.this, SelectionKey.OP_WRITE);
-                    }
-                }
+                writeImpl();
+            } else {
+                channelPromise.complete(new ChannelException("Channel is closed"));
             }
             return channelPromise;
         }
+
+        protected abstract void writeImpl();
 
         protected abstract boolean isActive();
 
@@ -212,7 +218,7 @@ public abstract class AbstractChannel implements Channel {
         public ChannelFuture close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
-                synchronized (lock) {
+                synchronized (registrationLock) {
                     if (isRegistered()) {
                         dispatcher().modifyRegistration(AbstractChannel.this, SelectionKey.OP_WRITE);
                     }
@@ -224,7 +230,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doRegister(Dispatcher dispatcher) {
-            synchronized (lock) {
+            synchronized (registrationLock) {
                 AbstractChannel.this.dispatcher = dispatcher;
                 doAfterRegister();
             }
@@ -234,7 +240,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doUnregister() {
-            synchronized (lock) {
+            synchronized (registrationLock) {
                 AbstractChannel.this.dispatcher = null;
                 doAfterUnregister();
             }

@@ -58,7 +58,7 @@ public interface Channel {
 
         ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise);
 
-        void read(ChannelPromise channelPromise);
+        ChannelFuture read(ChannelPromise channelPromise);
 
         ChannelFuture write(Object message, ChannelPromise channelPromise);
 
