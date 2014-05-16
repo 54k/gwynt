@@ -1,5 +1,6 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
@@ -83,7 +84,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doRegister0() {
+        protected void doAfterRegister() {
             pipeline().fireRegistered();
             if (isActive()) {
                 pipeline().fireOpen();
@@ -91,7 +92,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doUnregister0() {
+        protected void doAfterUnregister() {
             pipeline().fireUnregistered();
             if (!isActive()) {
                 pipeline().fireClose();
@@ -99,12 +100,12 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
+        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected void doRead0(List<Object> messages) {
+        protected void doReadImpl(List<Object> messages) {
             ByteBuffer buffer = ByteBufferAllocator.allocate(4096);
             int bytesWritten;
 
@@ -118,7 +119,8 @@ public class NioSocketChannel extends AbstractNioChannel {
                         messages.add(message);
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    exceptionCaught(e);
+                    return;
                 }
             } while (buffer.hasRemaining() && bytesWritten > 0);
 
@@ -135,14 +137,14 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean doWrite0(Object message) {
+        protected boolean doWriteImpl(Object message) {
             int bytesWritten;
             ByteBuffer src = (ByteBuffer) message;
             do {
                 try {
                     bytesWritten = javaChannel().write(src);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new EofException();
                 }
             } while (src.hasRemaining() && bytesWritten > 0);
 
@@ -163,7 +165,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     pipeline().fireOpen();
                 }
             } else {
-                close0();
+                doCloseImpl();
                 throw new RuntimeException("Connection failed");
             }
         }

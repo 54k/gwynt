@@ -13,4 +13,6 @@ public interface ChannelFuture {
     ChannelFuture await(long timeout, TimeUnit unit);
 
     boolean isDone();
+
+    boolean isFailed();
 }

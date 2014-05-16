@@ -127,6 +127,11 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
+    public boolean isFailed() {
+        return error != null;
+    }
+
+    @Override
     public ChannelFuture await() {
         try {
             lock.await();
@@ -153,7 +158,7 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public void complete(Throwable error) {
+    public ChannelPromise complete(Throwable error) {
         boolean wasDone = done.getAndSet(true);
         if (!wasDone) {
             this.error = error;
@@ -161,10 +166,11 @@ public class DefaultChannelPromise implements ChannelPromise {
             notifyListeners();
             notifyPromises();
         }
+        return this;
     }
 
     @Override
-    public void complete() {
-        complete(null);
+    public ChannelPromise complete() {
+        return complete(null);
     }
 }

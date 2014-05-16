@@ -1,9 +1,11 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
+import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -16,13 +18,12 @@ import java.util.List;
 
 public class NioServerSocketChannel extends AbstractNioChannel {
 
-    @SuppressWarnings("unused")
     public NioServerSocketChannel(Endpoint endpoint) {
         super(endpoint);
         try {
-            unsafe = new NioServerSocketNioUnsafe(ServerSocketChannel.open());
+            unsafe = new NioServerSocketChannelUnsafe(ServerSocketChannel.open());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ChannelException(e);
         }
     }
 
@@ -40,33 +41,36 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         return null;
     }
 
-    private class NioServerSocketNioUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
+    private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
-        private NioServerSocketNioUnsafe(ServerSocketChannel ch) {
+        private NioServerSocketChannelUnsafe(ServerSocketChannel ch) {
             super(ch);
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
+        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
+            SocketChannel ch;
             try {
-                SocketChannel ch = javaChannel().accept();
+                ch = javaChannel().accept();
                 ch.configureBlocking(false);
-                NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint, ch);
-                ChannelPromise channelPromise = channel.newChannelPromise();
-                channelPromise.addListener(new ChannelFutureListener() {
-                    @Override
-                    public void onComplete(ChannelFuture channelFuture) {
-                        channelFuture.channel().unsafe().read();
-                    }
-
-                    @Override
-                    public void onError(ChannelFuture channelFuture, Throwable e) {
-                    }
-                });
-                channels.add(new Pair<AbstractNioChannel, ChannelPromise>(channel, channelPromise));
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                exceptionCaught(e);
+                return;
             }
+
+            NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint(), ch);
+            ChannelPromise channelPromise = channel.newChannelPromise();
+            channelPromise.addListener(new ChannelFutureListener() {
+                @Override
+                public void onComplete(ChannelFuture channelFuture) {
+                    channelFuture.channel().unsafe().read(VOID_PROMISE);
+                }
+
+                @Override
+                public void onError(ChannelFuture channelFuture, Throwable e) {
+                }
+            });
+            channels.add(new Pair<Channel, ChannelPromise>(channel, channelPromise));
         }
 
         @Override
@@ -74,29 +78,29 @@ public class NioServerSocketChannel extends AbstractNioChannel {
             try {
                 javaChannel().bind(address);
                 dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
-                channelPromise.complete();
-                return channelPromise;
+                return channelPromise.complete();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                return channelPromise.complete(e);
             }
         }
 
         @Override
-        protected void doRegister0() {
+        protected void doAfterUnregister() {
+            // NO OP
         }
 
         @Override
-        protected void doUnregister0() {
-            // NO-OP
+        protected void doAfterRegister() {
+            // NO OP
         }
 
         @Override
-        protected void doRead0(List<Object> messages) {
+        protected void doReadImpl(List<Object> messages) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected boolean doWrite0(Object message) {
+        protected boolean doWriteImpl(Object message) {
             throw new UnsupportedOperationException();
         }
     }

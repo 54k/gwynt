@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -94,7 +95,7 @@ public class NioEventLoop implements Dispatcher {
             @Override
             public void run() {
                 try {
-                    channel.unsafe().javaChannel().register(selector, 0, channel);
+                    ((SelectableChannel) channel.unsafe().javaChannel()).register(selector, 0, channel);
                     channel.unsafe().doRegister(NioEventLoop.this);
                     channelPromise.complete();
                 } catch (IOException e) {
@@ -107,7 +108,7 @@ public class NioEventLoop implements Dispatcher {
 
     @Override
     public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
-        final SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
+        final SelectionKey key = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
         if (key == null) {
             throw new RegistrationException("unregistered unsafe");
         }
@@ -117,7 +118,7 @@ public class NioEventLoop implements Dispatcher {
             public void run() {
                 key.cancel();
                 key.attach(null);
-                channel.unsafe().doUnregister(NioEventLoop.this);
+                channel.unsafe().doUnregister();
                 channelPromise.complete();
             }
         });
@@ -126,14 +127,14 @@ public class NioEventLoop implements Dispatcher {
 
     @Override
     public ChannelFuture modifyRegistration(final Channel channel, final int interestOps, final ChannelPromise channelPromise) {
-        if ((interestOps & ~channel.unsafe().javaChannel().validOps()) != 0) {
+        if ((interestOps & ~((SelectableChannel) channel.unsafe().javaChannel()).validOps()) != 0) {
             throw new IllegalArgumentException("interestOps are not valid");
         }
 
         addTask(new Runnable() {
             @Override
             public void run() {
-                SelectionKey key = channel.unsafe().javaChannel().keyFor(selector);
+                SelectionKey key = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
                 if (key != null && key.isValid()) {
                     key.interestOps(key.interestOps() | interestOps);
                     channelPromise.complete();

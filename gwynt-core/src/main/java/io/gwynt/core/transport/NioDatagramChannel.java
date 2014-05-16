@@ -1,8 +1,10 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
+import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
 import io.gwynt.core.util.Pair;
@@ -27,7 +29,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         try {
             unsafe = new NioDatagramNioUnsafe(DatagramChannel.open());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ChannelException(e);
         }
     }
 
@@ -79,13 +81,16 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doRegister0() {
+        protected void doAfterRegister() {
             pipeline().fireRegistered();
+            if (isActive()) {
+                pipeline().fireOpen();
+            }
             dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_READ);
         }
 
         @Override
-        protected void doUnregister0() {
+        protected void doAfterUnregister() {
             pipeline().fireUnregistered();
             if (!isActive()) {
                 pipeline().fireClose();
@@ -93,12 +98,12 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAccept0(List<Pair<AbstractNioChannel, ChannelPromise>> channels) {
+        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected void doRead0(List<Object> messages) {
+        protected void doReadImpl(List<Object> messages) {
             ByteBuffer buffer = ByteBufferAllocator.allocate(150000);
             SocketAddress address;
 
@@ -112,7 +117,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
                         messages.add(new Datagram(address, ByteBuffer.wrap(message)));
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new EofException();
                 }
             } while (buffer.hasRemaining() && address != null);
 
@@ -120,7 +125,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean doWrite0(Object message) {
+        protected boolean doWriteImpl(Object message) {
             int bytesWritten;
             Datagram datagram = (Datagram) message;
             ByteBuffer src = datagram.getMessage();
@@ -128,7 +133,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
                 try {
                     bytesWritten = javaChannel().send(src, datagram.getRecipient());
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw new EofException();
                 }
             } while (src.hasRemaining() && bytesWritten > 0);
 

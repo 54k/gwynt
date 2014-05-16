@@ -23,6 +23,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractChannel implements Channel {
 
+    protected static final ChannelPromise VOID_PROMISE = new DefaultChannelPromise(null);
+
     private final Endpoint endpoint;
     private final DefaultPipeline pipeline;
 
@@ -242,14 +244,14 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doAccept() throws IOException {
-            List<Pair<AbstractNioChannel, ChannelPromise>> channels = new ArrayList<>();
+            List<Pair<Channel, ChannelPromise>> channels = new ArrayList<>();
             doAcceptImpl(channels);
-            for (Pair<AbstractNioChannel, ChannelPromise> pair : channels) {
+            for (Pair<Channel, ChannelPromise> pair : channels) {
                 dispatcher().next().register(pair.getFirst(), pair.getSecond());
             }
         }
 
-        protected abstract void doAcceptImpl(List<Pair<AbstractNioChannel, ChannelPromise>> channels);
+        protected abstract void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels);
 
         @Override
         public void doRead() throws IOException {
@@ -319,6 +321,7 @@ public abstract class AbstractChannel implements Channel {
         protected void doClose() {
             pendingClose = true;
             doCloseImpl();
+            closePromise.complete();
             pendingWrites.clear();
             if (isRegistered()) {
                 unregister();
