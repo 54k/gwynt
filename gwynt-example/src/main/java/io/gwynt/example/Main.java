@@ -83,8 +83,12 @@ public class Main {
                     }
                 }).connect("localhost", 3001);
 
-        Channel channel =
-                new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh).connect("localhost", 3000).channel();
+        Channel channel = new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
+            @Override
+            public void onMessageReceived(HandlerContext context, Object message) {
+                System.out.println(message);
+            }
+        }).connect("localhost", 3000).channel();
 
         channel.closeFuture().addListener(new ChannelFutureListener() {
             @Override
@@ -152,6 +156,7 @@ public class Main {
         public void onMessageReceived(HandlerContext context, String message) {
             if ("exit\r\n".equals(message)) {
                 context.fireClosing();
+                return;
             }
             context.fireMessageSent(message);
         }
