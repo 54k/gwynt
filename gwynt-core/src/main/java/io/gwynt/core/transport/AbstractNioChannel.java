@@ -1,6 +1,11 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.*;
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.DefaultChannelPromise;
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 import io.gwynt.core.scheduler.EventScheduler;
@@ -182,7 +187,7 @@ public abstract class AbstractNioChannel implements Channel {
                 pendingClose = true;
                 synchronized (lock) {
                     if (isRegistered()) {
-                        closePromise.addListener(channelPromise);
+                        closePromise.chainPromise(channelPromise);
                         dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
                     }
                 }
@@ -250,7 +255,7 @@ public abstract class AbstractNioChannel implements Channel {
                 try {
                     if (doWrite0(message.getFirst())) {
                         pendingWrites.poll();
-                        message.getSecond().success();
+                        message.getSecond().complete();
                     }
 
                     if (!pendingWrites.isEmpty()) {
@@ -259,7 +264,7 @@ public abstract class AbstractNioChannel implements Channel {
                     }
                 } catch (EofException e) {
                     shouldClose = true;
-                    message.getSecond().success();
+                    message.getSecond().complete();
                 }
             }
 
@@ -294,7 +299,6 @@ public abstract class AbstractNioChannel implements Channel {
             }
             dispatcher().unregister(AbstractNioChannel.this, closePromise);
         }
-
 
     }
 }

@@ -1,15 +1,16 @@
 package io.gwynt.core;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public interface ChannelFuture extends Future<Channel> {
+public interface ChannelFuture {
 
     Channel channel();
 
-    void addListener(ChannelFutureListener<? extends Channel> callback);
+    ChannelFuture addListener(ChannelFutureListener... callback);
 
-    Channel await() throws Throwable;
+    ChannelFuture await() throws Throwable;
 
-    Channel await(long timeout, TimeUnit unit) throws Throwable;
+    ChannelFuture await(long timeout, TimeUnit unit) throws Throwable;
+
+    boolean isDone();
 }

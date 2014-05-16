@@ -1,6 +1,9 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.*;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
+import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.Endpoint;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -50,14 +53,14 @@ public class NioServerSocketChannel extends AbstractNioChannel {
                 ch.configureBlocking(false);
                 NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint, ch);
                 ChannelPromise channelPromise = channel.newChannelPromise();
-                channelPromise.addListener(new ChannelFutureListener<Channel>() {
+                channelPromise.addListener(new ChannelFutureListener() {
                     @Override
-                    public void onComplete(Channel channel) {
-                        channel.unsafe().read();
+                    public void onComplete(ChannelFuture channelFuture) {
+                        channelFuture.channel().unsafe().read();
                     }
 
                     @Override
-                    public void onError(Channel channel, Throwable e) {
+                    public void onError(ChannelFuture channelFuture, Throwable e) {
                     }
                 });
                 channels.add(new Pair<AbstractNioChannel, ChannelPromise>(channel, channelPromise));
@@ -71,7 +74,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
             try {
                 javaChannel().bind(address);
                 dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
-                channelPromise.success();
+                channelPromise.complete();
                 return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);

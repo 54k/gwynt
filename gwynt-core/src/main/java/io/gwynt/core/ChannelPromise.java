@@ -2,9 +2,9 @@ package io.gwynt.core;
 
 public interface ChannelPromise extends ChannelFuture {
 
-    void success();
+    void complete();
 
-    void fail(Throwable error);
+    void complete(Throwable error);
 
-    void addListener(ChannelPromise channelPromise);
+    ChannelPromise chainPromise(ChannelPromise... channelPromise);
 }

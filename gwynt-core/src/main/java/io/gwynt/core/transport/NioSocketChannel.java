@@ -68,13 +68,13 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            connectFuture.addListener(channelPromise);
+            connectFuture.chainPromise(channelPromise);
             try {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
                     dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_CONNECT);
                 } else {
-                    connectFuture.success();
+                    connectFuture.complete();
                 }
                 return channelPromise;
             } catch (IOException e) {
@@ -157,7 +157,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         public void doConnect() throws IOException {
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {
-                connectFuture.success();
+                connectFuture.complete();
                 if (!wasActive && isActive()) {
                     dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_READ);
                     pipeline().fireOpen();

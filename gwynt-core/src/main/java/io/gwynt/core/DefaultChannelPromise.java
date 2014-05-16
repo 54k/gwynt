@@ -1,7 +1,11 @@
 package io.gwynt.core;
 
+import java.util.Collections;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultChannelPromise implements ChannelPromise {
@@ -10,14 +14,12 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private final Channel channel;
     private final CountDownLatch lock = new CountDownLatch(1);
-
-    private final AtomicBoolean cancelled = new AtomicBoolean();
     private final AtomicBoolean done = new AtomicBoolean();
 
-    private Throwable error;
     private Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
     private Queue<ChannelPromise> promises = new ConcurrentLinkedQueue<>();
 
+    private Throwable error;
 
     public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
@@ -29,19 +31,21 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public void addListener(ChannelFutureListener<? extends Channel> callback) {
-        listeners.add(callback);
+    public ChannelFuture addListener(ChannelFutureListener... callback) {
+        Collections.addAll(listeners, callback);
         if (isDone()) {
             notifyListeners();
         }
+        return this;
     }
 
     @Override
-    public void addListener(ChannelPromise channelPromise) {
-        promises.add(channelPromise);
+    public ChannelPromise chainPromise(ChannelPromise... channelPromise) {
+        Collections.addAll(promises, channelPromise);
         if (isDone()) {
             notifyPromises();
         }
+        return this;
     }
 
     private void notifyListeners() {
@@ -57,12 +61,12 @@ public class DefaultChannelPromise implements ChannelPromise {
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
             if (channel.scheduler().inSchedulerThread()) {
-                channelFutureListener.onComplete(channel);
+                channelFutureListener.onComplete(this);
             } else {
                 channel.scheduler().schedule(new Runnable() {
                     @Override
                     public void run() {
-                        channelFutureListener.onComplete(channel);
+                        channelFutureListener.onComplete(DefaultChannelPromise.this);
                     }
                 });
             }
@@ -74,12 +78,12 @@ public class DefaultChannelPromise implements ChannelPromise {
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
             if (channel.scheduler().inSchedulerThread()) {
-                channelFutureListener.onError(channel, error);
+                channelFutureListener.onError(this, error);
             } else {
                 channel.scheduler().schedule(new Runnable() {
                     @Override
                     public void run() {
-                        channelFutureListener.onError(channel, error);
+                        channelFutureListener.onError(DefaultChannelPromise.this, error);
                     }
                 });
             }
@@ -96,28 +100,14 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private void notifyPromisesOnComplete() {
         while (promises.peek() != null) {
-            promises.poll().success();
+            promises.poll().complete();
         }
     }
 
     private void notifyPromiseOnError() {
         while (promises.peek() != null) {
-            promises.poll().fail(error);
+            promises.poll().complete(error);
         }
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        if (cancelled.getAndSet(true)) {
-            lock.countDown();
-            return true;
-        }
-        return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled.get();
     }
 
     @Override
@@ -126,46 +116,26 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public Channel await() throws Throwable {
-        try {
-            lock.await();
-            if (error != null) {
-                throw error;
-            }
-            return channel;
-        } catch (InterruptedException ignore) {
-        }
-        return null;
-    }
-
-    @Override
-    public Channel await(long timeout, TimeUnit unit) throws Throwable {
-        if (lock.await(timeout, unit)) {
-            return get();
-        }
-        return null;
-    }
-
-    @Override
-    public Channel get() throws InterruptedException, ExecutionException {
+    public ChannelFuture await() throws Throwable {
         lock.await();
         if (error != null) {
-            throw new ExecutionException(error);
+            throw error;
         }
-        return channel;
+        return this;
     }
 
     @Override
-    public Channel get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public ChannelFuture await(long timeout, TimeUnit unit) throws Throwable {
         if (lock.await(timeout, unit)) {
-            return get();
+            return await();
         }
         throw timeoutException;
     }
 
     @Override
-    public void fail(Throwable error) {
-        if (!done.getAndSet(true)) {
+    public void complete(Throwable error) {
+        boolean wasDone = done.getAndSet(true);
+        if (!wasDone) {
             this.error = error;
             lock.countDown();
             notifyListeners();
@@ -174,7 +144,7 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public void success() {
-        fail(null);
+    public void complete() {
+        complete(null);
     }
 }

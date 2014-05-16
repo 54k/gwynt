@@ -1,8 +1,8 @@
 package io.gwynt.core;
 
-public interface ChannelFutureListener<T extends Channel> {
+public interface ChannelFutureListener {
 
-    void onComplete(T channel);
+    void onComplete(ChannelFuture channelFuture);
 
-    void onError(T channel, Throwable e);
+    void onError(ChannelFuture channelFuture, Throwable e);
 }

@@ -1,8 +1,18 @@
 package io.gwynt.example;
 
-import io.gwynt.core.*;
+import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
+import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.transport.*;
+import io.gwynt.core.transport.Datagram;
+import io.gwynt.core.transport.NioDatagramChannel;
+import io.gwynt.core.transport.NioEventLoopGroup;
+import io.gwynt.core.transport.NioServerSocketChannel;
+import io.gwynt.core.transport.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,14 +86,14 @@ public class Main {
         Channel channel =
                 new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh).connect("localhost", 3000).channel();
 
-        channel.closeFuture().addListener(new ChannelFutureListener<Channel>() {
+        channel.closeFuture().addListener(new ChannelFutureListener() {
             @Override
-            public void onComplete(Channel channel) {
+            public void onComplete(ChannelFuture channelFuture) {
                 System.exit(0);
             }
 
             @Override
-            public void onError(Channel channel, Throwable e) {
+            public void onError(ChannelFuture channelFuture, Throwable e) {
 
             }
         });
@@ -167,14 +177,14 @@ public class Main {
         @Override
         public void onClosing(HandlerContext context, final ChannelPromise channelPromise) {
             logger.info("Closing channel [{}]", context.channel());
-            channelPromise.addListener(new ChannelFutureListener<Channel>() {
+            channelPromise.addListener(new ChannelFutureListener() {
                 @Override
-                public void onComplete(Channel channel) {
-                    logger.info("Closed channel [{}], channelPromise [{}]: ", channelPromise, channel);
+                public void onComplete(ChannelFuture channelFuture) {
+                    logger.info("Closed channel [{}], channelPromise [{}]: ", channelFuture.channel(), channelFuture);
                 }
 
                 @Override
-                public void onError(Channel channel, Throwable e) {
+                public void onError(ChannelFuture channelFuture, Throwable e) {
                 }
             });
             context.fireClosing(channelPromise);
@@ -183,14 +193,14 @@ public class Main {
         @Override
         public void onMessageSent(final HandlerContext context, final Object message, final ChannelPromise channelPromise) {
             logger.info("Sending message [{}] to channel [{}]", message, context.channel());
-            channelPromise.addListener(new ChannelFutureListener<Channel>() {
+            channelPromise.addListener(new ChannelFutureListener() {
                 @Override
-                public void onComplete(Channel channel) {
-                    logger.info("Sent to channel [{}], channelPromise [{}], message [{}] ", channel, channelPromise, message);
+                public void onComplete(ChannelFuture channelFuture) {
+                    logger.info("Sent to channel [{}], channelPromise [{}], message [{}] ", channelFuture.channel(), channelPromise, message);
                 }
 
                 @Override
-                public void onError(Channel channel, Throwable e) {
+                public void onError(ChannelFuture channel, Throwable e) {
 
                 }
             });

@@ -107,54 +107,26 @@ public class EndpointBootstrap implements Endpoint {
 
     @Override
     public ChannelFuture bind(final int port) {
-        ChannelFuture channelFuture = initAndRegisterChannel();
-        channelFuture.addListener(new ChannelFutureListener<Channel>() {
-            @Override
-            public void onComplete(Channel channel) {
-                try {
-                    channel.bind(new InetSocketAddress(port)).await();
-                    latch.countDown();
-                } catch (Throwable ignore) {
-                }
-            }
-
-            @Override
-            public void onError(Channel channel, Throwable e) {
-            }
-        });
-
+        ChannelFuture regFuture = initAndRegisterChannel();
         try {
-            latch.await();
-        } catch (InterruptedException e) {
+            regFuture.await();
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-        return channelFuture;
+
+        return regFuture.channel().bind(new InetSocketAddress(port));
     }
 
     @Override
     public ChannelFuture connect(final String host, final int port) {
-        ChannelFuture channelFuture = initAndRegisterChannel();
-        channelFuture.addListener(new ChannelFutureListener<Channel>() {
-            @Override
-            public void onComplete(Channel channel) {
-                try {
-                    channel.connect(new InetSocketAddress(host, port)).await();
-                    latch.countDown();
-                } catch (Throwable ignore) {
-                }
-            }
-
-            @Override
-            public void onError(Channel channel, Throwable e) {
-            }
-        });
-
+        ChannelFuture regFuture = initAndRegisterChannel();
         try {
-            latch.await();
-        } catch (InterruptedException e) {
+            regFuture.await();
+        } catch (Throwable e) {
             throw new RuntimeException(e);
         }
-        return channelFuture;
+
+        return regFuture.channel().connect(new InetSocketAddress(host, port));
     }
 
     @SuppressWarnings("unchecked")
