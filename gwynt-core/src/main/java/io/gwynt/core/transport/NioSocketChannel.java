@@ -69,10 +69,8 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void closeImpl() {
-            synchronized (registrationLock()) {
-                if (isRegistered()) {
-                    dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_WRITE);
-                }
+            if (isRegistered()) {
+                dispatcher().modifyRegistration(NioSocketChannel.this, SelectionKey.OP_WRITE);
             }
         }
 

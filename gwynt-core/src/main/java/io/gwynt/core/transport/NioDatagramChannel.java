@@ -59,10 +59,8 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected void closeImpl() {
-            synchronized (registrationLock()) {
-                if (isRegistered()) {
-                    dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_WRITE);
-                }
+            if (isRegistered()) {
+                dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_WRITE);
             }
         }
 

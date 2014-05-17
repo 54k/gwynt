@@ -1,11 +1,6 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.DefaultChannelPromise;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.Handler;
+import io.gwynt.core.*;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
@@ -164,10 +159,6 @@ public abstract class AbstractChannel implements Channel {
             this.ch = ch;
         }
 
-        protected Object registrationLock() {
-            return registrationLock;
-        }
-
         protected ChannelPromise closePromise() {
             return closePromise;
         }
@@ -190,7 +181,9 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public ChannelFuture read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
-                readImpl(channelPromise);
+                synchronized (registrationLock) {
+                    readImpl(channelPromise);
+                }
             } else {
                 channelPromise.complete(new ChannelException("Channel is closed"));
             }
@@ -203,7 +196,9 @@ public abstract class AbstractChannel implements Channel {
         public ChannelFuture write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 pendingWrites.add(new Pair<>(message, channelPromise));
-                writeImpl();
+                synchronized (registrationLock) {
+                    writeImpl();
+                }
             } else {
                 channelPromise.complete(new ChannelException("Channel is closed"));
             }
@@ -218,7 +213,9 @@ public abstract class AbstractChannel implements Channel {
         public ChannelFuture close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
-                closeImpl();
+                synchronized (registrationLock) {
+                    closeImpl();
+                }
             }
             closePromise.chainPromise(channelPromise);
             return channelPromise;
@@ -323,11 +320,13 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            pendingClose = true;
-            doCloseImpl();
-            pendingWrites.clear();
-            if (isRegistered()) {
-                unregister();
+            if (!closePromise.isDone()) {
+                pendingClose = true;
+                doCloseImpl();
+                pendingWrites.clear();
+                if (isRegistered()) {
+                    unregister();
+                }
             }
         }
 

@@ -43,19 +43,15 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         protected void writeImpl() {
-            synchronized (registrationLock()) {
-                if (isRegistered()) {
-                    dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
-                }
+            if (isRegistered()) {
+                dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_WRITE);
             }
         }
 
         @Override
         protected void readImpl(ChannelPromise channelPromise) {
-            synchronized (registrationLock()) {
-                if (isRegistered()) {
-                    dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ, channelPromise);
-                }
+            if (isRegistered()) {
+                dispatcher().modifyRegistration(AbstractNioChannel.this, SelectionKey.OP_READ, channelPromise);
             }
         }
 
