@@ -33,20 +33,6 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public SocketAddress getLocalAddress() {
-        try {
-            return ((ServerSocketChannel) unsafe.javaChannel()).getLocalAddress();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public SocketAddress getRemoteAddress() {
-        return null;
-    }
-
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
         private NioServerSocketChannelUnsafe(ServerSocketChannel ch) {
@@ -123,6 +109,11 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         @Override
         protected boolean doWriteImpl(Object message) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalAddress();
         }
     }
 }

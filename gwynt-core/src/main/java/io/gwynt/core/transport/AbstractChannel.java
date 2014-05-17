@@ -28,6 +28,9 @@ public abstract class AbstractChannel implements Channel {
     private volatile Object attachment;
     private volatile Dispatcher dispatcher;
 
+    private SocketAddress localAddress;
+    private SocketAddress remoteAddress;
+
     protected AbstractChannel(Channel parent, Endpoint endpoint) {
         this.parent = parent;
         this.endpoint = endpoint;
@@ -45,12 +48,26 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public SocketAddress getLocalAddress() {
-        return null;
+        if (localAddress == null) {
+            try {
+                return localAddress = unsafe().getRemoteAddress();
+            } catch (Exception ignore) {
+                return null;
+            }
+        }
+        return localAddress;
     }
 
     @Override
     public SocketAddress getRemoteAddress() {
-        return null;
+        if (remoteAddress == null) {
+            try {
+                return remoteAddress = unsafe().getRemoteAddress();
+            } catch (Exception ignore) {
+                return null;
+            }
+        }
+        return remoteAddress;
     }
 
     @Override
@@ -332,5 +349,15 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected abstract void doCloseImpl();
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return null;
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return null;
+        }
     }
 }

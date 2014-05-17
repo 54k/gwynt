@@ -79,5 +79,9 @@ public interface Channel {
         void exceptionCaught(Throwable e);
 
         ChannelFuture closeFuture();
+
+        SocketAddress getLocalAddress() throws Exception;
+
+        SocketAddress getRemoteAddress() throws Exception;
     }
 }

@@ -32,24 +32,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
     }
 
-    @Override
-    public SocketAddress getLocalAddress() {
-        try {
-            return ((DatagramChannel) unsafe.javaChannel()).getLocalAddress();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    @Override
-    public SocketAddress getRemoteAddress() {
-        try {
-            return ((DatagramChannel) unsafe.javaChannel()).getRemoteAddress();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
     private class NioDatagramNioUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
         private NioDatagramNioUnsafe(DatagramChannel ch) {
@@ -148,6 +130,16 @@ public class NioDatagramChannel extends AbstractNioChannel {
             super.doCloseImpl();
             closePromise().complete();
             pipeline().fireClose();
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return javaChannel().getRemoteAddress();
         }
     }
 }

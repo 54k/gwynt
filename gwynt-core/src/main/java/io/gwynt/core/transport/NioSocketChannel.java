@@ -183,5 +183,15 @@ public class NioSocketChannel extends AbstractNioChannel {
             closePromise().complete();
             pipeline().fireClose();
         }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return javaChannel().getRemoteAddress();
+        }
     }
 }
