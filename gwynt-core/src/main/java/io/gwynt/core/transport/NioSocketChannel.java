@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
@@ -75,7 +74,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
             connectFuture.chainPromise(channelPromise);
             try {
                 boolean connected = javaChannel().connect(address);
@@ -84,9 +83,8 @@ public class NioSocketChannel extends AbstractNioChannel {
                 } else {
                     connectFuture.complete();
                 }
-                return channelPromise;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                connectFuture.complete(e);
             }
         }
 
@@ -136,8 +134,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture write(Object message, ChannelPromise channelPromise) {
-            return super.write(ByteBuffer.wrap((byte[]) message), channelPromise);
+        public void write(Object message, ChannelPromise channelPromise) {
+            super.write(ByteBuffer.wrap((byte[]) message), channelPromise);
         }
 
         @Override

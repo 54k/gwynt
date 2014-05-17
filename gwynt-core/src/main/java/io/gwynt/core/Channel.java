@@ -54,15 +54,15 @@ public interface Channel {
 
         T javaChannel();
 
-        ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise);
+        void bind(InetSocketAddress address, ChannelPromise channelPromise);
 
-        ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise);
+        void connect(InetSocketAddress address, ChannelPromise channelPromise);
 
-        ChannelFuture read(ChannelPromise channelPromise);
+        void read(ChannelPromise channelPromise);
 
-        ChannelFuture write(Object message, ChannelPromise channelPromise);
+        void write(Object message, ChannelPromise channelPromise);
 
-        ChannelFuture close(ChannelPromise channelFuture);
+        void close(ChannelPromise channelFuture);
 
         void doRegister(Dispatcher dispatcher);
 

@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.ChannelException;
@@ -65,24 +64,22 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
+        public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
                 channelPromise.complete();
                 pipeline().fireOpen();
-                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().connect(address);
                 channelPromise.complete();
                 pipeline().fireOpen();
-                return channelPromise;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

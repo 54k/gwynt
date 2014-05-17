@@ -95,12 +95,16 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelFuture bind(InetSocketAddress address) {
-        return unsafe().bind(address, newChannelPromise());
+        ChannelPromise channelPromise = newChannelPromise();
+        unsafe().bind(address, channelPromise);
+        return channelPromise;
     }
 
     @Override
     public ChannelFuture connect(InetSocketAddress address) {
-        return unsafe().connect(address, newChannelPromise());
+        ChannelPromise channelPromise = newChannelPromise();
+        unsafe().connect(address, channelPromise);
+        return channelPromise;
     }
 
     @Override
@@ -169,17 +173,17 @@ public abstract class AbstractChannel implements Channel {
         }
 
         @Override
-        public ChannelFuture bind(InetSocketAddress address, ChannelPromise channelPromise) {
+        public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ChannelFuture connect(InetSocketAddress address, ChannelPromise channelPromise) {
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public ChannelFuture read(ChannelPromise channelPromise) {
+        public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 synchronized (registrationLock) {
                     readImpl(channelPromise);
@@ -187,13 +191,12 @@ public abstract class AbstractChannel implements Channel {
             } else {
                 channelPromise.complete(new ChannelException("Channel is closed"));
             }
-            return channelPromise;
         }
 
         protected abstract void readImpl(ChannelPromise channelPromise);
 
         @Override
-        public ChannelFuture write(Object message, ChannelPromise channelPromise) {
+        public void write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 pendingWrites.add(new Pair<>(message, channelPromise));
                 synchronized (registrationLock) {
@@ -202,7 +205,6 @@ public abstract class AbstractChannel implements Channel {
             } else {
                 channelPromise.complete(new ChannelException("Channel is closed"));
             }
-            return channelPromise;
         }
 
         protected abstract void writeImpl();
@@ -210,7 +212,7 @@ public abstract class AbstractChannel implements Channel {
         protected abstract boolean isActive();
 
         @Override
-        public ChannelFuture close(ChannelPromise channelPromise) {
+        public void close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
                 synchronized (registrationLock) {
@@ -218,7 +220,6 @@ public abstract class AbstractChannel implements Channel {
                 }
             }
             closePromise.chainPromise(channelPromise);
-            return channelPromise;
         }
 
         protected abstract void closeImpl();
