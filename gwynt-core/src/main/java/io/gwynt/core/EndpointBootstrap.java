@@ -11,7 +11,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 public class EndpointBootstrap implements Endpoint {
 
@@ -20,7 +19,6 @@ public class EndpointBootstrap implements Endpoint {
     protected ChannelFactory channelFactory = new DefaultChannelFactory();
     protected EventScheduler eventScheduler = new SingleThreadedEventScheduler();
     protected Class<? extends Channel> channelClazz;
-    protected CountDownLatch latch = new CountDownLatch(1);
 
     @Override
     public Endpoint addHandler(Handler handler) {
@@ -123,7 +121,7 @@ public class EndpointBootstrap implements Endpoint {
     private ChannelFuture initAndRegisterChannel() {
         startEventLoop();
         Channel channel = channelFactory.createChannel(channelClazz);
-        return eventLoop.register(channel);
+        return channel.register(eventLoop);
     }
 
     private void startEventLoop() {
