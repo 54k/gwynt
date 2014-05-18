@@ -12,11 +12,7 @@ public interface Dispatcher {
 
     ChannelFuture unregister(Channel channel);
 
-    ChannelFuture modifyRegistration(Channel channel, int interestOps);
-
     ChannelFuture register(Channel channel, ChannelPromise channelPromise);
 
     ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
-
-    ChannelFuture modifyRegistration(Channel channel, int interestOps, ChannelPromise channelPromise);
 }

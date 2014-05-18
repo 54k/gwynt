@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.*;
-import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -14,13 +13,8 @@ import java.util.List;
 
 public class NioServerSocketChannel extends AbstractNioChannel {
 
-    public NioServerSocketChannel(Endpoint endpoint) {
-        super(endpoint);
-        try {
-            unsafe = new NioServerSocketChannelUnsafe(ServerSocketChannel.open());
-        } catch (IOException e) {
-            throw new ChannelException(e);
-        }
+    public NioServerSocketChannel(Endpoint endpoint) throws IOException {
+        super(endpoint, ServerSocketChannel.open());
     }
 
     @Override
@@ -33,14 +27,15 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    protected Unsafe newUnsafe() {
+        return new NioServerSocketChannelUnsafe();
+    }
+
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
-        private NioServerSocketChannelUnsafe(ServerSocketChannel ch) {
-            super(ch);
-        }
-
         @Override
-        protected void closeImpl() {
+        protected void closeRequested() {
             // NO OP
         }
 
@@ -74,21 +69,11 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
-                dispatcher().modifyRegistration(NioServerSocketChannel.this, SelectionKey.OP_ACCEPT);
+                interestOps(SelectionKey.OP_ACCEPT);
                 channelPromise.complete();
             } catch (IOException e) {
                 channelPromise.complete(e);
             }
-        }
-
-        @Override
-        protected void doAfterUnregister() {
-            // NO OP
-        }
-
-        @Override
-        protected void doAfterRegister() {
-            // NO OP
         }
 
         @Override
@@ -102,12 +87,12 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doReadImpl(List<Object> messages) {
+        protected void doReadMessages(List<Object> messages) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected boolean doWriteImpl(Object message) {
+        protected boolean writeMessage(Object message) {
             throw new UnsupportedOperationException();
         }
 

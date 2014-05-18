@@ -3,7 +3,6 @@ package io.gwynt.core.transport;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
-import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
 import io.gwynt.core.util.Pair;
@@ -19,29 +18,25 @@ import java.util.List;
 public class NioDatagramChannel extends AbstractNioChannel {
 
     @SuppressWarnings("unused")
-    public NioDatagramChannel(Endpoint endpoint) {
+    public NioDatagramChannel(Endpoint endpoint) throws IOException {
         this(null, endpoint);
     }
 
-    public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) {
-        super(parent, endpoint);
-        try {
-            unsafe = new NioDatagramNioUnsafe(DatagramChannel.open());
-        } catch (IOException e) {
-            throw new ChannelException(e);
-        }
+    public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) throws IOException {
+        super(parent, endpoint, DatagramChannel.open());
     }
 
-    private class NioDatagramNioUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    @Override
+    protected Unsafe newUnsafe() {
+        return new NioDatagramChannelUnsafe();
+    }
 
-        private NioDatagramNioUnsafe(DatagramChannel ch) {
-            super(ch);
-        }
+    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
         @Override
-        protected void closeImpl() {
+        protected void closeRequested() {
             if (isRegistered()) {
-                dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_WRITE);
+                interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         }
 
@@ -69,13 +64,8 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected void doAfterRegister() {
-            pipeline().fireRegistered();
-            dispatcher().modifyRegistration(NioDatagramChannel.this, SelectionKey.OP_READ);
-        }
-
-        @Override
-        protected void doAfterUnregister() {
-            pipeline().fireUnregistered();
+            super.doAfterRegister();
+            interestOps(interestOps() | SelectionKey.OP_READ);
         }
 
         @Override
@@ -84,7 +74,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doReadImpl(List<Object> messages) {
+        protected void doReadMessages(List<Object> messages) {
             ByteBuffer buffer = ByteBufferAllocator.allocate(150000);
             SocketAddress address;
 
@@ -106,7 +96,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean doWriteImpl(Object message) {
+        protected boolean writeMessage(Object message) {
             int bytesWritten;
             Datagram datagram = (Datagram) message;
             ByteBuffer src = datagram.getMessage();

@@ -3,6 +3,7 @@ package io.gwynt.core.transport;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
 import org.slf4j.Logger;
@@ -85,20 +86,14 @@ public class NioEventLoop implements Dispatcher {
     }
 
     @Override
-    public ChannelFuture modifyRegistration(Channel channel, int interestOps) {
-        return modifyRegistration(channel, interestOps, channel.newChannelPromise());
-    }
-
-    @Override
     public ChannelFuture register(final Channel channel, final ChannelPromise channelPromise) {
         addTask(new Runnable() {
             @Override
             public void run() {
                 try {
-                    ((SelectableChannel) channel.unsafe().javaChannel()).register(selector, 0, channel);
-                    channel.unsafe().doRegister(NioEventLoop.this);
+                    channel.unsafe().register(NioEventLoop.this);
                     channelPromise.complete();
-                } catch (IOException e) {
+                } catch (ChannelException e) {
                     channelPromise.complete(e);
                 }
             }
@@ -118,27 +113,8 @@ public class NioEventLoop implements Dispatcher {
             public void run() {
                 key.cancel();
                 key.attach(null);
-                channel.unsafe().doUnregister();
+                channel.unsafe().unregister();
                 channelPromise.complete();
-            }
-        });
-        return channelPromise;
-    }
-
-    @Override
-    public ChannelFuture modifyRegistration(final Channel channel, final int interestOps, final ChannelPromise channelPromise) {
-        if ((interestOps & ~((SelectableChannel) channel.unsafe().javaChannel()).validOps()) != 0) {
-            throw new IllegalArgumentException("interestOps are not valid");
-        }
-
-        addTask(new Runnable() {
-            @Override
-            public void run() {
-                SelectionKey key = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
-                if (key != null && key.isValid()) {
-                    key.interestOps(key.interestOps() | interestOps);
-                    channelPromise.complete();
-                }
             }
         });
         return channelPromise;

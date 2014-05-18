@@ -64,9 +64,9 @@ public interface Channel {
 
         void close(ChannelPromise channelFuture);
 
-        void doRegister(Dispatcher dispatcher);
+        void register(Dispatcher dispatcher);
 
-        void doUnregister();
+        void unregister();
 
         void doAccept() throws IOException;
 

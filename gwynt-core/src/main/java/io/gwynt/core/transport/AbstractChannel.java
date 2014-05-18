@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.*;
-import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
@@ -11,7 +10,7 @@ import io.gwynt.core.util.Pair;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -20,6 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public abstract class AbstractChannel implements Channel {
 
     protected static final ChannelPromise VOID_PROMISE = new DefaultChannelPromise(null);
+    protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     private final Endpoint endpoint;
     private final DefaultPipeline pipeline;
@@ -28,17 +28,21 @@ public abstract class AbstractChannel implements Channel {
     private volatile Object attachment;
     private volatile Dispatcher dispatcher;
 
+    private Object ch;
+    private Unsafe unsafe;
     private SocketAddress localAddress;
     private SocketAddress remoteAddress;
 
-    protected AbstractChannel(Channel parent, Endpoint endpoint) {
+    protected AbstractChannel(Channel parent, Endpoint endpoint, Object ch) {
         this.parent = parent;
         this.endpoint = endpoint;
+        this.ch = ch;
 
         pipeline = new DefaultPipeline(this);
         for (Handler handler : endpoint.getHandlers()) {
             pipeline.addLast(handler);
         }
+        unsafe = newUnsafe();
     }
 
     @Override
@@ -50,7 +54,7 @@ public abstract class AbstractChannel implements Channel {
     public SocketAddress getLocalAddress() {
         if (localAddress == null) {
             try {
-                return localAddress = unsafe().getRemoteAddress();
+                return localAddress = unsafe().getLocalAddress();
             } catch (Exception ignore) {
                 return null;
             }
@@ -166,6 +170,13 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract boolean isDispatcherCompatible(Dispatcher dispatcher);
 
+    @Override
+    public Unsafe unsafe() {
+        return unsafe;
+    }
+
+    protected abstract Unsafe newUnsafe();
+
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
         private final Object registrationLock = new Object();
@@ -174,19 +185,15 @@ public abstract class AbstractChannel implements Channel {
 
         private volatile boolean pendingClose;
         private Queue<Pair<Object, ChannelPromise>> pendingWrites = new ConcurrentLinkedQueue<>();
-        private T ch;
-
-        protected AbstractUnsafe(T ch) {
-            this.ch = ch;
-        }
 
         protected ChannelPromise closePromise() {
             return closePromise;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public T javaChannel() {
-            return ch;
+            return (T) ch;
         }
 
         @Override
@@ -203,28 +210,28 @@ public abstract class AbstractChannel implements Channel {
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 synchronized (registrationLock) {
-                    readImpl(channelPromise);
+                    readRequested(channelPromise);
                 }
             } else {
-                channelPromise.complete(new ChannelException("Channel is closed"));
+                channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
-        protected abstract void readImpl(ChannelPromise channelPromise);
+        protected abstract void readRequested(ChannelPromise channelPromise);
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 pendingWrites.add(new Pair<>(message, channelPromise));
                 synchronized (registrationLock) {
-                    writeImpl();
+                    writeRequested();
                 }
             } else {
-                channelPromise.complete(new ChannelException("Channel is closed"));
+                channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
-        protected abstract void writeImpl();
+        protected abstract void writeRequested();
 
         protected abstract boolean isActive();
 
@@ -233,29 +240,31 @@ public abstract class AbstractChannel implements Channel {
             if (!pendingClose) {
                 pendingClose = true;
                 synchronized (registrationLock) {
-                    closeImpl();
+                    closeRequested();
                 }
             }
             closePromise.chainPromise(channelPromise);
         }
 
-        protected abstract void closeImpl();
+        protected abstract void closeRequested();
 
         @Override
-        public void doRegister(Dispatcher dispatcher) {
+        public void register(Dispatcher dispatcher) {
             synchronized (registrationLock) {
                 AbstractChannel.this.dispatcher = dispatcher;
                 doAfterRegister();
+                pipeline.fireRegistered();
             }
         }
 
         protected abstract void doAfterRegister();
 
         @Override
-        public void doUnregister() {
+        public void unregister() {
             synchronized (registrationLock) {
                 AbstractChannel.this.dispatcher = null;
                 doAfterUnregister();
+                pipeline.fireUnregistered();
             }
         }
 
@@ -276,7 +285,7 @@ public abstract class AbstractChannel implements Channel {
         public void doRead() throws IOException {
             boolean shouldClose = pendingClose;
             try {
-                doReadImpl(messages);
+                doReadMessages(messages);
             } catch (EofException e) {
                 shouldClose = true;
             }
@@ -291,26 +300,22 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void doReadImpl(List<Object> messages);
+        protected abstract void doReadMessages(List<Object> messages);
 
         @Override
         public void doWrite() throws IOException {
             boolean shouldClose = pendingClose;
-            Pair<Object, ChannelPromise> message = pendingWrites.peek();
-            if (message != null) {
-                try {
-                    if (doWriteImpl(message.getFirst())) {
-                        pendingWrites.poll();
-                        message.getSecond().complete();
-                    }
-
+            try {
+                if (!pendingWrites.isEmpty()) {
+                    writeMessages(pendingWrites);
                     if (!pendingWrites.isEmpty()) {
                         shouldClose = false;
-                        dispatcher().modifyRegistration(AbstractChannel.this, SelectionKey.OP_WRITE);
                     }
-                } catch (EofException e) {
-                    shouldClose = true;
-                    message.getSecond().complete(e);
+                }
+            } catch (EofException e) {
+                shouldClose = true;
+                while (pendingWrites.peek() != null) {
+                    pendingWrites.poll().getSecond().complete(e);
                 }
             }
 
@@ -319,7 +324,8 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract boolean doWriteImpl(Object message);
+        protected abstract void writeMessages(Queue<Pair<Object, ChannelPromise>> messages);
+
 
         @Override
         public void doConnect() throws IOException {
@@ -343,7 +349,7 @@ public abstract class AbstractChannel implements Channel {
                 doCloseImpl();
                 pendingWrites.clear();
                 if (isRegistered()) {
-                    unregister();
+                    this.unregister();
                 }
             }
         }
