@@ -40,15 +40,15 @@ public class GwyntSimpleServer implements Runnable {
                 byte[] messageBytes = new byte[buffer.limit()];
                 buffer.get(messageBytes);
                 buffer.clear();
-                context.fireMessageSent(messageBytes, channelPromise);
+                context.write(messageBytes, channelPromise);
             }
         });
         endpoint.addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
-                context.fireMessageSent("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
-                context.fireMessageSent(new Date().toString() + "\r\n");
-                context.fireClosing();
+                context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
+                context.write(new Date().toString() + "\r\n");
+                context.close();
             }
         });
 

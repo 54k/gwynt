@@ -39,12 +39,12 @@ public abstract class AbstractHandler<I, O> implements Handler<I, O> {
 
     @Override
     public void onMessageSent(HandlerContext context, O message, ChannelPromise channelPromise) {
-        context.fireMessageSent(message, channelPromise);
+        context.write(message, channelPromise);
     }
 
     @Override
     public void onClosing(HandlerContext context, ChannelPromise channelPromise) {
-        context.fireClosing(channelPromise);
+        context.close(channelPromise);
     }
 
     @Override

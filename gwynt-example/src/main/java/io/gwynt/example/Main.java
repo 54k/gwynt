@@ -38,13 +38,13 @@ public class Main {
         //
         //                    @Override
         //                    public void onOpen(HandlerContext context) {
-        //                        context.fireMessageSent("echo echo echo");
+        //                        context.write("echo echo echo");
         //                    }
         //
         //                    @Override
         //                    public void onMessageReceived(HandlerContext context, String message) {
-        //                        context.fireMessageSent(message);
-        //                        context.fireClosing();
+        //                        context.write(message);
+        //                        context.close();
         //                    }
         //
         //                    @Override
@@ -60,7 +60,7 @@ public class Main {
         //                .addHandler(new AbstractHandler() {
         //                    @Override
         //                    public void onMessageReceived(HandlerContext context, Object message) {
-        //                        context.fireMessageSent(message);
+        //                        context.write(message);
         //                    }
         //                }).bind(3001).await();
         //
@@ -68,13 +68,13 @@ public class Main {
         //                .addHandler(new AbstractHandler() {
         //                    @Override
         //                    public void onOpen(HandlerContext context) {
-        //                        context.fireMessageSent(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
+        //                        context.write(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
         //                    }
         //
         //                    @Override
         //                    public void onMessageReceived(HandlerContext context, Object message) {
-        //                        context.fireMessageSent(message);
-        //                        context.fireClosing();
+        //                        context.write(message);
+        //                        context.close();
         //                    }
         //                }).connect("localhost", 3001).await();
         //
@@ -122,7 +122,7 @@ public class Main {
             byte[] messageBytes = new byte[buffer.limit()];
             buffer.get(messageBytes);
             buffer.clear();
-            context.fireMessageSent(messageBytes, channelPromise);
+            context.write(messageBytes, channelPromise);
         }
     }
 
@@ -132,10 +132,10 @@ public class Main {
 
         @Override
         public void onMessageReceived(HandlerContext context, String message) {
-            context.fireMessageSent("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
-            context.fireMessageSent(new Date().toString() + "\r\n");
+            context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
+            context.write(new Date().toString() + "\r\n");
             if (context.channel() instanceof NioSocketChannel) {
-                context.fireClosing();
+                context.close();
             }
         }
 
@@ -150,10 +150,10 @@ public class Main {
         @Override
         public void onMessageReceived(HandlerContext context, String message) {
             if ("exit\r\n".equals(message)) {
-                context.fireClosing();
+                context.close();
                 return;
             }
-            context.fireMessageSent(message);
+            context.write(message);
         }
     }
 
@@ -187,7 +187,7 @@ public class Main {
                 public void onError(ChannelFuture channelFuture, Throwable e) {
                 }
             });
-            context.fireClosing(channelPromise);
+            context.close(channelPromise);
         }
 
         @Override
@@ -204,7 +204,7 @@ public class Main {
 
                 }
             });
-            context.fireMessageSent(message, channelPromise);
+            context.write(message, channelPromise);
         }
 
         @Override

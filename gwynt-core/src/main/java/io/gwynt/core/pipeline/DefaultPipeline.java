@@ -58,11 +58,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     public void fireMessageSent(Object message, ChannelPromise channelPromise) {
-        tail.fireMessageSent(message, channelPromise);
+        tail.write(message, channelPromise);
     }
 
     public void fireClosing(ChannelPromise channelPromise) {
-        tail.fireClosing(channelPromise);
+        tail.close(channelPromise);
     }
 
     public void fireClose() {

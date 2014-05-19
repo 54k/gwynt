@@ -110,23 +110,23 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public void fireMessageSent(Object message) {
-        fireMessageSent(message, channel.newChannelPromise());
+    public void write(Object message) {
+        write(message, channel.newChannelPromise());
     }
 
     @Override
-    public void fireMessageSent(Object message, ChannelPromise channelPromise) {
+    public void write(Object message, ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnMessageSent(prev, message, channelPromise);
     }
 
     @Override
-    public void fireClosing() {
-        fireClosing(channel.newChannelPromise());
+    public void close() {
+        close(channel.newChannelPromise());
     }
 
     @Override
-    public void fireClosing(ChannelPromise channelPromise) {
+    public void close(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnClosing(prev, channelPromise);
     }

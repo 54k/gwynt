@@ -24,13 +24,13 @@ public interface HandlerContext {
 
     void fireMessageReceived(Object message);
 
-    void fireMessageSent(Object message);
+    void write(Object message);
 
-    void fireMessageSent(Object message, ChannelPromise channelPromise);
+    void write(Object message, ChannelPromise channelPromise);
 
-    void fireClosing();
+    void close();
 
-    void fireClosing(ChannelPromise channelPromise);
+    void close(ChannelPromise channelPromise);
 
     void fireClose();
 
