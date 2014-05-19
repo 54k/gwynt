@@ -18,9 +18,9 @@ public interface HandlerContext {
 
     void fireOpen();
 
-    void fireRead();
+    void read();
 
-    void fireRead(ChannelPromise channelPromise);
+    void read(ChannelPromise channelPromise);
 
     void fireMessageReceived(Object message);
 

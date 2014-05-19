@@ -93,12 +93,12 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public void fireRead() {
-        fireRead(channel.newChannelPromise());
+    public void read() {
+        read(channel.newChannelPromise());
     }
 
     @Override
-    public void fireRead(ChannelPromise channelPromise) {
+    public void read(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnRead(prev, channelPromise);
     }

@@ -54,7 +54,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     public void fireRead(ChannelPromise channelPromise) {
-        tail.fireRead(channelPromise);
+        tail.read(channelPromise);
     }
 
     public void fireMessageSent(Object message, ChannelPromise channelPromise) {

@@ -29,7 +29,7 @@ public abstract class AbstractHandler<I, O> implements Handler<I, O> {
 
     @Override
     public void onRead(HandlerContext context, ChannelPromise channelPromise) {
-        context.fireRead(channelPromise);
+        context.read(channelPromise);
     }
 
     @Override
