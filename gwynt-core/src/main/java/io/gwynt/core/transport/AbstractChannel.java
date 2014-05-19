@@ -1,6 +1,11 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.*;
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.DefaultChannelPromise;
+import io.gwynt.core.Endpoint;
+import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
@@ -186,10 +191,6 @@ public abstract class AbstractChannel implements Channel {
         private volatile boolean pendingClose;
         private Queue<Pair<Object, ChannelPromise>> pendingWrites = new ConcurrentLinkedQueue<>();
 
-        protected ChannelPromise closePromise() {
-            return closePromise;
-        }
-
         @SuppressWarnings("unchecked")
         @Override
         public T javaChannel() {
@@ -273,13 +274,13 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void doAccept() throws IOException {
             List<Pair<Channel, ChannelPromise>> channels = new ArrayList<>();
-            doAcceptImpl(channels);
+            doAcceptChannels(channels);
             for (Pair<Channel, ChannelPromise> pair : channels) {
                 dispatcher().next().register(pair.getFirst(), pair.getSecond());
             }
         }
 
-        protected abstract void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels);
+        protected abstract void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels);
 
         @Override
         public void doRead() throws IOException {
@@ -307,7 +308,7 @@ public abstract class AbstractChannel implements Channel {
             boolean shouldClose = pendingClose;
             try {
                 if (!pendingWrites.isEmpty()) {
-                    writeMessages(pendingWrites);
+                    doWriteMessages(pendingWrites);
                     if (!pendingWrites.isEmpty()) {
                         shouldClose = false;
                     }
@@ -324,8 +325,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void writeMessages(Queue<Pair<Object, ChannelPromise>> messages);
-
+        protected abstract void doWriteMessages(Queue<Pair<Object, ChannelPromise>> messages);
 
         @Override
         public void doConnect() throws IOException {
@@ -344,17 +344,21 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            if (!closePromise.isDone()) {
+            if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
-                doCloseImpl();
+                doCloseChannel();
                 pendingWrites.clear();
+                closePromise.complete();
+                if (!isActive()) {
+                    pipeline.fireClose();
+                }
                 if (isRegistered()) {
-                    this.unregister();
+                    unregister();
                 }
             }
         }
 
-        protected abstract void doCloseImpl();
+        protected abstract void doCloseChannel();
 
         @Override
         public SocketAddress getLocalAddress() throws Exception {

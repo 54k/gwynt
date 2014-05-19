@@ -1,6 +1,10 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.*;
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
+import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.Endpoint;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -40,7 +44,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
+        protected void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels) {
             SocketChannel ch;
             try {
                 ch = javaChannel().accept();
@@ -92,7 +96,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean writeMessage(Object message) {
+        protected boolean doWriteMessage(Object message) {
             throw new UnsupportedOperationException();
         }
 

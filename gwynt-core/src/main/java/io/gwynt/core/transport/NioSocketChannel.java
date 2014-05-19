@@ -67,7 +67,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
+        protected void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 
@@ -104,7 +104,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean writeMessage(Object message) {
+        protected boolean doWriteMessage(Object message) {
             int bytesWritten;
             ByteBuffer src = (ByteBuffer) message;
             do {
@@ -132,7 +132,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     pipeline().fireOpen();
                 }
             } else {
-                doCloseImpl();
+                doCloseChannel();
                 throw new ChannelException("Connection failed");
             }
         }
@@ -140,13 +140,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected boolean isActive() {
             return javaChannel().isOpen() && javaChannel().isConnected();
-        }
-
-        @Override
-        protected void doCloseImpl() {
-            super.doCloseImpl();
-            closePromise().complete();
-            pipeline().fireClose();
         }
 
         @Override

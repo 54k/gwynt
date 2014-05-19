@@ -69,7 +69,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAcceptImpl(List<Pair<Channel, ChannelPromise>> channels) {
+        protected void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels) {
             throw new UnsupportedOperationException();
         }
 
@@ -96,7 +96,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean writeMessage(Object message) {
+        protected boolean doWriteMessage(Object message) {
             int bytesWritten;
             Datagram datagram = (Datagram) message;
             ByteBuffer src = datagram.getMessage();
@@ -113,13 +113,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
             }
 
             return !src.hasRemaining();
-        }
-
-        @Override
-        protected void doCloseImpl() {
-            super.doCloseImpl();
-            closePromise().complete();
-            pipeline().fireClose();
         }
 
         @Override

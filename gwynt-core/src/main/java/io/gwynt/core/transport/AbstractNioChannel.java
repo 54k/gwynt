@@ -52,9 +52,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void writeMessages(Queue<Pair<Object, ChannelPromise>> messages) {
+        protected void doWriteMessages(Queue<Pair<Object, ChannelPromise>> messages) {
             Pair<Object, ChannelPromise> message = messages.peek();
-            if (writeMessage(message.getFirst())) {
+            if (doWriteMessage(message.getFirst())) {
                 messages.poll();
                 message.getSecond().complete();
             }
@@ -64,7 +64,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
-        protected abstract boolean writeMessage(Object message);
+        protected abstract boolean doWriteMessage(Object message);
 
         @Override
         protected void doAfterRegister() {
@@ -88,7 +88,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doCloseImpl() {
+        protected void doCloseChannel() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {
