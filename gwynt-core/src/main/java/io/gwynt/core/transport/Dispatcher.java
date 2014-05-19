@@ -6,6 +6,8 @@ import io.gwynt.core.ChannelPromise;
 
 public interface Dispatcher {
 
+    Dispatcher parent();
+
     Dispatcher next();
 
     ChannelFuture register(Channel channel);

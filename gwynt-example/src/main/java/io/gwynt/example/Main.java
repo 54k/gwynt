@@ -34,7 +34,9 @@ public class Main {
         NioEventLoopGroup dispatcher = new NioEventLoopGroup();
         dispatcher.runThread();
 
-        Endpoint tcpEndpoint = new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
+        Endpoint tcpEndpoint =
+                new EndpointBootstrap().setDispatcher(dispatcher).setScheduler(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh)
+                        .addHandler(eh);
         tcpEndpoint.bind(3000).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
@@ -58,8 +60,8 @@ public class Main {
                     }
                 }).connect("localhost", 3000).await();
 
-        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(lh)
-                .addHandler(mh).bind(3001).await();
+        new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioServerSocketChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(sc).addHandler(mh)
+                .bind(3001).await();
 
         new EndpointBootstrap().setDispatcher(dispatcher).setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh)
                 .addHandler(new AbstractHandler() {

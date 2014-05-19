@@ -225,7 +225,9 @@ public abstract class AbstractChannel implements Channel {
             if (!pendingClose && isActive()) {
                 pendingWrites.add(new Pair<>(message, channelPromise));
                 synchronized (registrationLock) {
-                    writeRequested();
+                    if (isRegistered()) {
+                        writeRequested();
+                    }
                 }
             } else {
                 channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
@@ -241,7 +243,9 @@ public abstract class AbstractChannel implements Channel {
             if (!pendingClose) {
                 pendingClose = true;
                 synchronized (registrationLock) {
-                    closeRequested();
+                    if (isRegistered()) {
+                        closeRequested();
+                    }
                 }
             }
             closePromise.chainPromise(channelPromise);

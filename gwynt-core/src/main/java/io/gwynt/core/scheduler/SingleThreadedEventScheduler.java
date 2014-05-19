@@ -13,7 +13,7 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(EventScheduler.class);
 
-    private Thread schedulerThread;
+    private Thread thread;
 
     private AtomicBoolean running = new AtomicBoolean(false);
     private CountDownLatch shutdownLock = new CountDownLatch(1);
@@ -25,7 +25,7 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
         if (!running.get()) {
             throw new IllegalStateException("Scheduler is not running");
         }
-        return schedulerThread == Thread.currentThread();
+        return thread == Thread.currentThread();
     }
 
     @Override
@@ -65,7 +65,7 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
         Thread thread = new Thread(this);
         thread.setName("gwynt-scheduler");
         thread.start();
-        schedulerThread = thread;
+        this.thread = thread;
         try {
             shutdownLock.await();
         } catch (InterruptedException e) {
@@ -80,14 +80,14 @@ public class SingleThreadedEventScheduler implements EventScheduler, Runnable {
             return;
         }
         running.set(false);
-        if (schedulerThread.getState() == State.WAITING) {
-            schedulerThread.interrupt();
+        if (thread.getState() == State.WAITING) {
+            thread.interrupt();
         }
         try {
             shutdownLock.await();
         } catch (InterruptedException e) {
             // ignore
         }
-        schedulerThread = null;
+        thread = null;
     }
 }

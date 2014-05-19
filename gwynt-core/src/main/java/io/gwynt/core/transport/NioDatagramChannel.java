@@ -35,9 +35,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected void closeRequested() {
-            if (isRegistered()) {
-                interestOps(interestOps() | SelectionKey.OP_WRITE);
-            }
+            interestOps(interestOps() | SelectionKey.OP_WRITE);
         }
 
         @Override

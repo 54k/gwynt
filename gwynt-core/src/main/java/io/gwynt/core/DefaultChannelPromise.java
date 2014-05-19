@@ -111,13 +111,33 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private void notifyPromisesOnComplete() {
         while (promises.peek() != null) {
-            promises.poll().complete();
+            final ChannelPromise promise = promises.poll();
+            if (channel.scheduler().inSchedulerThread()) {
+                promise.complete();
+            } else {
+                channel.scheduler().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        promise.complete();
+                    }
+                });
+            }
         }
     }
 
     private void notifyPromiseOnError() {
         while (promises.peek() != null) {
-            promises.poll().complete(error);
+            final ChannelPromise promise = promises.poll();
+            if (channel.scheduler().inSchedulerThread()) {
+                promise.complete(error);
+            } else {
+                channel.scheduler().schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        promise.complete(error);
+                    }
+                });
+            }
         }
     }
 

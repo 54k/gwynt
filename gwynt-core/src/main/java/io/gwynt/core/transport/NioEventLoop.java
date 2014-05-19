@@ -6,6 +6,7 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.exception.RegistrationException;
+import io.gwynt.core.scheduler.EventScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,26 +21,34 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
-public class NioEventLoop implements Dispatcher {
+public class NioEventLoop implements Dispatcher, EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
 
     Selector selector;
 
+    private NioEventLoop parent;
+
+    private Thread thread;
     private volatile boolean running;
     private CountDownLatch shutdownLock = new CountDownLatch(1);
+
     private Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {
-        this(SelectorProvider.provider());
+        this(null);
     }
 
-    public NioEventLoop(SelectorProvider selectorProvider) {
+    public NioEventLoop(NioEventLoop parent) {
+        this(parent, SelectorProvider.provider());
+    }
+
+    public NioEventLoop(NioEventLoop parent, SelectorProvider selectorProvider) {
         if (selectorProvider == null) {
             throw new IllegalArgumentException("selectorProvider");
         }
-
+        this.parent = parent == null ? this : parent;
         this.selectorProvider = selectorProvider;
         openSelector();
     }
@@ -68,6 +77,11 @@ public class NioEventLoop implements Dispatcher {
         } catch (IOException e) {
             throw new DispatcherStartupException(e);
         }
+    }
+
+    @Override
+    public Dispatcher parent() {
+        return parent;
     }
 
     @Override
@@ -103,16 +117,16 @@ public class NioEventLoop implements Dispatcher {
 
     @Override
     public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
-        final SelectionKey key = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
-        if (key == null) {
+        final SelectionKey selectionKey = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
+        if (selectionKey == null) {
             throw new RegistrationException("unregistered unsafe");
         }
 
         addTask(new Runnable() {
             @Override
             public void run() {
-                key.cancel();
-                key.attach(null);
+                selectionKey.cancel();
+                selectionKey.attach(null);
                 channel.unsafe().unregister();
                 channelPromise.complete();
             }
@@ -137,12 +151,13 @@ public class NioEventLoop implements Dispatcher {
 
     public void runThread() {
         if (running) {
-            throw new IllegalStateException("thread already started");
+            return;
         }
 
         running = true;
         Thread workerThread = new SelectorLoopThread();
         workerThread.start();
+        thread = workerThread;
         try {
             shutdownLock.await();
         } catch (InterruptedException e) {
@@ -152,7 +167,7 @@ public class NioEventLoop implements Dispatcher {
 
     public void shutdownThread() {
         if (!running) {
-            throw new IllegalStateException("thread already stopped");
+            return;
         }
 
         running = false;
@@ -162,6 +177,17 @@ public class NioEventLoop implements Dispatcher {
         } catch (InterruptedException e) {
             // ignore
         }
+        thread = null;
+    }
+
+    @Override
+    public boolean inSchedulerThread() {
+        return parent.thread == Thread.currentThread();
+    }
+
+    @Override
+    public void schedule(Runnable task) {
+        parent.addTask(task);
     }
 
     private class SelectorLoopThread extends Thread {

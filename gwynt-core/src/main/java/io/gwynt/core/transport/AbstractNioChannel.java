@@ -6,6 +6,7 @@ import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -97,7 +98,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         protected int interestOps() {
             checkRegistered();
-            return selectionKey.interestOps();
+            try {
+                return selectionKey.interestOps();
+            } catch (CancelledKeyException ignore) {
+            }
+            return 0;
         }
 
         protected void interestOps(int interestOps) {
@@ -105,8 +110,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             if ((interestOps & ~javaChannel().validOps()) != 0) {
                 throw new IllegalArgumentException("interestOps are not valid");
             }
-            selectionKey.interestOps(interestOps);
-            selector.wakeup();
+            try {
+                selectionKey.interestOps(interestOps);
+                selector.wakeup();
+            } catch (CancelledKeyException ignore) {
+            }
         }
 
         private void checkRegistered() {

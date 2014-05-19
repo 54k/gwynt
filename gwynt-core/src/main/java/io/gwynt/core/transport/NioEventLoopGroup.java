@@ -30,7 +30,7 @@ public class NioEventLoopGroup extends NioEventLoop {
 
     private void spawnWorkers(int count) {
         for (int i = 0; i < count; i++) {
-            NioEventLoop worker = new NioEventLoop();
+            NioEventLoop worker = new NioEventLoop(this);
             workers[i] = worker;
         }
     }
