@@ -20,15 +20,14 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop implements Dispatcher, EventScheduler {
+public class NioEventLoop implements EventScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
-
+    private final AtomicBoolean selectorAwaken = new AtomicBoolean(true);
     Selector selector;
-
     private NioEventLoop parent;
-
     private Thread thread;
     private volatile boolean running;
     private CountDownLatch shutdownLock = new CountDownLatch(1);
@@ -80,12 +79,12 @@ public class NioEventLoop implements Dispatcher, EventScheduler {
     }
 
     @Override
-    public Dispatcher parent() {
+    public EventScheduler parent() {
         return parent;
     }
 
     @Override
-    public Dispatcher next() {
+    public EventScheduler next() {
         return this;
     }
 
@@ -136,7 +135,13 @@ public class NioEventLoop implements Dispatcher, EventScheduler {
 
     protected void addTask(Runnable task) {
         pendingTasks.add(task);
-        selector.wakeup();
+        wakeUpSelector();
+    }
+
+    private void wakeUpSelector() {
+        if (!selectorAwaken.getAndSet(true)) {
+            selector.wakeup();
+        }
     }
 
     private void performTasks() {
@@ -202,6 +207,7 @@ public class NioEventLoop implements Dispatcher, EventScheduler {
 
                     int keyCount = 0;
                     try {
+                        selectorAwaken.set(false);
                         keyCount = selector.select();
                     } catch (ClosedSelectorException e) {
                         logger.error(e.getMessage(), e);

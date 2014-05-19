@@ -31,7 +31,7 @@ public abstract class AbstractChannel implements Channel {
 
     private volatile Channel parent;
     private volatile Object attachment;
-    private volatile Dispatcher dispatcher;
+    private volatile EventScheduler eventScheduler;
 
     private Object ch;
     private Unsafe unsafe;
@@ -90,13 +90,8 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public Dispatcher dispatcher() {
-        return dispatcher;
-    }
-
-    @Override
     public boolean isRegistered() {
-        return dispatcher != null;
+        return eventScheduler != null;
     }
 
     @Override
@@ -116,7 +111,7 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public EventScheduler scheduler() {
-        return endpoint.getScheduler();
+        return eventScheduler;
     }
 
     @Override
@@ -161,19 +156,19 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelFuture unregister() {
-        return dispatcher.unregister(this, newChannelPromise());
+        return eventScheduler.unregister(this, newChannelPromise());
     }
 
     @Override
-    public ChannelFuture register(Dispatcher dispatcher) {
-        if (!isDispatcherCompatible(dispatcher)) {
-            throw new RegistrationException("dispatcher is not compatible");
+    public ChannelFuture register(EventScheduler eventScheduler) {
+        if (!isEventSchedulerCompatible(eventScheduler)) {
+            throw new RegistrationException("eventScheduler is not compatible");
         }
 
-        return dispatcher.register(this, newChannelPromise());
+        return eventScheduler.register(this, newChannelPromise());
     }
 
-    protected abstract boolean isDispatcherCompatible(Dispatcher dispatcher);
+    protected abstract boolean isEventSchedulerCompatible(EventScheduler eventScheduler);
 
     @Override
     public Unsafe unsafe() {
@@ -254,9 +249,9 @@ public abstract class AbstractChannel implements Channel {
         protected abstract void closeRequested();
 
         @Override
-        public void register(Dispatcher dispatcher) {
+        public void register(EventScheduler eventScheduler) {
             synchronized (registrationLock) {
-                AbstractChannel.this.dispatcher = dispatcher;
+                AbstractChannel.this.eventScheduler = eventScheduler;
                 doAfterRegister();
                 pipeline.fireRegistered();
             }
@@ -267,7 +262,7 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void unregister() {
             synchronized (registrationLock) {
-                AbstractChannel.this.dispatcher = null;
+                AbstractChannel.this.eventScheduler = null;
                 doAfterUnregister();
                 pipeline.fireUnregistered();
             }
@@ -280,7 +275,7 @@ public abstract class AbstractChannel implements Channel {
             List<Pair<Channel, ChannelPromise>> channels = new ArrayList<>();
             doAcceptChannels(channels);
             for (Pair<Channel, ChannelPromise> pair : channels) {
-                dispatcher().next().register(pair.getFirst(), pair.getSecond());
+                scheduler().next().register(pair.getFirst(), pair.getSecond());
             }
         }
 

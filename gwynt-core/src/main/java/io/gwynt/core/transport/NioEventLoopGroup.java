@@ -6,7 +6,7 @@ public class NioEventLoopGroup extends NioEventLoop {
     private volatile int currentWorker = 0;
 
     public NioEventLoopGroup() {
-        this(Math.max(1, Runtime.getRuntime().availableProcessors() * 2));
+        this(Math.max(1, Runtime.getRuntime().availableProcessors() * 2 - 1));
     }
 
     public NioEventLoopGroup(int workersCount) {

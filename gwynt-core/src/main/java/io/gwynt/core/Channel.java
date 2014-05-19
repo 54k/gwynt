@@ -2,7 +2,6 @@ package io.gwynt.core;
 
 import io.gwynt.core.pipeline.Pipeline;
 import io.gwynt.core.scheduler.EventScheduler;
-import io.gwynt.core.transport.Dispatcher;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -28,8 +27,6 @@ public interface Channel {
 
     Unsafe unsafe();
 
-    Dispatcher dispatcher();
-
     Endpoint endpoint();
 
     ChannelPromise newChannelPromise();
@@ -46,7 +43,7 @@ public interface Channel {
 
     ChannelFuture closeFuture();
 
-    ChannelFuture register(Dispatcher dispatcher);
+    ChannelFuture register(EventScheduler eventScheduler);
 
     ChannelFuture unregister();
 
@@ -64,7 +61,7 @@ public interface Channel {
 
         void close(ChannelPromise channelFuture);
 
-        void register(Dispatcher dispatcher);
+        void register(EventScheduler eventScheduler);
 
         void unregister();
 
