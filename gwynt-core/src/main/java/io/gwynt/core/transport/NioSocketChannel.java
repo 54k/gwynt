@@ -38,7 +38,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void closeRequested() {
-            interestOps(interestOps() | SelectionKey.OP_WRITE);
+            interestOps(SelectionKey.OP_WRITE);
         }
 
         @Override
