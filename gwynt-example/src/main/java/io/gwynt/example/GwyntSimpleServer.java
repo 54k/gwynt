@@ -20,7 +20,6 @@ public class GwyntSimpleServer implements Runnable {
         NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         Endpoint endpoint = new EndpointBootstrap();
         endpoint.setChannelClass(NioServerSocketChannel.class);
-        endpoint.setDispatcher(eventLoopGroup);
         endpoint.setScheduler(eventLoopGroup);
         endpoint.addHandler(new AbstractHandler<byte[], String>() {
 

@@ -10,15 +10,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Queue;
-import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class AbstractEventScheduler extends AbstractExecutorService implements EventScheduler {
+public abstract class AbstractEventScheduler implements EventScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractEventScheduler.class);
+    protected static final Logger logger = LoggerFactory.getLogger(AbstractEventScheduler.class);
 
-    private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
-    private HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
+    private final Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+    private final HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
+
+    @Override
+    public HandlerContextInvoker asInvoker() {
+        return invoker;
+    }
+
+    @Override
+    public void schedule(Runnable task) {
+        addTask(task);
+    }
+
+    protected boolean hasTasks() {
+        return !tasks.isEmpty();
+    }
 
     protected void addTask(Runnable task) {
         if (task == null) {
@@ -29,14 +42,15 @@ public abstract class AbstractEventScheduler extends AbstractExecutorService imp
 
     protected void runTasks(long timeout) {
         long elapsedTime = 0;
-        while (tasks.peek() != null) {
-            long startTime = System.nanoTime();
+        Runnable task;
+        while ((task = tasks.poll()) != null) {
+            long startTime = System.currentTimeMillis();
             try {
-                tasks.poll().run();
+                task.run();
             } catch (Throwable e) {
                 logger.error(e.getMessage(), e);
             }
-            elapsedTime += System.nanoTime() - startTime;
+            elapsedTime += System.currentTimeMillis() - startTime;
             if (elapsedTime >= timeout) {
                 break;
             }

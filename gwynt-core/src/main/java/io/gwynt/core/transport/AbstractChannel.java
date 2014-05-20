@@ -32,6 +32,7 @@ public abstract class AbstractChannel implements Channel {
     private volatile Channel parent;
     private volatile Object attachment;
     private volatile EventScheduler eventScheduler;
+    private volatile boolean registered;
 
     private Object ch;
     private Unsafe unsafe;
@@ -91,7 +92,7 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public boolean isRegistered() {
-        return eventScheduler != null;
+        return registered;
     }
 
     @Override
@@ -251,6 +252,7 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void register(EventScheduler eventScheduler) {
             synchronized (registrationLock) {
+                registered = true;
                 AbstractChannel.this.eventScheduler = eventScheduler;
                 doAfterRegister();
                 pipeline.fireRegistered();
@@ -262,7 +264,7 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void unregister() {
             synchronized (registrationLock) {
-                AbstractChannel.this.eventScheduler = null;
+                registered = false;
                 doAfterUnregister();
                 pipeline.fireUnregistered();
             }

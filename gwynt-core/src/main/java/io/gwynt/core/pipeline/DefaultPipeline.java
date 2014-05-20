@@ -385,6 +385,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         @Override
         public void onExceptionCaught(HandlerContext context, Throwable e) {
             logger.warn("Uncaught exception reached end of pipeline, check your pipeline configuration");
+            logger.error(e.getMessage(), e);
         }
     }
 }

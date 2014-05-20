@@ -5,7 +5,7 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
-public interface EventScheduler {
+public interface EventScheduler extends Runnable {
 
     HandlerContextInvoker asInvoker();
 
@@ -28,4 +28,6 @@ public interface EventScheduler {
     EventScheduler parent();
 
     void schedule(Runnable task);
+
+    boolean isRunning();
 }

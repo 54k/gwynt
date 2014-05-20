@@ -1,5 +1,7 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.scheduler.EventScheduler;
+
 public class NioEventLoopGroup extends NioEventLoop {
 
     private NioEventLoop[] workers;
@@ -18,12 +20,12 @@ public class NioEventLoopGroup extends NioEventLoop {
     }
 
     @Override
-    public Dispatcher next() {
+    public EventScheduler next() {
         if (workers.length > 0) {
             currentWorker = currentWorker % workers.length;
-            Dispatcher dispatcher = workers[currentWorker];
+            EventScheduler scheduler = workers[currentWorker];
             currentWorker++;
-            return dispatcher;
+            return scheduler;
         }
         return this;
     }

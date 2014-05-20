@@ -1,38 +1,22 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.DispatcherStartupException;
-import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.scheduler.EventScheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop implements EventScheduler {
+public class NioEventLoop extends AbstractNioEventScheduler {
 
-    private static final Logger logger = LoggerFactory.getLogger(NioEventLoop.class);
     private final AtomicBoolean selectorAwaken = new AtomicBoolean(true);
     Selector selector;
     private NioEventLoop parent;
-    private Thread thread;
-    private volatile boolean running;
-    private CountDownLatch shutdownLock = new CountDownLatch(1);
 
-    private Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {
@@ -88,53 +72,8 @@ public class NioEventLoop implements EventScheduler {
         return this;
     }
 
-    @Override
-    public ChannelFuture register(final Channel channel) {
-        return register(channel, channel.newChannelPromise());
-    }
-
-    @Override
-    public ChannelFuture unregister(Channel channel) {
-        return unregister(channel, channel.newChannelPromise());
-    }
-
-    @Override
-    public ChannelFuture register(final Channel channel, final ChannelPromise channelPromise) {
-        addTask(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    channel.unsafe().register(NioEventLoop.this);
-                    channelPromise.complete();
-                } catch (ChannelException e) {
-                    channelPromise.complete(e);
-                }
-            }
-        });
-        return channelPromise;
-    }
-
-    @Override
-    public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
-        final SelectionKey selectionKey = ((SelectableChannel) channel.unsafe().javaChannel()).keyFor(selector);
-        if (selectionKey == null) {
-            throw new RegistrationException("unregistered unsafe");
-        }
-
-        addTask(new Runnable() {
-            @Override
-            public void run() {
-                selectionKey.cancel();
-                selectionKey.attach(null);
-                channel.unsafe().unregister();
-                channelPromise.complete();
-            }
-        });
-        return channelPromise;
-    }
-
     protected void addTask(Runnable task) {
-        pendingTasks.add(task);
+        super.addTask(task);
         wakeUpSelector();
     }
 
@@ -144,100 +83,47 @@ public class NioEventLoop implements EventScheduler {
         }
     }
 
-    private void performTasks() {
-        while (pendingTasks.peek() != null) {
-            try {
-                pendingTasks.poll().run();
-            } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    public void runThread() {
-        if (running) {
-            return;
-        }
-
-        running = true;
-        Thread workerThread = new SelectorLoopThread();
-        workerThread.start();
-        thread = workerThread;
-        try {
-            shutdownLock.await();
-        } catch (InterruptedException e) {
-            // ignore
-        }
-    }
-
-    public void shutdownThread() {
-        if (!running) {
-            return;
-        }
-
-        running = false;
-        selector.wakeup();
-        try {
-            shutdownLock.await();
-        } catch (InterruptedException e) {
-            // ignore
-        }
-        thread = null;
-    }
-
     @Override
-    public boolean inSchedulerThread() {
-        return parent.thread == Thread.currentThread();
-    }
-
-    @Override
-    public void schedule(Runnable task) {
-        parent.addTask(task);
-    }
-
-    private class SelectorLoopThread extends Thread {
-
-        @Override
-        public void run() {
-            shutdownLock.countDown();
-
-            try (Selector sel = selector) {
-                while (running) {
-                    performTasks();
-
-                    int keyCount = 0;
-                    try {
-                        selectorAwaken.set(false);
+    public void run() {
+        try (Selector sel = selector) {
+            while (isRunning()) {
+                long start = System.currentTimeMillis();
+                int keyCount = 0;
+                try {
+                    selectorAwaken.set(false);
+                    if (hasTasks()) {
+                        keyCount = selector.selectNow();
+                    } else {
                         keyCount = selector.select();
-                    } catch (ClosedSelectorException e) {
-                        logger.error(e.getMessage(), e);
-                        break;
-                    } catch (Throwable e) {
-                        logger.error(e.getMessage(), e);
                     }
+                } catch (ClosedSelectorException e) {
+                    logger.error(e.getMessage(), e);
+                    break;
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                }
 
-                    Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
+                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
 
-                    while (keys != null && keys.hasNext()) {
-                        SelectionKey key = keys.next();
-                        keys.remove();
+                while (keys != null && keys.hasNext()) {
+                    SelectionKey key = keys.next();
+                    keys.remove();
 
-                        if (key.isValid()) {
-                            processSelectedKey((AbstractNioChannel) key.attachment(), key);
-                        }
+                    if (key.isValid()) {
+                        processSelectedKey((AbstractNioChannel) key.attachment(), key);
                     }
                 }
 
-                pendingTasks.clear();
-                for (SelectionKey selectionKey : selector.keys()) {
-                    unregister((AbstractNioChannel) selectionKey.attachment());
-                    selectionKey.channel().close();
-                }
-                performTasks();
-                shutdownLock.countDown();
-            } catch (Throwable e) {
-                throw new RuntimeException("Unexpected exception", e);
+                runTasks(System.currentTimeMillis() - start);
             }
+
+            for (SelectionKey selectionKey : selector.keys()) {
+                unregister((AbstractNioChannel) selectionKey.attachment());
+                selectionKey.channel().close();
+            }
+            runTasks(1000);
+        } catch (Throwable e) {
+            throw new RuntimeException("Unexpected exception", e);
         }
     }
 }
