@@ -1,6 +1,7 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.exception.DispatcherStartupException;
+import io.gwynt.core.scheduler.AbstractEventScheduler;
 import io.gwynt.core.scheduler.EventScheduler;
 
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop extends AbstractNioEventScheduler {
+public class NioEventLoop extends AbstractEventScheduler {
 
     private final AtomicBoolean selectorAwaken = new AtomicBoolean(true);
     Selector selector;

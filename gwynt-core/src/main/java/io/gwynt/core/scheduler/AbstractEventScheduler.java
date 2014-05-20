@@ -15,9 +15,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public abstract class AbstractEventScheduler implements EventScheduler {
 
     protected static final Logger logger = LoggerFactory.getLogger(AbstractEventScheduler.class);
-
     private final Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
     private final HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
+    private Thread thread;
+    private volatile boolean running;
 
     @Override
     public HandlerContextInvoker asInvoker() {
@@ -103,5 +104,33 @@ public abstract class AbstractEventScheduler implements EventScheduler {
             }
         });
         return channelPromise;
+    }
+
+    @Override
+    public boolean inSchedulerThread() {
+        return thread == Thread.currentThread();
+    }
+
+    public void runThread() {
+        if (running) {
+            return;
+        }
+        running = true;
+        Thread workerThread = new Thread(this);
+        workerThread.start();
+        thread = workerThread;
+    }
+
+    public void shutdownThread() {
+        if (!running) {
+            return;
+        }
+        running = false;
+        thread = null;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return running;
     }
 }
