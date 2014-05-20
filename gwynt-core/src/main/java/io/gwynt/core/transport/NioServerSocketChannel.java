@@ -1,11 +1,8 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
-import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -41,32 +38,6 @@ public class NioServerSocketChannel extends AbstractNioChannel {
         @Override
         protected void closeRequested() {
             // NO OP
-        }
-
-        @Override
-        protected void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels) {
-            SocketChannel ch;
-            try {
-                ch = javaChannel().accept();
-                ch.configureBlocking(false);
-            } catch (IOException e) {
-                exceptionCaught(e);
-                return;
-            }
-
-            NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint(), ch);
-            ChannelPromise channelPromise = channel.newChannelPromise();
-            channelPromise.addListener(new ChannelFutureListener() {
-                @Override
-                public void onComplete(ChannelFuture channelFuture) {
-                    channelFuture.channel().unsafe().read(VOID_PROMISE);
-                }
-
-                @Override
-                public void onError(ChannelFuture channelFuture, Throwable e) {
-                }
-            });
-            channels.add(new Pair<Channel, ChannelPromise>(channel, channelPromise));
         }
 
         @Override

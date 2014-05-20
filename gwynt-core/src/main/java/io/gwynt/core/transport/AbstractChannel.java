@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractChannel implements Channel {
 
-    protected static final ChannelPromise VOID_PROMISE = new DefaultChannelPromise(null);
     protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
     private final Endpoint endpoint;
@@ -267,17 +266,6 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected abstract void doAfterUnregister();
-
-        @Override
-        public void doAccept() throws IOException {
-            List<Pair<Channel, ChannelPromise>> channels = new ArrayList<>();
-            doAcceptChannels(channels);
-            for (Pair<Channel, ChannelPromise> pair : channels) {
-                scheduler().next().register(pair.getFirst(), pair.getSecond());
-            }
-        }
-
-        protected abstract void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels);
 
         @Override
         public void doRead() throws IOException {

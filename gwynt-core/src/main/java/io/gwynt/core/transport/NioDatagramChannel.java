@@ -1,11 +1,8 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
-import io.gwynt.core.util.ByteBufferAllocator;
-import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -67,13 +64,8 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAcceptChannels(List<Pair<Channel, ChannelPromise>> channels) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected void doReadMessages(List<Object> messages) {
-            ByteBuffer buffer = ByteBufferAllocator.allocate(150000);
+            ByteBuffer buffer = endpoint().getByteBufferPool().acquire(4096, true);
             SocketAddress address;
 
             do {
@@ -86,11 +78,13 @@ public class NioDatagramChannel extends AbstractNioChannel {
                         messages.add(new Datagram(address, ByteBuffer.wrap(message)));
                     }
                 } catch (IOException e) {
-                    throw new EofException();
+                    exceptionCaught(e);
+                    endpoint().getByteBufferPool().release(buffer);
+                    return;
                 }
             } while (buffer.hasRemaining() && address != null);
 
-            ByteBufferAllocator.release(buffer);
+            endpoint().getByteBufferPool().release(buffer);
         }
 
         @Override

@@ -65,8 +65,6 @@ public interface Channel {
 
         void unregister();
 
-        void doAccept() throws IOException;
-
         void doRead() throws IOException;
 
         void doWrite() throws IOException;

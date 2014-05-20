@@ -5,6 +5,21 @@ import io.gwynt.core.scheduler.EventScheduler;
 public interface Endpoint {
 
     /**
+     * Get specific {@link ByteBufferPool} implementation
+     *
+     * @return current {@link ByteBufferPool}
+     */
+    ByteBufferPool getByteBufferPool();
+
+    /**
+     * Set specific {@link ByteBufferPool} implementation
+     *
+     * @param byteBufferPool {@link ByteBufferPool} implementation
+     * @return current {@link Endpoint}
+     */
+    Endpoint setByteBufferPool(ByteBufferPool byteBufferPool);
+
+    /**
      * Add handler from {@link io.gwynt.core.pipeline.Pipeline} for all incoming {@link Channel}s
      *
      * @param handler {@link Handler} implementation
