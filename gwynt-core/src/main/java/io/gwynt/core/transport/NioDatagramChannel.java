@@ -3,6 +3,7 @@ package io.gwynt.core.transport;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
+import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.util.ByteBufferAllocator;
 import io.gwynt.core.util.Pair;
@@ -24,6 +25,9 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
     public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) throws IOException {
         super(parent, endpoint, DatagramChannel.open());
+        for (Handler handler : endpoint.getHandlers()) {
+            pipeline().addLast(handler);
+        }
     }
 
     @Override

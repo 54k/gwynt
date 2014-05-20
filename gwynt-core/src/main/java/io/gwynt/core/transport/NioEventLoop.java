@@ -44,7 +44,7 @@ public class NioEventLoop extends AbstractNioEventScheduler {
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
                 channel.unsafe().doWrite();
             } else if (key.isAcceptable()) {
-                channel.unsafe().doAccept();
+                channel.unsafe().doRead();
             } else if (key.isConnectable()) {
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
                 channel.unsafe().doConnect();

@@ -1,8 +1,10 @@
 package io.gwynt.core;
 
+import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.scheduler.EventScheduler;
 import io.gwynt.core.transport.AbstractNioChannel;
 import io.gwynt.core.transport.NioEventLoop;
+import io.gwynt.core.transport.NioServerSocketChannel;
 
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
@@ -104,6 +106,13 @@ public class EndpointBootstrap implements Endpoint {
     private ChannelFuture initAndRegisterChannel() {
         startEventLoop();
         Channel channel = channelFactory.createChannel(channelClazz);
+        if (channel instanceof NioServerSocketChannel) {
+            channel.pipeline().addFirst(new DefaultChannelAcceptor());
+        } else {
+            for (Handler handler : getHandlers()) {
+                channel.pipeline().addLast(handler);
+            }
+        }
         return channel.register(eventLoop);
     }
 
@@ -127,6 +136,28 @@ public class EndpointBootstrap implements Endpoint {
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    private class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
+
+        @Override
+        public void onMessageReceived(HandlerContext context, Channel message) {
+            for (Handler handler : getHandlers()) {
+                message.pipeline().addLast(handler);
+            }
+
+            message.register(eventLoop.next()).addListener(new ChannelFutureListener() {
+                @Override
+                public void onComplete(ChannelFuture channelFuture) {
+                    channelFuture.channel().read();
+                }
+
+                @Override
+                public void onError(ChannelFuture channelFuture, Throwable e) {
+
+                }
+            });
         }
     }
 }

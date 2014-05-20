@@ -24,7 +24,7 @@ public class DefaultHandlerContext implements HandlerContext {
     public DefaultHandlerContext(Channel channel, Handler handler) {
         this.channel = channel;
         this.handler = handler;
-        invoker = new DefaultHandlerContextInvoker(channel.endpoint().getScheduler());
+        invoker = channel.endpoint().getScheduler().asInvoker();
     }
 
     @Override

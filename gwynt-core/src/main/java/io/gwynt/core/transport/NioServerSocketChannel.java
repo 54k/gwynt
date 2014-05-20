@@ -92,7 +92,16 @@ public class NioServerSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doReadMessages(List<Object> messages) {
-            throw new UnsupportedOperationException();
+            SocketChannel ch;
+            try {
+                ch = javaChannel().accept();
+                ch.configureBlocking(false);
+            } catch (IOException e) {
+                exceptionCaught(e);
+                return;
+            }
+            NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, endpoint(), ch);
+            messages.add(channel);
         }
 
         @Override

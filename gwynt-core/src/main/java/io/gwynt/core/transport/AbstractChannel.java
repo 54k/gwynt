@@ -5,7 +5,6 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.DefaultChannelPromise;
 import io.gwynt.core.Endpoint;
-import io.gwynt.core.Handler;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
@@ -45,9 +44,6 @@ public abstract class AbstractChannel implements Channel {
         this.ch = ch;
 
         pipeline = new DefaultPipeline(this);
-        for (Handler handler : endpoint.getHandlers()) {
-            pipeline.addLast(handler);
-        }
         unsafe = newUnsafe();
     }
 
