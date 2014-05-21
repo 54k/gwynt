@@ -114,8 +114,8 @@ public class NioEventLoop extends AbstractEventScheduler {
                         processSelectedKey((AbstractNioChannel) key.attachment(), key);
                     }
                 }
-
-                runTasks(System.currentTimeMillis() - start);
+                // TODO needs io ratio
+                runTasks((System.currentTimeMillis() - start) / 100 * 50);
             }
 
             for (SelectionKey selectionKey : selector.keys()) {
