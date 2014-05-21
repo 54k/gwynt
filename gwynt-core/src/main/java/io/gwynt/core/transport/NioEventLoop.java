@@ -1,6 +1,5 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.exception.DispatcherStartupException;
 import io.gwynt.core.scheduler.AbstractEventScheduler;
 import io.gwynt.core.scheduler.EventScheduler;
 
@@ -59,7 +58,7 @@ public class NioEventLoop extends AbstractEventScheduler {
         try {
             this.selector = selectorProvider.openSelector();
         } catch (IOException e) {
-            throw new DispatcherStartupException(e);
+            throw new RuntimeException(e);
         }
     }
 
