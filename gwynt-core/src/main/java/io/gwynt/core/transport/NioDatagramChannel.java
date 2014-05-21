@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 
 import java.io.IOException;
@@ -15,12 +14,12 @@ import java.util.List;
 public class NioDatagramChannel extends AbstractNioChannel {
 
     @SuppressWarnings("unused")
-    public NioDatagramChannel(Endpoint endpoint) throws IOException {
-        this(null, endpoint);
+    public NioDatagramChannel() throws IOException {
+        this(null);
     }
 
-    public NioDatagramChannel(AbstractNioChannel parent, Endpoint endpoint) throws IOException {
-        super(parent, endpoint, DatagramChannel.open());
+    public NioDatagramChannel(AbstractNioChannel parent) throws IOException {
+        super(parent, DatagramChannel.open());
     }
 
     @Override
@@ -65,7 +64,8 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected void doReadMessages(List<Object> messages) {
-            ByteBuffer buffer = endpoint().getByteBufferPool().acquire(4096, true);
+            ByteBuffer buffer = ByteBuffer.allocate(4096);
+//            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             SocketAddress address;
 
             do {
@@ -79,12 +79,12 @@ public class NioDatagramChannel extends AbstractNioChannel {
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
-                    endpoint().getByteBufferPool().release(buffer);
+//                    config().getByteBufferPool().release(buffer);
                     return;
                 }
             } while (buffer.hasRemaining() && address != null);
 
-            endpoint().getByteBufferPool().release(buffer);
+//            config().getByteBufferPool().release(buffer);
         }
 
         @Override

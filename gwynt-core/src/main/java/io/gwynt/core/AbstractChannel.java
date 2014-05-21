@@ -1,14 +1,8 @@
-package io.gwynt.core.transport;
+package io.gwynt.core;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.DefaultChannelPromise;
-import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
-import io.gwynt.core.scheduler.EventScheduler;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -24,7 +18,6 @@ public abstract class AbstractChannel implements Channel {
 
     protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
 
-    private final Endpoint endpoint;
     private final DefaultPipeline pipeline;
 
     private volatile Channel parent;
@@ -37,9 +30,8 @@ public abstract class AbstractChannel implements Channel {
     private SocketAddress localAddress;
     private SocketAddress remoteAddress;
 
-    protected AbstractChannel(Channel parent, Endpoint endpoint, Object ch) {
+    protected AbstractChannel(Channel parent, Object ch) {
         this.parent = parent;
-        this.endpoint = endpoint;
         this.ch = ch;
 
         pipeline = new DefaultPipeline(this);
@@ -78,11 +70,6 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public ChannelPromise newChannelPromise() {
         return new DefaultChannelPromise(this);
-    }
-
-    @Override
-    public Endpoint endpoint() {
-        return endpoint;
     }
 
     @Override

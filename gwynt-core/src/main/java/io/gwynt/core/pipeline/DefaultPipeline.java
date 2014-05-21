@@ -96,7 +96,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             context.setName(name);
             context.removed = false;
             name2context.put(name, context);
-            context.fireOnAdded();
+            invokeHandlerAdded(context);
         }
     }
 
@@ -123,7 +123,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             context.setName(name);
             context.removed = false;
             name2context.put(name, context);
-            context.fireOnAdded();
+            invokeHandlerAdded(context);
         }
     }
 
@@ -195,7 +195,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         before.setPrev(context);
         context.removed = false;
         name2context.put(context.name(), context);
-        context.fireOnAdded();
+        invokeHandlerAdded(context);
     }
 
     @Override
@@ -266,7 +266,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         after.setNext(context);
         context.removed = false;
         name2context.put(context.name(), context);
-        context.fireOnAdded();
+        invokeHandlerAdded(context);
     }
 
     @Override
@@ -297,7 +297,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             next.setPrev(context.getPrev());
             context.removed = true;
             name2context.remove(context.name());
-            context.fireOnRemoved();
+            invokeHandlerRemoved(context);
         }
     }
 
@@ -340,6 +340,30 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
                 DefaultPipeline.this.remove(context);
             }
         };
+    }
+
+    private void invokeHandlerAdded(final DefaultHandlerContext context) {
+        if (context.channel().isRegistered() && !context.channel().scheduler().inSchedulerThread()) {
+            context.channel().scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    context.handler().onHandlerAdded(context);
+                }
+            });
+        }
+        context.handler().onHandlerAdded(context);
+    }
+
+    private void invokeHandlerRemoved(final DefaultHandlerContext context) {
+        if (context.channel().isRegistered() && !context.channel().scheduler().inSchedulerThread()) {
+            context.channel().scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    context.handler().onHandlerRemoved(context);
+                }
+            });
+        }
+        context.handler().onHandlerRemoved(context);
     }
 
     private static class HeadHandler extends AbstractHandler {

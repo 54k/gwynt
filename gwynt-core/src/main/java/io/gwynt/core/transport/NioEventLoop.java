@@ -1,7 +1,7 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.scheduler.AbstractEventScheduler;
-import io.gwynt.core.scheduler.EventScheduler;
+import io.gwynt.core.AbstractEventScheduler;
+import io.gwynt.core.EventScheduler;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;

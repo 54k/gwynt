@@ -1,12 +1,10 @@
 package io.gwynt.core;
 
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.scheduler.EventScheduler;
 import io.gwynt.core.transport.AbstractNioChannel;
 import io.gwynt.core.transport.NioEventLoop;
 import io.gwynt.core.transport.NioServerSocketChannel;
 
-import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -147,8 +145,7 @@ public class EndpointBootstrap implements Endpoint {
         @Override
         public AbstractNioChannel createChannel(Class<? extends AbstractNioChannel> channelClazz) {
             try {
-                Constructor<? extends AbstractNioChannel> constructor = channelClazz.getConstructor(Endpoint.class);
-                return constructor.newInstance(EndpointBootstrap.this);
+                return channelClazz.newInstance();
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }

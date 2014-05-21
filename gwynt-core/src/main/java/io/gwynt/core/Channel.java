@@ -1,7 +1,6 @@
 package io.gwynt.core;
 
 import io.gwynt.core.pipeline.Pipeline;
-import io.gwynt.core.scheduler.EventScheduler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -26,8 +25,6 @@ public interface Channel {
     SocketAddress getRemoteAddress();
 
     Unsafe unsafe();
-
-    Endpoint endpoint();
 
     ChannelPromise newChannelPromise();
 

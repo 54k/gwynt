@@ -1,7 +1,5 @@
 package io.gwynt.core;
 
-import io.gwynt.core.scheduler.EventScheduler;
-
 public interface Endpoint {
 
     /**
@@ -72,16 +70,16 @@ public interface Endpoint {
     Endpoint setChannelClass(Class<? extends Channel> channel);
 
     /**
-     * Returns instance of {@link io.gwynt.core.scheduler.EventScheduler} in which all {@link Handler} events dispatched
+     * Returns instance of {@link EventScheduler} in which all {@link Handler} events dispatched
      *
-     * @return current {@link io.gwynt.core.scheduler.EventScheduler}
+     * @return current {@link EventScheduler}
      */
     EventScheduler getScheduler();
 
     /**
-     * Set specific {@link io.gwynt.core.scheduler.EventScheduler} implementation, which will dispatch all events to {@link Handler}
+     * Set specific {@link EventScheduler} implementation, which will dispatch all events to {@link Handler}
      *
-     * @param eventScheduler {@link io.gwynt.core.scheduler.EventScheduler} implementation
+     * @param eventScheduler {@link EventScheduler} implementation
      * @return current {@link Endpoint}
      */
     Endpoint setScheduler(EventScheduler eventScheduler);

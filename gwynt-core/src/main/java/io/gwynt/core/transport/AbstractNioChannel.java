@@ -1,9 +1,9 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
+import io.gwynt.core.EventScheduler;
 import io.gwynt.core.exception.ChannelException;
-import io.gwynt.core.scheduler.EventScheduler;
 import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
@@ -17,12 +17,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
     private volatile SelectionKey selectionKey;
 
-    protected AbstractNioChannel(Endpoint endpoint, SelectableChannel ch) {
-        this(null, endpoint, ch);
+    protected AbstractNioChannel(SelectableChannel ch) {
+        this(null, ch);
     }
 
-    protected AbstractNioChannel(AbstractNioChannel parent, Endpoint endpoint, SelectableChannel ch) {
-        super(parent, endpoint, ch);
+    protected AbstractNioChannel(AbstractNioChannel parent, SelectableChannel ch) {
+        super(parent, ch);
         try {
             ch.configureBlocking(false);
         } catch (IOException e) {

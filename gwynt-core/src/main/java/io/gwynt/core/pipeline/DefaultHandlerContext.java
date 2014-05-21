@@ -22,9 +22,13 @@ public class DefaultHandlerContext implements HandlerContext {
     private String name;
 
     public DefaultHandlerContext(Channel channel, Handler handler) {
+        this(null, channel, handler);
+    }
+
+    public DefaultHandlerContext(HandlerContextInvoker invoker, Channel channel, Handler handler) {
+        this.invoker = invoker;
         this.channel = channel;
         this.handler = handler;
-        invoker = channel.endpoint().getScheduler().asInvoker();
     }
 
     @Override
@@ -53,6 +57,9 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     public HandlerContextInvoker invoker() {
+        if (invoker == null) {
+            return channel.scheduler().asInvoker();
+        }
         return invoker;
     }
 

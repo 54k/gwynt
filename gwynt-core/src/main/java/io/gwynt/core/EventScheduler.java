@@ -1,8 +1,5 @@
-package io.gwynt.core.scheduler;
+package io.gwynt.core;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
 public interface EventScheduler extends Runnable {

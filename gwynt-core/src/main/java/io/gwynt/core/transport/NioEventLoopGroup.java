@@ -1,6 +1,6 @@
 package io.gwynt.core.transport;
 
-import io.gwynt.core.scheduler.EventScheduler;
+import io.gwynt.core.EventScheduler;
 
 public class NioEventLoopGroup extends NioEventLoop {
 

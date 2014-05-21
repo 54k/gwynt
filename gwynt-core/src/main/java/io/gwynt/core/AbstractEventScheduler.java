@@ -1,8 +1,5 @@
-package io.gwynt.core.scheduler;
+package io.gwynt.core;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.pipeline.DefaultHandlerContextInvoker;
 import io.gwynt.core.pipeline.HandlerContextInvoker;

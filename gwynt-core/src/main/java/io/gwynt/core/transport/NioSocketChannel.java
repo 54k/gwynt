@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 
@@ -16,12 +15,12 @@ import java.util.List;
 public class NioSocketChannel extends AbstractNioChannel {
 
     @SuppressWarnings("unused")
-    public NioSocketChannel(Endpoint endpoint) throws IOException {
-        this(null, endpoint, SocketChannel.open());
+    public NioSocketChannel() throws IOException {
+        this(null, SocketChannel.open());
     }
 
-    public NioSocketChannel(AbstractNioChannel parent, Endpoint endpoint, SocketChannel ch) {
-        super(parent, endpoint, ch);
+    public NioSocketChannel(AbstractNioChannel parent, SocketChannel ch) {
+        super(parent, ch);
     }
 
     @Override
@@ -64,7 +63,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected void doReadMessages(List<Object> messages) {
             // TODO make channel config
-            ByteBuffer buffer = endpoint().getByteBufferPool().acquire(4096, true);
+            ByteBuffer buffer = ByteBuffer.allocate(4096);
+//            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             int bytesWritten;
 
             do {
@@ -78,12 +78,12 @@ public class NioSocketChannel extends AbstractNioChannel {
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
-                    endpoint().getByteBufferPool().release(buffer);
+//                    config().getByteBufferPool().release(buffer);
                     return;
                 }
             } while (buffer.hasRemaining() && bytesWritten > 0);
 
-            endpoint().getByteBufferPool().release(buffer);
+//            config().getByteBufferPool().release(buffer);
 
             if (bytesWritten == -1) {
                 throw new EofException();
@@ -95,7 +95,8 @@ public class NioSocketChannel extends AbstractNioChannel {
             ByteBuffer buffer;
             if (message instanceof byte[]) {
                 byte[] bytes = (byte[]) message;
-                buffer = endpoint().getByteBufferPool().acquire(bytes.length, true);
+                buffer = ByteBuffer.allocate(bytes.length);
+//                buffer = config().getByteBufferPool().acquire(bytes.length, true);
                 buffer.put(bytes);
                 buffer.flip();
             } else if (message instanceof ByteBuffer) {
@@ -124,7 +125,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 throw new EofException();
             }
             if (!src.hasRemaining()) {
-                endpoint().getByteBufferPool().release(src);
+//                config().getByteBufferPool().release(src);
                 return true;
             }
             return false;
