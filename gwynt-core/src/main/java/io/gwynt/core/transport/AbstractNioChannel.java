@@ -11,13 +11,11 @@ import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.util.Queue;
 
 public abstract class AbstractNioChannel extends AbstractChannel {
 
     private volatile SelectionKey selectionKey;
-    private volatile Selector selector;
 
     protected AbstractNioChannel(Endpoint endpoint, SelectableChannel ch) {
         this(null, endpoint, ch);
@@ -71,8 +69,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void doAfterRegister() {
             try {
-                selector = ((NioEventLoop) scheduler()).selector;
-                selectionKey = javaChannel().register(selector, 0, AbstractNioChannel.this);
+                selectionKey = javaChannel().register(((NioEventLoop) scheduler()).selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
                 throw new ChannelException(e);
             }
@@ -113,7 +110,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
             try {
                 selectionKey.interestOps(interestOps);
-                selector.wakeup();
+                ((NioEventLoop) scheduler()).wakeUpSelector();
             } catch (CancelledKeyException ignore) {
             }
         }
