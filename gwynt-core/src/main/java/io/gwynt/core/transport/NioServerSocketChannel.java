@@ -35,9 +35,16 @@ public class NioServerSocketChannel extends AbstractNioChannel {
 
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
+        private final Runnable CLOSE_TASK = new Runnable() {
+            @Override
+            public void run() {
+                doClose();
+            }
+        };
+
         @Override
         protected void closeRequested() {
-            // NO OP
+            scheduler().schedule(CLOSE_TASK);
         }
 
         @Override
