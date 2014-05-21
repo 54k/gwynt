@@ -171,7 +171,6 @@ public class EndpointBootstrap implements Endpoint {
 
                 @Override
                 public void onError(ChannelFuture channelFuture, Throwable e) {
-
                 }
             });
         }
