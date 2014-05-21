@@ -78,7 +78,7 @@ public class NioEventLoop extends AbstractEventScheduler {
         wakeUpSelector();
     }
 
-     void wakeUpSelector() {
+    void wakeUpSelector() {
         if (!selectorAwaken.getAndSet(true)) {
             selector.wakeup();
         }

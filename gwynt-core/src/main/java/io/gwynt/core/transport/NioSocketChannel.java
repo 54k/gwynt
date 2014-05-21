@@ -63,6 +63,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doReadMessages(List<Object> messages) {
+            // TODO make channel config
             ByteBuffer buffer = endpoint().getByteBufferPool().acquire(4096, true);
             int bytesWritten;
 
@@ -91,7 +92,20 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
-            super.write(ByteBuffer.wrap((byte[]) message), channelPromise);
+            ByteBuffer buffer;
+            if (message instanceof byte[]) {
+                byte[] bytes = (byte[]) message;
+                buffer = endpoint().getByteBufferPool().acquire(bytes.length, true);
+                buffer.put(bytes);
+                buffer.flip();
+            } else if (message instanceof ByteBuffer) {
+                ByteBuffer byteBuffer = (ByteBuffer) message;
+                byteBuffer.flip();
+                buffer = byteBuffer;
+            } else {
+                throw new IllegalArgumentException("Wrong message type");
+            }
+            super.write(buffer, channelPromise);
         }
 
         @Override
@@ -109,8 +123,11 @@ public class NioSocketChannel extends AbstractNioChannel {
             if (bytesWritten == -1) {
                 throw new EofException();
             }
-
-            return !src.hasRemaining();
+            if (!src.hasRemaining()) {
+                endpoint().getByteBufferPool().release(src);
+                return true;
+            }
+            return false;
         }
 
         @Override
