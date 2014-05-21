@@ -11,7 +11,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-// TODO fix queue's NPE
 public class DefaultChannelPromise implements ChannelPromise {
 
     private static final ChannelFutureTimeoutException TIMEOUT_EXCEPTION = new ChannelFutureTimeoutException();
@@ -19,6 +18,8 @@ public class DefaultChannelPromise implements ChannelPromise {
     private final Channel channel;
     private final CountDownLatch lock = new CountDownLatch(1);
     private final AtomicBoolean done = new AtomicBoolean();
+    private final AtomicBoolean notifyingListeners = new AtomicBoolean();
+    private final AtomicBoolean notifyingPromises = new AtomicBoolean();
 
     private Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
     private Queue<ChannelPromise> promises = new ConcurrentLinkedQueue<>();
@@ -63,11 +64,21 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void notifyListeners() {
+        if (notifyingListeners.getAndSet(true)) {
+            channel().scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    notifyListeners();
+                }
+            });
+            return;
+        }
         if (error == null) {
             notifyListenersOnComplete();
         } else {
             notifyListenersOnError();
         }
+        notifyingListeners.set(false);
     }
 
     private void notifyListenersOnComplete() {
@@ -103,11 +114,21 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void notifyPromises() {
+        if (notifyingPromises.getAndSet(true)) {
+            channel().scheduler().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    notifyPromises();
+                }
+            });
+            return;
+        }
         if (error == null) {
             notifyPromisesOnComplete();
         } else {
             notifyPromiseOnError();
         }
+        notifyingPromises.set(false);
     }
 
     private void notifyPromisesOnComplete() {
