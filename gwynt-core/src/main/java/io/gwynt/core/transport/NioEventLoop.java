@@ -79,7 +79,7 @@ public class NioEventLoop extends AbstractEventScheduler {
     }
 
     void wakeUpSelector() {
-        if (!selectorAwaken.getAndSet(true)) {
+        if (!inSchedulerThread() && !selectorAwaken.getAndSet(true)) {
             selector.wakeup();
         }
     }
@@ -97,6 +97,7 @@ public class NioEventLoop extends AbstractEventScheduler {
                     } else {
                         keyCount = selector.select();
                     }
+                    selectorAwaken.set(true);
                 } catch (ClosedSelectorException e) {
                     logger.error(e.getMessage(), e);
                     break;
