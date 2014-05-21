@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioEventLoop extends AbstractEventScheduler {
 
-    private final AtomicBoolean selectorAwaken = new AtomicBoolean(true);
+    private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
     Selector selector;
     private NioEventLoop parent;
 
@@ -34,6 +34,17 @@ public class NioEventLoop extends AbstractEventScheduler {
         this.parent = parent == null ? this : parent;
         this.selectorProvider = selectorProvider;
         openSelector();
+    }
+
+    private static void processSelectedKeys(Iterator<SelectionKey> keys) {
+        while (keys != null && keys.hasNext()) {
+            SelectionKey key = keys.next();
+            keys.remove();
+
+            if (key.isValid()) {
+                processSelectedKey((AbstractNioChannel) key.attachment(), key);
+            }
+        }
     }
 
     private static void processSelectedKey(AbstractNioChannel channel, SelectionKey key) {
@@ -78,7 +89,7 @@ public class NioEventLoop extends AbstractEventScheduler {
     }
 
     void wakeUpSelector() {
-        if (!inSchedulerThread() && !selectorAwaken.getAndSet(true)) {
+        if (!inSchedulerThread() && !selectorAwakened.getAndSet(true)) {
             selector.wakeup();
         }
     }
@@ -87,16 +98,15 @@ public class NioEventLoop extends AbstractEventScheduler {
     public void run() {
         try (Selector sel = selector) {
             while (isRunning()) {
-                long start = System.currentTimeMillis();
                 int keyCount = 0;
                 try {
-                    selectorAwaken.set(false);
+                    selectorAwakened.set(false);
                     if (hasTasks()) {
                         keyCount = selector.selectNow();
                     } else {
                         keyCount = selector.select();
                     }
-                    selectorAwaken.set(true);
+                    selectorAwakened.set(true);
                 } catch (ClosedSelectorException e) {
                     logger.error(e.getMessage(), e);
                     break;
@@ -104,18 +114,12 @@ public class NioEventLoop extends AbstractEventScheduler {
                     logger.error(e.getMessage(), e);
                 }
 
+                long start = System.currentTimeMillis();
                 Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
-
-                while (keys != null && keys.hasNext()) {
-                    SelectionKey key = keys.next();
-                    keys.remove();
-
-                    if (key.isValid()) {
-                        processSelectedKey((AbstractNioChannel) key.attachment(), key);
-                    }
-                }
-                // TODO needs io ratio
-                runTasks((System.currentTimeMillis() - start) / 100 * 50);
+                processSelectedKeys(keys);
+                long ioTime = System.currentTimeMillis() - start;
+                // TODO ioRatio
+                runTasks(ioTime * (100 - 50) / 50);
             }
 
             for (SelectionKey selectionKey : selector.keys()) {
