@@ -1,4 +1,4 @@
-package io.gwynt.core.transport;
+package io.gwynt.core.nio;
 
 import io.gwynt.core.AbstractEventScheduler;
 import io.gwynt.core.EventScheduler;

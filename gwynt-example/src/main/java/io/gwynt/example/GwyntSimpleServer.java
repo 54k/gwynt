@@ -5,8 +5,8 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.transport.NioEventLoopGroup;
-import io.gwynt.core.transport.NioServerSocketChannel;
+import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioServerSocketChannel;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

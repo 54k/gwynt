@@ -8,11 +8,11 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.transport.Datagram;
-import io.gwynt.core.transport.NioDatagramChannel;
-import io.gwynt.core.transport.NioEventLoopGroup;
-import io.gwynt.core.transport.NioServerSocketChannel;
-import io.gwynt.core.transport.NioSocketChannel;
+import io.gwynt.core.nio.Datagram;
+import io.gwynt.core.nio.NioDatagramChannel;
+import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioServerSocketChannel;
+import io.gwynt.core.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

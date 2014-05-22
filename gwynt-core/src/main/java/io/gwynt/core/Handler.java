@@ -27,14 +27,14 @@ public interface Handler<I, O> {
     void onHandlerRemoved(HandlerContext context);
 
     /**
-     * Called when {@link Channel} is registered by {@link io.gwynt.core.transport.NioEventLoop}
+     * Called when {@link Channel} is registered by {@link io.gwynt.core.nio.NioEventLoop}
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}
      */
     void onRegistered(HandlerContext context);
 
     /**
-     * Called when {@link Channel} is unregistered by {@link io.gwynt.core.transport.NioEventLoop}
+     * Called when {@link Channel} is unregistered by {@link io.gwynt.core.nio.NioEventLoop}
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}
      */
