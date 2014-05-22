@@ -174,7 +174,6 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
-        private final Object registrationLock = new Object();
         private final ChannelPromise closePromise = newChannelPromise();
         private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
 
@@ -204,9 +203,7 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
-                synchronized (registrationLock) {
-                    readRequested();
-                }
+                readRequested();
                 channelPromise.complete();
             } else {
                 channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
@@ -219,11 +216,7 @@ public abstract class AbstractChannel implements Channel {
         public void write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 channelOutboundBuffer.addMessage(message, channelPromise);
-                synchronized (registrationLock) {
-                    if (isRegistered()) {
-                        writeRequested();
-                    }
-                }
+                writeRequested();
             } else {
                 channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
             }
@@ -237,11 +230,7 @@ public abstract class AbstractChannel implements Channel {
         public void close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
-                synchronized (registrationLock) {
-                    if (isRegistered()) {
-                        closeRequested();
-                    }
-                }
+                closeRequested();
             }
             closePromise.chainPromise(channelPromise);
         }
@@ -250,23 +239,23 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void register(EventScheduler eventScheduler) {
-            synchronized (registrationLock) {
-                registered = true;
-                AbstractChannel.this.eventScheduler = eventScheduler;
-                pipeline.fireRegistered();
-                afterRegister();
-            }
+            assert eventScheduler.inSchedulerThread();
+
+            registered = true;
+            AbstractChannel.this.eventScheduler = eventScheduler;
+            pipeline.fireRegistered();
+            afterRegister();
         }
 
         protected abstract void afterRegister();
 
         @Override
         public void unregister() {
-            synchronized (registrationLock) {
-                registered = false;
-                pipeline.fireUnregistered();
-                afterUnregister();
-            }
+            assert eventScheduler.inSchedulerThread();
+
+            registered = false;
+            pipeline.fireUnregistered();
+            afterUnregister();
         }
 
         protected abstract void afterUnregister();

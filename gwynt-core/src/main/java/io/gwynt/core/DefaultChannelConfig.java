@@ -5,8 +5,8 @@ public class DefaultChannelConfig implements ChannelConfig {
     private Channel channel;
     private boolean autoRead = true;
     private ByteBufferPool byteBufferPool = ByteBufferPool.DEFAULT;
-    private int writeSpinCount = 1;
-    private int readSpinCount = 1;
+    private int writeSpinCount = 8;
+    private int readSpinCount = 8;
 
     public DefaultChannelConfig(Channel channel) {
         this.channel = channel;

@@ -4,9 +4,9 @@ import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
-import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
+import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -18,11 +18,7 @@ public class GwyntSimpleServer implements Runnable {
     @Override
     public void run() {
         NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        Endpoint endpoint = new EndpointBootstrap();
-        endpoint.setChannelClass(NioServerSocketChannel.class);
-        endpoint.setScheduler(eventLoopGroup);
-        endpoint.addHandler(new AbstractHandler<byte[], String>() {
-
+        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioServerSocketChannel.class).setScheduler(eventLoopGroup).addHandler(new AbstractHandler<byte[], String>() {
             private Charset charset = Charset.forName("UTF-8");
 
             @Override
@@ -41,8 +37,7 @@ public class GwyntSimpleServer implements Runnable {
                 buffer.clear();
                 context.write(messageBytes, channelPromise);
             }
-        });
-        endpoint.addHandler(new AbstractHandler() {
+        }).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
