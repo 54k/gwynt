@@ -1,5 +1,6 @@
 package io.gwynt.core.nio;
 
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.exception.ChannelException;
@@ -14,6 +15,8 @@ import java.util.List;
 
 public class NioSocketChannel extends AbstractNioChannel {
 
+    private SocketChannel ch;
+
     @SuppressWarnings("unused")
     public NioSocketChannel() throws IOException {
         this(null, SocketChannel.open());
@@ -21,11 +24,17 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     public NioSocketChannel(AbstractNioChannel parent, SocketChannel ch) {
         super(parent, ch);
+        this.ch = ch;
     }
 
     @Override
     protected Unsafe newUnsafe() {
         return new NioSocketChannelUnsafe();
+    }
+
+    @Override
+    protected ChannelConfig newConfig() {
+        return new NioSocketChannelConfig(this, ch);
     }
 
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
