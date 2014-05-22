@@ -55,8 +55,11 @@ public class ChannelOutboundBuffer {
         return entries.size();
     }
 
-    public void clear() {
-        entries.clear();
+    public void clear(Throwable e) {
+        while (entries.peek() != null) {
+            Entry entry = entries.poll();
+            entry.channelPromise.complete(e);
+        }
     }
 
     protected static class Entry {

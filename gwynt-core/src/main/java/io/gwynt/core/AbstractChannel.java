@@ -248,7 +248,12 @@ public abstract class AbstractChannel implements Channel {
             synchronized (registrationLock) {
                 registered = true;
                 AbstractChannel.this.eventScheduler = eventScheduler;
-                pipeline.fireRegistered();
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        pipeline.fireRegistered();
+                    }
+                });
                 afterRegister();
             }
         }
@@ -259,7 +264,12 @@ public abstract class AbstractChannel implements Channel {
         public void unregister() {
             synchronized (registrationLock) {
                 registered = false;
-                pipeline.fireUnregistered();
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        pipeline.fireUnregistered();
+                    }
+                });
                 afterUnregister();
             }
         }
@@ -280,6 +290,7 @@ public abstract class AbstractChannel implements Channel {
             for (int i = 0; i < messagesRead; i++) {
                 pipeline().fireMessageReceived(messages.get(i));
             }
+
             if (messagesRead > 0) {
                 messages.clear();
             }
@@ -308,9 +319,14 @@ public abstract class AbstractChannel implements Channel {
         }
 
         @Override
-        public void exceptionCaught(Throwable e) {
-            pipeline().fireExceptionCaught(e);
-            doClose();
+        public void exceptionCaught(final Throwable e) {
+            invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    pipeline().fireExceptionCaught(e);
+                    doClose();
+                }
+            });
         }
 
         @Override
@@ -324,15 +340,20 @@ public abstract class AbstractChannel implements Channel {
             if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
                 closeForcibly();
-                channelOutboundBuffer.clear();
+                channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.complete();
-                if (!isActive()) {
-                    pipeline.fireClose();
-                }
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (!isActive()) {
+                            pipeline.fireClose();
+                        }
 
-                if (isRegistered()) {
-                    unregister();
-                }
+                        if (isRegistered()) {
+                            unregister();
+                        }
+                    }
+                });
             }
         }
 
@@ -346,6 +367,10 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public SocketAddress getRemoteAddress() throws Exception {
             return null;
+        }
+
+        protected void invokeLater(Runnable task) {
+            scheduler().schedule(task);
         }
     }
 }

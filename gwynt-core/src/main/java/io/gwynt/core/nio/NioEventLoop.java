@@ -16,6 +16,7 @@ public class NioEventLoop extends AbstractEventScheduler {
     private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
     Selector selector;
     private NioEventLoop parent;
+    private int ioRatio = 50;
 
     private SelectorProvider selectorProvider;
 
@@ -63,6 +64,17 @@ public class NioEventLoop extends AbstractEventScheduler {
         } catch (Throwable e) {
             channel.unsafe().exceptionCaught(e);
         }
+    }
+
+    public int getIoRatio() {
+        return ioRatio;
+    }
+
+    public void setIoRatio(int ioRatio) {
+        if (ioRatio < 1 || ioRatio > 100) {
+            throw new IllegalArgumentException("Mus be in range[1...100]");
+        }
+        this.ioRatio = ioRatio;
     }
 
     private void openSelector() {
@@ -118,8 +130,7 @@ public class NioEventLoop extends AbstractEventScheduler {
                 Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
                 processSelectedKeys(keys);
                 long ioTime = System.currentTimeMillis() - start;
-                // TODO ioRatio
-                runTasks(ioTime * (100 - 50) / 50);
+                runTasks(ioTime * (100 - ioRatio) / ioRatio);
             }
 
             for (SelectionKey selectionKey : selector.keys()) {
