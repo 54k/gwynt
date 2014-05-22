@@ -6,6 +6,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class ChannelOutboundBuffer {
 
     private final Queue<Entry> entries = new ConcurrentLinkedQueue<>();
+    private Channel channel;
+
+    public ChannelOutboundBuffer(Channel channel) {
+        this.channel = channel;
+    }
+
+    protected Channel channel() {
+        return channel;
+    }
 
     public void addMessage(Object message, ChannelPromise channelPromise) {
         message = prepareMessage(message);

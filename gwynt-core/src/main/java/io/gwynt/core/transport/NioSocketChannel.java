@@ -1,6 +1,8 @@
 package io.gwynt.core.transport;
 
+import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.NioSocketChannelOutboundBuffer;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.exception.EofException;
 
@@ -53,8 +55,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAfterRegister() {
-            super.doAfterRegister();
+        protected void afterRegister() {
+            super.afterRegister();
             if (isActive()) {
                 pipeline().fireOpen();
             }
@@ -89,21 +91,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void write(Object message, ChannelPromise channelPromise) {
-            ByteBuffer buffer;
-            if (message instanceof byte[]) {
-                byte[] bytes = (byte[]) message;
-                buffer = config().getByteBufferPool().acquire(bytes.length, true);
-                buffer.put(bytes);
-                buffer.flip();
-            } else if (message instanceof ByteBuffer) {
-                ByteBuffer byteBuffer = (ByteBuffer) message;
-                byteBuffer.flip();
-                buffer = byteBuffer;
-            } else {
-                throw new IllegalArgumentException("Wrong message type");
-            }
-            super.write(buffer, channelPromise);
+        protected ChannelOutboundBuffer newChannelOutboundBuffer() {
+            return new NioSocketChannelOutboundBuffer(NioSocketChannel.this);
         }
 
         @Override
@@ -140,7 +129,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     pipeline().fireOpen();
                 }
             } else {
-                doCloseChannel();
+                closeForcibly();
                 throw new ChannelException("Connection failed");
             }
         }

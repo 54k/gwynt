@@ -57,8 +57,8 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doAfterRegister() {
-            super.doAfterRegister();
+        protected void afterRegister() {
+            super.afterRegister();
             if (config().isAutoRead()) {
                 interestOps(interestOps() | SelectionKey.OP_READ);
             }

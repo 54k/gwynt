@@ -33,8 +33,8 @@ public abstract class AbstractChannel implements Channel {
         this.ch = ch;
 
         pipeline = new DefaultPipeline(this);
-        unsafe = newUnsafe();
         config = newConfig();
+        unsafe = newUnsafe();
     }
 
     @Override
@@ -172,13 +172,13 @@ public abstract class AbstractChannel implements Channel {
 
         private final Object registrationLock = new Object();
         private final ChannelPromise closePromise = newChannelPromise();
-        private final List<Object> messages = new ArrayList<>();
+        private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
 
         private volatile boolean pendingClose;
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
 
         protected ChannelOutboundBuffer newChannelOutboundBuffer() {
-            return new ChannelOutboundBuffer();
+            return new ChannelOutboundBuffer(AbstractChannel.this);
         }
 
         @SuppressWarnings("unchecked")
@@ -250,28 +250,31 @@ public abstract class AbstractChannel implements Channel {
                 registered = true;
                 AbstractChannel.this.eventScheduler = eventScheduler;
                 pipeline.fireRegistered();
-                doAfterRegister();
+                afterRegister();
             }
         }
 
-        protected abstract void doAfterRegister();
+        protected abstract void afterRegister();
 
         @Override
         public void unregister() {
             synchronized (registrationLock) {
                 registered = false;
                 pipeline.fireUnregistered();
-                doAfterUnregister();
+                afterUnregister();
             }
         }
 
-        protected abstract void doAfterUnregister();
+        protected abstract void afterUnregister();
 
         @Override
         public void doRead() throws IOException {
+            assert scheduler().inSchedulerThread();
             boolean shouldClose = pendingClose;
             try {
-                doReadMessages(messages);
+                for (int i = 0; i < config().getReadSpinCount(); i++) {
+                    doReadMessages(messages);
+                }
             } catch (EofException e) {
                 shouldClose = true;
             }
@@ -290,6 +293,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doWrite() throws IOException {
+            assert scheduler().inSchedulerThread();
             boolean shouldClose = pendingClose;
             try {
                 if (!channelOutboundBuffer.isEmpty()) {
@@ -329,21 +333,23 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
+            assert scheduler().inSchedulerThread();
             if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
-                doCloseChannel();
+                closeForcibly();
                 channelOutboundBuffer.clear();
                 closePromise.complete();
                 if (!isActive()) {
                     pipeline.fireClose();
                 }
+
                 if (isRegistered()) {
                     unregister();
                 }
             }
         }
 
-        protected abstract void doCloseChannel();
+        protected abstract void closeForcibly();
 
         @Override
         public SocketAddress getLocalAddress() throws Exception {

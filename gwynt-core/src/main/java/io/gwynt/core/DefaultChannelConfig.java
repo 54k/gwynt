@@ -5,6 +5,8 @@ public class DefaultChannelConfig implements ChannelConfig {
     private Channel channel;
     private boolean autoRead = true;
     private ByteBufferPool byteBufferPool = ByteBufferPool.DEFAULT;
+    private int writeSpinCount = 1;
+    private int readSpinCount = 1;
 
     public DefaultChannelConfig(Channel channel) {
         this.channel = channel;
@@ -29,6 +31,34 @@ public class DefaultChannelConfig implements ChannelConfig {
     @Override
     public ChannelConfig setByteBufferPool(ByteBufferPool byteBufferPool) {
         this.byteBufferPool = byteBufferPool;
+        return this;
+    }
+
+    @Override
+    public int getWriteSpinCount() {
+        return writeSpinCount;
+    }
+
+    @Override
+    public ChannelConfig setWriteSpinCount(int writeSpinCount) {
+        if (writeSpinCount < 1 || writeSpinCount > 16) {
+            throw new IllegalArgumentException("Must be in range [1...16]");
+        }
+        this.writeSpinCount = writeSpinCount;
+        return this;
+    }
+
+    @Override
+    public int getReadSpinCount() {
+        return readSpinCount;
+    }
+
+    @Override
+    public ChannelConfig setReadSpinCount(int readSpinCount) {
+        if (readSpinCount < 1 || readSpinCount > 16) {
+            throw new IllegalArgumentException("Must be in range [1...16]");
+        }
+        this.readSpinCount = readSpinCount;
         return this;
     }
 }

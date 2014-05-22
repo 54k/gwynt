@@ -68,7 +68,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         protected abstract boolean doWriteMessage(Object message);
 
         @Override
-        protected void doAfterRegister() {
+        protected void afterRegister() {
             try {
                 selectionKey = javaChannel().register(((NioEventLoop) scheduler()).selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
@@ -77,7 +77,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doAfterUnregister() {
+        protected void afterUnregister() {
             selectionKey.cancel();
             selectionKey.attach(null);
         }
@@ -88,7 +88,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doCloseChannel() {
+        protected void closeForcibly() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {
