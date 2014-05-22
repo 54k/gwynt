@@ -73,26 +73,23 @@ public class NioSocketChannel extends AbstractNioChannel {
             int bytesRead = 0;
             int messagesRead = 0;
 
-            do {
-                try {
-                    bytesRead = javaChannel().read(buffer);
-                    if (bytesRead > 0) {
-                        buffer.flip();
-                        byte[] message = new byte[buffer.limit()];
-                        buffer.get(message);
-                        messages.add(message);
-                        messagesRead++;
-                    }
-                } catch (IOException e) {
-                    error = e;
-                    break;
+            try {
+                bytesRead = javaChannel().read(buffer);
+                if (bytesRead > 0) {
+                    buffer.flip();
+                    byte[] message = new byte[buffer.limit()];
+                    buffer.get(message);
+                    messages.add(message);
+                    messagesRead++;
                 }
-            } while (buffer.hasRemaining() && bytesRead > 0);
+            } catch (IOException e) {
+                error = e;
+            }
 
             if (error != null) {
                 exceptionCaught(error);
-                bytesRead = -1;
             }
+
             if (bytesRead == -1) {
                 doClose();
             }
@@ -119,7 +116,6 @@ public class NioSocketChannel extends AbstractNioChannel {
 
             if (error != null) {
                 exceptionCaught(error);
-                bytesWritten = -1;
             }
 
             if (bytesWritten == -1) {

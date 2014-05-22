@@ -69,26 +69,23 @@ public class NioDatagramChannel extends AbstractNioChannel {
             Throwable error = null;
             SocketAddress address;
             int messagesRead = 0;
-            do {
-                try {
-                    address = javaChannel().receive(buffer);
-                    if (address != null) {
-                        buffer.flip();
-                        byte[] message = new byte[buffer.limit()];
-                        buffer.get(message);
-                        messages.add(new Datagram(address, ByteBuffer.wrap(message)));
-                        messagesRead++;
-                    }
-                } catch (IOException e) {
-                    error = e;
-                    break;
+            try {
+                address = javaChannel().receive(buffer);
+                if (address != null) {
+                    buffer.flip();
+                    byte[] message = new byte[buffer.limit()];
+                    buffer.get(message);
+                    messages.add(new Datagram(address, ByteBuffer.wrap(message)));
+                    messagesRead++;
                 }
-            } while (buffer.hasRemaining() && address != null);
+            } catch (IOException e) {
+                error = e;
+            }
 
             if (error != null) {
                 exceptionCaught(error);
-                doClose();
             }
+
             config().getByteBufferPool().release(buffer);
             return messagesRead;
         }
@@ -107,7 +104,6 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
             if (error != null) {
                 exceptionCaught(error);
-                bytesWritten = -1;
             }
 
             if (bytesWritten == -1) {
