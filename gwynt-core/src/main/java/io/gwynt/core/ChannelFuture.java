@@ -15,4 +15,6 @@ public interface ChannelFuture {
     boolean isDone();
 
     boolean isFailed();
+
+    Throwable getError();
 }

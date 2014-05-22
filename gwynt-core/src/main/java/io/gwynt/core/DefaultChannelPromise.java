@@ -73,15 +73,6 @@ public class DefaultChannelPromise implements ChannelPromise {
             });
             return;
         }
-        if (error == null) {
-            notifyListenersOnComplete();
-        } else {
-            notifyListenersOnError();
-        }
-        notifyingListeners.set(false);
-    }
-
-    private void notifyListenersOnComplete() {
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
             if (channel.scheduler().inSchedulerThread()) {
@@ -95,22 +86,7 @@ public class DefaultChannelPromise implements ChannelPromise {
                 });
             }
         }
-    }
-
-    private void notifyListenersOnError() {
-        while (listeners.peek() != null) {
-            final ChannelFutureListener channelFutureListener = listeners.poll();
-            if (channel.scheduler().inSchedulerThread()) {
-                channelFutureListener.onError(this, error);
-            } else {
-                channel.scheduler().schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        channelFutureListener.onError(DefaultChannelPromise.this, error);
-                    }
-                });
-            }
-        }
+        notifyingListeners.set(false);
     }
 
     private void notifyPromises() {
@@ -123,15 +99,6 @@ public class DefaultChannelPromise implements ChannelPromise {
             });
             return;
         }
-        if (error == null) {
-            notifyPromisesOnComplete();
-        } else {
-            notifyPromiseOnError();
-        }
-        notifyingPromises.set(false);
-    }
-
-    private void notifyPromisesOnComplete() {
         while (promises.peek() != null) {
             final ChannelPromise promise = promises.poll();
             if (channel.scheduler().inSchedulerThread()) {
@@ -145,22 +112,7 @@ public class DefaultChannelPromise implements ChannelPromise {
                 });
             }
         }
-    }
-
-    private void notifyPromiseOnError() {
-        while (promises.peek() != null) {
-            final ChannelPromise promise = promises.poll();
-            if (channel.scheduler().inSchedulerThread()) {
-                promise.complete(error);
-            } else {
-                channel.scheduler().schedule(new Runnable() {
-                    @Override
-                    public void run() {
-                        promise.complete(error);
-                    }
-                });
-            }
-        }
+        notifyingPromises.set(false);
     }
 
     @Override
@@ -171,6 +123,11 @@ public class DefaultChannelPromise implements ChannelPromise {
     @Override
     public boolean isFailed() {
         return error != null;
+    }
+
+    @Override
+    public Throwable getError() {
+        return error;
     }
 
     @Override

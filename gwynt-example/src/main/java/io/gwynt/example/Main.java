@@ -1,27 +1,16 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.nio.Datagram;
-import io.gwynt.core.nio.NioDatagramChannel;
-import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioServerSocketChannel;
-import io.gwynt.core.nio.NioSocketChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.util.Date;
 
 public class Main {
 
@@ -164,10 +153,6 @@ public class Main {
                 public void onComplete(ChannelFuture channelFuture) {
                     logger.info("Closed channel [{}], channelPromise [{}]", channelFuture.channel(), channelFuture);
                 }
-
-                @Override
-                public void onError(ChannelFuture channelFuture, Throwable e) {
-                }
             });
             context.close(channelPromise);
         }
@@ -179,11 +164,6 @@ public class Main {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
                     logger.info("Sent to channel [{}], channelPromise [{}], message [{}]", channelFuture.channel(), channelPromise, message);
-                }
-
-                @Override
-                public void onError(ChannelFuture channel, Throwable e) {
-
                 }
             });
             context.write(message, channelPromise);

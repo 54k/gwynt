@@ -151,10 +151,6 @@ public class EndpointBootstrap implements Endpoint {
                         channelFuture.channel().read();
                     }
                 }
-
-                @Override
-                public void onError(ChannelFuture channelFuture, Throwable e) {
-                }
             });
         }
     }
