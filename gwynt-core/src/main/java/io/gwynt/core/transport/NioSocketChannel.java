@@ -65,7 +65,8 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected int doReadMessages(List<Object> messages) {
             ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
-            int bytesWritten;
+            Throwable error = null;
+            int bytesWritten = 0;
             int messagesRead = 0;
 
             do {
@@ -79,18 +80,20 @@ public class NioSocketChannel extends AbstractNioChannel {
                         messagesRead++;
                     }
                 } catch (IOException e) {
-                    exceptionCaught(e);
-                    config().getByteBufferPool().release(buffer);
-                    return messagesRead;
+                    error = e;
+                    break;
                 }
             } while (buffer.hasRemaining() && bytesWritten > 0);
 
-            config().getByteBufferPool().release(buffer);
-
+            if (error != null) {
+                exceptionCaught(error);
+                bytesWritten = -1;
+            }
             if (bytesWritten == -1) {
-                throw new EofException();
+                doClose();
             }
 
+            config().getByteBufferPool().release(buffer);
             return messagesRead;
         }
 

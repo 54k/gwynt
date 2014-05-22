@@ -1,6 +1,5 @@
 package io.gwynt.core;
 
-import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
@@ -270,24 +269,19 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void doRead() throws IOException {
             assert scheduler().inSchedulerThread();
-            boolean shouldClose = pendingClose;
-            try {
-                for (int i = 0; i < config().getReadSpinCount(); i++) {
-                    if (doReadMessages(messages) == 0) {
-                        break;
-                    }
+
+            int messagesRead = 0;
+            for (int i = 0; i < config().getReadSpinCount(); i++) {
+                if ((messagesRead = doReadMessages(messages)) == 0) {
+                    break;
                 }
-            } catch (EofException e) {
-                shouldClose = true;
             }
 
-            for (Object message : messages) {
-                pipeline().fireMessageReceived(message);
+            for (int i = 0; i < messagesRead; i++) {
+                pipeline().fireMessageReceived(messages.get(i));
             }
-            messages.clear();
-
-            if (shouldClose) {
-                doClose();
+            if (messagesRead > 0) {
+                messages.clear();
             }
         }
 
@@ -296,23 +290,12 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void doWrite() throws IOException {
             assert scheduler().inSchedulerThread();
-            boolean shouldClose = pendingClose;
-            try {
-                if (!channelOutboundBuffer.isEmpty()) {
-                    int written = doWriteMessages(channelOutboundBuffer);
-                    if (written != channelOutboundBuffer.size()) {
-                        shouldClose = false;
-                    }
-                    for (int i = 0; i < written; i++) {
-                        channelOutboundBuffer.remove();
-                    }
-                }
-            } catch (EofException e) {
-                shouldClose = true;
-            }
 
-            if (shouldClose) {
-                doClose();
+            if (!channelOutboundBuffer.isEmpty()) {
+                int written = doWriteMessages(channelOutboundBuffer);
+                for (int i = 0; i < written; i++) {
+                    channelOutboundBuffer.remove();
+                }
             }
         }
 

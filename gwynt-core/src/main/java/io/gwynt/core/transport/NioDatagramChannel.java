@@ -67,6 +67,7 @@ public class NioDatagramChannel extends AbstractNioChannel {
         @Override
         protected int doReadMessages(List<Object> messages) {
             ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
+            Throwable error = null;
             SocketAddress address;
             int messagesRead = 0;
             do {
@@ -80,12 +81,15 @@ public class NioDatagramChannel extends AbstractNioChannel {
                         messagesRead++;
                     }
                 } catch (IOException e) {
-                    exceptionCaught(e);
-                    config().getByteBufferPool().release(buffer);
-                    return messagesRead;
+                    error = e;
+                    break;
                 }
             } while (buffer.hasRemaining() && address != null);
 
+            if (error != null) {
+                exceptionCaught(error);
+                doClose();
+            }
             config().getByteBufferPool().release(buffer);
             return messagesRead;
         }

@@ -77,8 +77,9 @@ public class NioServerSocketChannel extends AbstractNioChannel {
                 accepted++;
             } catch (IOException e) {
                 exceptionCaught(e);
-                return -1;
+                return 0;
             }
+
             NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, ch);
             messages.add(channel);
             return accepted;
