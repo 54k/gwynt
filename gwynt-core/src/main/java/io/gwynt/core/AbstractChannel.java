@@ -248,13 +248,8 @@ public abstract class AbstractChannel implements Channel {
             synchronized (registrationLock) {
                 registered = true;
                 AbstractChannel.this.eventScheduler = eventScheduler;
-                invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        pipeline.fireRegistered();
-                        afterRegister();
-                    }
-                });
+                pipeline.fireRegistered();
+                afterRegister();
             }
         }
 
@@ -264,13 +259,8 @@ public abstract class AbstractChannel implements Channel {
         public void unregister() {
             synchronized (registrationLock) {
                 registered = false;
-                invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        pipeline.fireUnregistered();
-                        afterUnregister();
-                    }
-                });
+                pipeline.fireUnregistered();
+                afterUnregister();
             }
         }
 
