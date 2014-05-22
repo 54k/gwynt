@@ -99,14 +99,11 @@ public class NioDatagramChannel extends AbstractNioChannel {
             int bytesWritten = 0;
             Datagram datagram = (Datagram) message;
             ByteBuffer src = datagram.getMessage();
-            do {
-                try {
-                    bytesWritten = javaChannel().send(src, datagram.getRecipient());
-                } catch (IOException e) {
-                    error = e;
-                    break;
-                }
-            } while (src.hasRemaining() && bytesWritten > 0);
+            try {
+                bytesWritten = javaChannel().send(src, datagram.getRecipient());
+            } catch (IOException e) {
+                error = e;
+            }
 
             if (error != null) {
                 exceptionCaught(error);

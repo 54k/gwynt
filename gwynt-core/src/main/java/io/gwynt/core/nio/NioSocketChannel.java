@@ -103,11 +103,9 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected boolean doWriteMessage(Object message) {
-            boolean done;
             Throwable error = null;
             int bytesWritten = 0;
             ByteBuffer src = (ByteBuffer) message;
-
             try {
                 bytesWritten = javaChannel().write(src);
             } catch (IOException e) {
@@ -123,10 +121,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 doClose();
             }
 
-            done = !src.hasRemaining();
-            config().getByteBufferPool().release(src);
-
-            return done;
+            return !src.hasRemaining();
         }
 
         @Override
