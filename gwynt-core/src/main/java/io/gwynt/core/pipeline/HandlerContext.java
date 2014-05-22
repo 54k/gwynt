@@ -1,6 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 
@@ -18,19 +19,19 @@ public interface HandlerContext {
 
     void fireOpen();
 
-    void read();
+    ChannelFuture read();
 
-    void read(ChannelPromise channelPromise);
+    ChannelFuture read(ChannelPromise channelPromise);
 
     void fireMessageReceived(Object message);
 
-    void write(Object message);
+    ChannelFuture write(Object message);
 
-    void write(Object message, ChannelPromise channelPromise);
+    ChannelFuture write(Object message, ChannelPromise channelPromise);
 
-    void close();
+    ChannelFuture close();
 
-    void close(ChannelPromise channelPromise);
+    ChannelFuture close(ChannelPromise channelPromise);
 
     void fireClose();
 

@@ -1,6 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 
@@ -73,14 +74,6 @@ public class DefaultHandlerContext implements HandlerContext {
         return channel;
     }
 
-    public void fireOnAdded() {
-        invoker().invokeOnHandlerAdded(this);
-    }
-
-    public void fireOnRemoved() {
-        invoker().invokeOnHandlerRemoved(this);
-    }
-
     @Override
     public void fireRegistered() {
         DefaultHandlerContext next = findContextInbound();
@@ -100,14 +93,15 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public void read() {
-        read(channel.newChannelPromise());
+    public ChannelFuture read() {
+        return read(channel.newChannelPromise());
     }
 
     @Override
-    public void read(ChannelPromise channelPromise) {
+    public ChannelFuture read(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnRead(prev, channelPromise);
+        return channelPromise;
     }
 
     @Override
@@ -117,25 +111,27 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public void write(Object message) {
-        write(message, channel.newChannelPromise());
+    public ChannelFuture write(Object message) {
+        return write(message, channel.newChannelPromise());
     }
 
     @Override
-    public void write(Object message, ChannelPromise channelPromise) {
+    public ChannelFuture write(Object message, ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnMessageSent(prev, message, channelPromise);
+        return channelPromise;
     }
 
     @Override
-    public void close() {
-        close(channel.newChannelPromise());
+    public ChannelFuture close() {
+        return close(channel.newChannelPromise());
     }
 
     @Override
-    public void close(ChannelPromise channelPromise) {
+    public ChannelFuture close(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnClosing(prev, channelPromise);
+        return channelPromise;
     }
 
     @Override
