@@ -252,9 +252,9 @@ public abstract class AbstractChannel implements Channel {
                     @Override
                     public void run() {
                         pipeline.fireRegistered();
+                        afterRegister();
                     }
                 });
-                afterRegister();
             }
         }
 
@@ -268,9 +268,9 @@ public abstract class AbstractChannel implements Channel {
                     @Override
                     public void run() {
                         pipeline.fireUnregistered();
+                        afterUnregister();
                     }
                 });
-                afterUnregister();
             }
         }
 
