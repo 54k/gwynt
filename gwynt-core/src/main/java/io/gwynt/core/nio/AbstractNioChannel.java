@@ -6,7 +6,6 @@ import io.gwynt.core.EventScheduler;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -37,16 +36,22 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         protected void writeRequested() {
-            if (isRegistered()) {
-                interestOps(interestOps() | SelectionKey.OP_WRITE);
-            }
+            invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    interestOps(interestOps() | SelectionKey.OP_WRITE);
+                }
+            });
         }
 
         @Override
         protected void readRequested() {
-            if (isRegistered()) {
-                interestOps(interestOps() | SelectionKey.OP_READ);
-            }
+            invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    interestOps(interestOps() | SelectionKey.OP_READ);
+                }
+            });
         }
 
         @Override
@@ -104,9 +109,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         protected int interestOps() {
             checkRegistered();
-            try {
+            if (selectionKey.isValid()) {
                 return selectionKey.interestOps();
-            } catch (CancelledKeyException ignore) {
             }
             return 0;
         }
@@ -116,10 +120,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             if ((interestOps & ~javaChannel().validOps()) != 0) {
                 throw new IllegalArgumentException("interestOps are not valid");
             }
-            try {
+            if (selectionKey.isValid()) {
                 selectionKey.interestOps(interestOps);
                 ((NioEventLoop) scheduler()).wakeUpSelector();
-            } catch (CancelledKeyException ignore) {
             }
         }
 

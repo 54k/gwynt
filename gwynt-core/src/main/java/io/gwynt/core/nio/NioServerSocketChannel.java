@@ -73,6 +73,9 @@ public class NioServerSocketChannel extends AbstractNioChannel {
             int accepted = 0;
             try {
                 ch = javaChannel().accept();
+                if (ch == null) {
+                    return 0;
+                }
                 ch.configureBlocking(false);
                 accepted++;
             } catch (IOException e) {

@@ -266,7 +266,7 @@ public abstract class AbstractChannel implements Channel {
 
             int messagesRead = 0;
             for (int i = 0; i < config().getReadSpinCount(); i++) {
-                if ((messagesRead = doReadMessages(messages)) == 0) {
+                if ((messagesRead += doReadMessages(messages)) == 0) {
                     break;
                 }
             }
