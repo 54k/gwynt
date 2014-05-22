@@ -320,6 +320,7 @@ public abstract class AbstractChannel implements Channel {
 
         protected void doClose() {
             assert scheduler().inSchedulerThread();
+
             if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
                 closeForcibly();

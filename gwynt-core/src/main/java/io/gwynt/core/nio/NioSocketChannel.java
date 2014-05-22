@@ -65,13 +65,13 @@ public class NioSocketChannel extends AbstractNioChannel {
         protected int doReadMessages(List<Object> messages) {
             ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             Throwable error = null;
-            int bytesWritten = 0;
+            int bytesRead = 0;
             int messagesRead = 0;
 
             do {
                 try {
-                    bytesWritten = javaChannel().read(buffer);
-                    if (bytesWritten > 0) {
+                    bytesRead = javaChannel().read(buffer);
+                    if (bytesRead > 0) {
                         buffer.flip();
                         byte[] message = new byte[buffer.limit()];
                         buffer.get(message);
@@ -82,13 +82,13 @@ public class NioSocketChannel extends AbstractNioChannel {
                     error = e;
                     break;
                 }
-            } while (buffer.hasRemaining() && bytesWritten > 0);
+            } while (buffer.hasRemaining() && bytesRead > 0);
 
             if (error != null) {
                 exceptionCaught(error);
-                bytesWritten = -1;
+                bytesRead = -1;
             }
-            if (bytesWritten == -1) {
+            if (bytesRead == -1) {
                 doClose();
             }
 
@@ -103,18 +103,16 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected boolean doWriteMessage(Object message) {
+            boolean done;
             Throwable error = null;
             int bytesWritten = 0;
             ByteBuffer src = (ByteBuffer) message;
 
-            do {
-                try {
-                    bytesWritten = javaChannel().write(src);
-                } catch (IOException e) {
-                    error = e;
-                    break;
-                }
-            } while (src.hasRemaining() && bytesWritten > 0);
+            try {
+                bytesWritten = javaChannel().write(src);
+            } catch (IOException e) {
+                error = e;
+            }
 
             if (error != null) {
                 exceptionCaught(error);
@@ -124,9 +122,11 @@ public class NioSocketChannel extends AbstractNioChannel {
             if (bytesWritten == -1) {
                 doClose();
             }
+
+            done = !src.hasRemaining();
             config().getByteBufferPool().release(src);
 
-            return !src.hasRemaining();
+            return done;
         }
 
         @Override

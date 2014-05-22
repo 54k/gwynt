@@ -127,25 +127,6 @@ public class Main {
         }
     }
 
-    private static class MainHandler extends AbstractHandler<String, Object> {
-
-        private static final Logger logger = LoggerFactory.getLogger(MainHandler.class);
-
-        @Override
-        public void onMessageReceived(HandlerContext context, String message) {
-            context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
-            context.write(new Date().toString() + "\r\n");
-            if (context.channel() instanceof NioSocketChannel) {
-                context.close();
-            }
-        }
-
-        @Override
-        public void onExceptionCaught(HandlerContext context, Throwable e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
-
     private static class EchoHandler extends AbstractHandler<String, Object> {
 
         @Override
