@@ -16,22 +16,6 @@ public class EndpointBootstrap implements Endpoint {
     protected List<Handler> handlers = new ArrayList<>();
     protected ChannelFactory channelFactory = new DefaultChannelFactory();
     protected Class<? extends Channel> channelClazz;
-    protected ByteBufferPool byteBufferPool = new ArrayByteBufferPool();
-
-    @Override
-    public ByteBufferPool getByteBufferPool() {
-        return byteBufferPool;
-    }
-
-    @Override
-    public Endpoint setByteBufferPool(ByteBufferPool byteBufferPool) {
-        if (byteBufferPool == null) {
-            throw new IllegalArgumentException("byteBufferPool");
-        }
-
-        this.byteBufferPool = byteBufferPool;
-        return this;
-    }
 
     @Override
     public Endpoint addHandler(Handler handler) {
