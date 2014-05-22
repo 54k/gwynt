@@ -94,7 +94,7 @@ public class NioEventLoop extends AbstractEventScheduler {
     public EventScheduler next() {
         return this;
     }
-    
+
     @Override
     protected void addTask(Runnable task) {
         super.addTask(task);
