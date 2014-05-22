@@ -28,81 +28,81 @@ public class Main {
     public static void main(String[] args) throws Exception {
         new NettySimpleServer().run();
         new GwyntSimpleServer().run();
-
-        StringConverter sc = new StringConverter();
-        LoggingHandler lh = new LoggingHandler();
-        EchoHandler eh = new EchoHandler();
-
-        NioEventLoopGroup dispatcher = new NioEventLoopGroup();
-        dispatcher.runThread();
-
-        Endpoint tcpEndpoint = new EndpointBootstrap().setScheduler(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
-        tcpEndpoint.bind(3002).await();
-
-        new EndpointBootstrap().setScheduler(tcpEndpoint.getScheduler()).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh)
-                .addHandler(new AbstractHandler<String, String>() {
-                    private Logger logger = LoggerFactory.getLogger(getClass());
-
-                    @Override
-                    public void onOpen(HandlerContext context) {
-                        context.write("echo echo echo");
-                    }
-
-                    @Override
-                    public void onMessageReceived(HandlerContext context, String message) {
-                        context.write(message);
-                        context.close();
-                    }
-
-                    @Override
-                    public void onExceptionCaught(HandlerContext context, Throwable e) {
-                        logger.error(e.getMessage(), e);
-                    }
-                }).connect("localhost", 3002).await();
-
-        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
-            @Override
-            public void onMessageReceived(HandlerContext context, Object message) {
-                context.write(message);
-            }
-        }).bind(3002).await();
-
-        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
-            @Override
-            public void onOpen(HandlerContext context) {
-                context.write(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
-            }
-
-            @Override
-            public void onMessageReceived(HandlerContext context, Object message) {
-                context.write(message);
-                context.close();
-            }
-        }).connect("localhost", 3002).await();
-
-        Channel channel = new EndpointBootstrap().setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
-            @Override
-            public void onMessageReceived(HandlerContext context, Object message) {
-                System.out.println(message);
-            }
-        }).connect("localhost", 3002).await().channel();
-
-        channel.closeFuture().addListener(new ChannelFutureListener() {
-            @Override
-            public void onComplete(ChannelFuture channelFuture) {
-                System.exit(0);
-            }
-
-            @Override
-            public void onError(ChannelFuture channelFuture, Throwable e) {
-            }
-        });
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                channel.write(line + "\r\n");
-            }
-        }
+//
+//        StringConverter sc = new StringConverter();
+//        LoggingHandler lh = new LoggingHandler();
+//        EchoHandler eh = new EchoHandler();
+//
+//        NioEventLoopGroup dispatcher = new NioEventLoopGroup();
+//        dispatcher.runThread();
+//
+//        Endpoint tcpEndpoint = new EndpointBootstrap().setScheduler(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
+//        tcpEndpoint.bind(3002).await();
+//
+//        new EndpointBootstrap().setScheduler(tcpEndpoint.getScheduler()).setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(lh)
+//                .addHandler(new AbstractHandler<String, String>() {
+//                    private Logger logger = LoggerFactory.getLogger(getClass());
+//
+//                    @Override
+//                    public void onOpen(HandlerContext context) {
+//                        context.write("echo echo echo");
+//                    }
+//
+//                    @Override
+//                    public void onMessageReceived(HandlerContext context, String message) {
+//                        context.write(message);
+//                        context.close();
+//                    }
+//
+//                    @Override
+//                    public void onExceptionCaught(HandlerContext context, Throwable e) {
+//                        logger.error(e.getMessage(), e);
+//                    }
+//                }).connect("localhost", 3002).await();
+//
+//        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
+//            @Override
+//            public void onMessageReceived(HandlerContext context, Object message) {
+//                context.write(message);
+//            }
+//        }).bind(3002).await();
+//
+//        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setScheduler(tcpEndpoint.getScheduler()).addHandler(lh).addHandler(new AbstractHandler() {
+//            @Override
+//            public void onOpen(HandlerContext context) {
+//                context.write(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
+//            }
+//
+//            @Override
+//            public void onMessageReceived(HandlerContext context, Object message) {
+//                context.write(message);
+//                context.close();
+//            }
+//        }).connect("localhost", 3002).await();
+//
+//        Channel channel = new EndpointBootstrap().setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
+//            @Override
+//            public void onMessageReceived(HandlerContext context, Object message) {
+//                System.out.println(message);
+//            }
+//        }).connect("localhost", 3002).await().channel();
+//
+//        channel.closeFuture().addListener(new ChannelFutureListener() {
+//            @Override
+//            public void onComplete(ChannelFuture channelFuture) {
+//                System.exit(0);
+//            }
+//
+//            @Override
+//            public void onError(ChannelFuture channelFuture, Throwable e) {
+//            }
+//        });
+//        try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+//            String line;
+//            while ((line = br.readLine()) != null) {
+//                channel.write(line + "\r\n");
+//            }
+//        }
     }
 
     private static class StringConverter extends AbstractHandler<byte[], String> {
