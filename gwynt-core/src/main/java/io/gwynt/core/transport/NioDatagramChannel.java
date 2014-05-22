@@ -59,13 +59,14 @@ public class NioDatagramChannel extends AbstractNioChannel {
         @Override
         protected void doAfterRegister() {
             super.doAfterRegister();
-            interestOps(interestOps() | SelectionKey.OP_READ);
+            if (config().isAutoRead()) {
+                interestOps(interestOps() | SelectionKey.OP_READ);
+            }
         }
 
         @Override
         protected void doReadMessages(List<Object> messages) {
-            ByteBuffer buffer = ByteBuffer.allocate(4096);
-//            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
+            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             SocketAddress address;
 
             do {
@@ -79,12 +80,12 @@ public class NioDatagramChannel extends AbstractNioChannel {
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
-//                    config().getByteBufferPool().release(buffer);
+                    config().getByteBufferPool().release(buffer);
                     return;
                 }
             } while (buffer.hasRemaining() && address != null);
 
-//            config().getByteBufferPool().release(buffer);
+            config().getByteBufferPool().release(buffer);
         }
 
         @Override

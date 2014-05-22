@@ -62,9 +62,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doReadMessages(List<Object> messages) {
-            // TODO make channel config
-            ByteBuffer buffer = ByteBuffer.allocate(4096);
-//            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
+            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             int bytesWritten;
 
             do {
@@ -78,12 +76,12 @@ public class NioSocketChannel extends AbstractNioChannel {
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
-//                    config().getByteBufferPool().release(buffer);
+                    config().getByteBufferPool().release(buffer);
                     return;
                 }
             } while (buffer.hasRemaining() && bytesWritten > 0);
 
-//            config().getByteBufferPool().release(buffer);
+            config().getByteBufferPool().release(buffer);
 
             if (bytesWritten == -1) {
                 throw new EofException();
@@ -95,8 +93,7 @@ public class NioSocketChannel extends AbstractNioChannel {
             ByteBuffer buffer;
             if (message instanceof byte[]) {
                 byte[] bytes = (byte[]) message;
-                buffer = ByteBuffer.allocate(bytes.length);
-//                buffer = config().getByteBufferPool().acquire(bytes.length, true);
+                buffer = config().getByteBufferPool().acquire(bytes.length, true);
                 buffer.put(bytes);
                 buffer.flip();
             } else if (message instanceof ByteBuffer) {
@@ -125,7 +122,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 throw new EofException();
             }
             if (!src.hasRemaining()) {
-//                config().getByteBufferPool().release(src);
+                config().getByteBufferPool().release(src);
                 return true;
             }
             return false;
@@ -137,7 +134,9 @@ public class NioSocketChannel extends AbstractNioChannel {
             if (javaChannel().finishConnect()) {
                 connectPromise.complete();
                 if (!wasActive && isActive()) {
-                    interestOps(SelectionKey.OP_READ);
+                    if (config().isAutoRead()) {
+                        interestOps(SelectionKey.OP_READ);
+                    }
                     pipeline().fireOpen();
                 }
             } else {

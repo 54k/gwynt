@@ -45,7 +45,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void readRequested(ChannelPromise channelPromise) {
+        protected void readRequested() {
             if (isRegistered()) {
                 interestOps(interestOps() | SelectionKey.OP_READ);
             }

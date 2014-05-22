@@ -29,6 +29,7 @@ public abstract class AbstractChannel implements Channel {
     private Unsafe unsafe;
     private SocketAddress localAddress;
     private SocketAddress remoteAddress;
+    private ChannelConfig config;
 
     protected AbstractChannel(Channel parent, Object ch) {
         this.parent = parent;
@@ -36,6 +37,7 @@ public abstract class AbstractChannel implements Channel {
 
         pipeline = new DefaultPipeline(this);
         unsafe = newUnsafe();
+        config = newConfig();
     }
 
     @Override
@@ -75,6 +77,15 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public boolean isRegistered() {
         return registered;
+    }
+
+    @Override
+    public ChannelConfig config() {
+        return config;
+    }
+
+    protected ChannelConfig newConfig() {
+        return new DefaultChannelConfig(this);
     }
 
     @Override
@@ -189,14 +200,15 @@ public abstract class AbstractChannel implements Channel {
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 synchronized (registrationLock) {
-                    readRequested(channelPromise);
+                    readRequested();
                 }
+                channelPromise.complete();
             } else {
                 channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
-        protected abstract void readRequested(ChannelPromise channelPromise);
+        protected abstract void readRequested();
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {

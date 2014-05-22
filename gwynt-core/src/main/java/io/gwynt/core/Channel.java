@@ -12,6 +12,8 @@ public interface Channel {
 
     boolean isRegistered();
 
+    ChannelConfig config();
+
     Object attach(Object attachment);
 
     Object attachment();

@@ -163,7 +163,9 @@ public class EndpointBootstrap implements Endpoint {
             message.register(eventLoop.next()).addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
-                    channelFuture.channel().read();
+                    if (channelFuture.channel().config().isAutoRead()) {
+                        channelFuture.channel().read();
+                    }
                 }
 
                 @Override
