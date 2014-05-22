@@ -273,7 +273,9 @@ public abstract class AbstractChannel implements Channel {
             boolean shouldClose = pendingClose;
             try {
                 for (int i = 0; i < config().getReadSpinCount(); i++) {
-                    doReadMessages(messages);
+                    if (doReadMessages(messages) == 0) {
+                        break;
+                    }
                 }
             } catch (EofException e) {
                 shouldClose = true;
@@ -289,7 +291,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void doReadMessages(List<Object> messages);
+        protected abstract int doReadMessages(List<Object> messages);
 
         @Override
         public void doWrite() throws IOException {

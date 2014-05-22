@@ -65,10 +65,10 @@ public class NioDatagramChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) {
             ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             SocketAddress address;
-
+            int messagesRead = 0;
             do {
                 try {
                     address = javaChannel().receive(buffer);
@@ -77,15 +77,17 @@ public class NioDatagramChannel extends AbstractNioChannel {
                         byte[] message = new byte[buffer.limit()];
                         buffer.get(message);
                         messages.add(new Datagram(address, ByteBuffer.wrap(message)));
+                        messagesRead++;
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
                     config().getByteBufferPool().release(buffer);
-                    return;
+                    return messagesRead;
                 }
             } while (buffer.hasRemaining() && address != null);
 
             config().getByteBufferPool().release(buffer);
+            return messagesRead;
         }
 
         @Override

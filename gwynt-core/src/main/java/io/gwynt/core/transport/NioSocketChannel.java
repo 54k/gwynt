@@ -63,9 +63,10 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) {
             ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
             int bytesWritten;
+            int messagesRead = 0;
 
             do {
                 try {
@@ -75,11 +76,12 @@ public class NioSocketChannel extends AbstractNioChannel {
                         byte[] message = new byte[buffer.limit()];
                         buffer.get(message);
                         messages.add(message);
+                        messagesRead++;
                     }
                 } catch (IOException e) {
                     exceptionCaught(e);
                     config().getByteBufferPool().release(buffer);
-                    return;
+                    return messagesRead;
                 }
             } while (buffer.hasRemaining() && bytesWritten > 0);
 
@@ -88,6 +90,8 @@ public class NioSocketChannel extends AbstractNioChannel {
             if (bytesWritten == -1) {
                 throw new EofException();
             }
+
+            return messagesRead;
         }
 
         @Override
@@ -103,7 +107,9 @@ public class NioSocketChannel extends AbstractNioChannel {
                 try {
                     bytesWritten = javaChannel().write(src);
                 } catch (IOException e) {
-                    throw new EofException();
+                    exceptionCaught(e);
+                    config().getByteBufferPool().release(src);
+                    return false;
                 }
             } while (src.hasRemaining() && bytesWritten > 0);
 
@@ -119,6 +125,8 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public void doConnect() throws IOException {
+            assert scheduler().inSchedulerThread();
+
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {
                 connectPromise.complete();
