@@ -301,6 +301,15 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
     }
 
+    @Override
+    public void clear() {
+        DefaultHandlerContext context = tail.getPrev();
+        do {
+            remove(context);
+            context = context.getPrev();
+        } while (context != null);
+    }
+
     private DefaultHandlerContext getContext(Handler handler) {
         DefaultHandlerContext contextByName;
         if ((contextByName = getContext(generateName(handler))) != null) {

@@ -31,4 +31,6 @@ public interface Pipeline {
     void remove(Handler handler);
 
     void remove(String name);
+
+    void clear();
 }
