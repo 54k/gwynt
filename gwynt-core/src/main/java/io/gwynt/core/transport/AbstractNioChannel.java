@@ -1,17 +1,15 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.AbstractChannel;
-import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventScheduler;
 import io.gwynt.core.exception.ChannelException;
-import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.util.Queue;
 
 public abstract class AbstractNioChannel extends AbstractChannel {
 
@@ -52,16 +50,19 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doWriteMessages(Queue<Pair<Object, ChannelPromise>> messages) {
-            Pair<Object, ChannelPromise> message = messages.peek();
-            if (doWriteMessage(message.getFirst())) {
-                messages.poll();
-                message.getSecond().complete();
+        protected int doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) {
+            int written = 0;
+            Object message = channelOutboundBuffer.current();
+            if (message != null) {
+                if (doWriteMessage(message)) {
+                    written++;
+                }
             }
 
-            if (!messages.isEmpty()) {
+            if (written != channelOutboundBuffer.size()) {
                 interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
+            return written;
         }
 
         protected abstract boolean doWriteMessage(Object message);

@@ -3,7 +3,6 @@ package io.gwynt.core;
 import io.gwynt.core.exception.EofException;
 import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
-import io.gwynt.core.util.Pair;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,8 +10,6 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class AbstractChannel implements Channel {
 
@@ -178,7 +175,11 @@ public abstract class AbstractChannel implements Channel {
         private final List<Object> messages = new ArrayList<>();
 
         private volatile boolean pendingClose;
-        private Queue<Pair<Object, ChannelPromise>> pendingWrites = new ConcurrentLinkedQueue<>();
+        private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
+
+        protected ChannelOutboundBuffer newChannelOutboundBuffer() {
+            return new ChannelOutboundBuffer();
+        }
 
         @SuppressWarnings("unchecked")
         @Override
@@ -213,7 +214,7 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
-                pendingWrites.add(new Pair<>(message, channelPromise));
+                channelOutboundBuffer.addMessage(message, channelPromise);
                 synchronized (registrationLock) {
                     if (isRegistered()) {
                         writeRequested();
@@ -291,17 +292,17 @@ public abstract class AbstractChannel implements Channel {
         public void doWrite() throws IOException {
             boolean shouldClose = pendingClose;
             try {
-                if (!pendingWrites.isEmpty()) {
-                    doWriteMessages(pendingWrites);
-                    if (!pendingWrites.isEmpty()) {
+                if (!channelOutboundBuffer.isEmpty()) {
+                    int written = doWriteMessages(channelOutboundBuffer);
+                    if (written != channelOutboundBuffer.size()) {
                         shouldClose = false;
+                    }
+                    for (int i = 0; i < written; i++) {
+                        channelOutboundBuffer.remove();
                     }
                 }
             } catch (EofException e) {
                 shouldClose = true;
-                while (pendingWrites.peek() != null) {
-                    pendingWrites.poll().getSecond().complete(e);
-                }
             }
 
             if (shouldClose) {
@@ -309,7 +310,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void doWriteMessages(Queue<Pair<Object, ChannelPromise>> messages);
+        protected abstract int doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer);
 
         @Override
         public void doConnect() throws IOException {
@@ -331,7 +332,7 @@ public abstract class AbstractChannel implements Channel {
             if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
                 doCloseChannel();
-                pendingWrites.clear();
+                channelOutboundBuffer.clear();
                 closePromise.complete();
                 if (!isActive()) {
                     pipeline.fireClose();
