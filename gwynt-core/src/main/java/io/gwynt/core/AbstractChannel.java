@@ -158,6 +158,11 @@ public abstract class AbstractChannel implements Channel {
         return eventScheduler.register(this, newChannelPromise());
     }
 
+    @Override
+    public Object javaChannel() {
+        return ch;
+    }
+
     protected abstract boolean isEventSchedulerCompatible(EventScheduler eventScheduler);
 
     @Override

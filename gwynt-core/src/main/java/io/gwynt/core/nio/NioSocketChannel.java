@@ -15,8 +15,6 @@ import java.util.List;
 
 public class NioSocketChannel extends AbstractNioChannel {
 
-    private SocketChannel ch;
-
     @SuppressWarnings("unused")
     public NioSocketChannel() throws IOException {
         this(null, SocketChannel.open());
@@ -24,7 +22,6 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     public NioSocketChannel(AbstractNioChannel parent, SocketChannel ch) {
         super(parent, ch);
-        this.ch = ch;
     }
 
     @Override
@@ -34,7 +31,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     @Override
     protected ChannelConfig newConfig() {
-        return new NioSocketChannelConfig(this, ch);
+        return new NioSocketChannelConfig(this, (SocketChannel) javaChannel());
     }
 
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {

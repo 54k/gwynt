@@ -46,6 +46,8 @@ public interface Channel {
 
     ChannelFuture unregister();
 
+    Object javaChannel();
+
     interface Unsafe<T> {
 
         T javaChannel();
