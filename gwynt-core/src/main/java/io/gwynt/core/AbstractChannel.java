@@ -292,14 +292,15 @@ public abstract class AbstractChannel implements Channel {
             assert scheduler().inSchedulerThread();
 
             if (!channelOutboundBuffer.isEmpty()) {
-                int written = doWriteMessages(channelOutboundBuffer);
-                for (int i = 0; i < written; i++) {
-                    channelOutboundBuffer.remove();
-                }
+                doWriteMessages(channelOutboundBuffer);
+            }
+
+            if (channelOutboundBuffer.isEmpty() && pendingClose) {
+                doClose();
             }
         }
 
-        protected abstract int doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer);
+        protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer);
 
         @Override
         public void doConnect() throws IOException {

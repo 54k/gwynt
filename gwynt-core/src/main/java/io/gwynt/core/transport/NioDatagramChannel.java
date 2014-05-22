@@ -1,7 +1,6 @@
 package io.gwynt.core.transport;
 
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.exception.EofException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -96,19 +95,26 @@ public class NioDatagramChannel extends AbstractNioChannel {
 
         @Override
         protected boolean doWriteMessage(Object message) {
-            int bytesWritten;
+            Throwable error = null;
+            int bytesWritten = 0;
             Datagram datagram = (Datagram) message;
             ByteBuffer src = datagram.getMessage();
             do {
                 try {
                     bytesWritten = javaChannel().send(src, datagram.getRecipient());
                 } catch (IOException e) {
-                    throw new EofException();
+                    error = e;
+                    break;
                 }
             } while (src.hasRemaining() && bytesWritten > 0);
 
+            if (error != null) {
+                exceptionCaught(error);
+                bytesWritten = -1;
+            }
+
             if (bytesWritten == -1) {
-                throw new EofException();
+                doClose();
             }
 
             return !src.hasRemaining();

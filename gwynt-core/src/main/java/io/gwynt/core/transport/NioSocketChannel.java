@@ -4,7 +4,6 @@ import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.NioSocketChannelOutboundBuffer;
 import io.gwynt.core.exception.ChannelException;
-import io.gwynt.core.exception.EofException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -104,26 +103,30 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected boolean doWriteMessage(Object message) {
-            int bytesWritten;
+            Throwable error = null;
+            int bytesWritten = 0;
             ByteBuffer src = (ByteBuffer) message;
+
             do {
                 try {
                     bytesWritten = javaChannel().write(src);
                 } catch (IOException e) {
-                    exceptionCaught(e);
-                    config().getByteBufferPool().release(src);
-                    return false;
+                    error = e;
+                    break;
                 }
             } while (src.hasRemaining() && bytesWritten > 0);
 
+            if (error != null) {
+                exceptionCaught(error);
+                bytesWritten = -1;
+            }
+
             if (bytesWritten == -1) {
-                throw new EofException();
+                doClose();
             }
-            if (!src.hasRemaining()) {
-                config().getByteBufferPool().release(src);
-                return true;
-            }
-            return false;
+            config().getByteBufferPool().release(src);
+
+            return !src.hasRemaining();
         }
 
         @Override
