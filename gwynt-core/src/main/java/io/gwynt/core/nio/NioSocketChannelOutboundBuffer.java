@@ -1,4 +1,7 @@
-package io.gwynt.core;
+package io.gwynt.core.nio;
+
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelOutboundBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -24,5 +27,10 @@ public class NioSocketChannelOutboundBuffer extends ChannelOutboundBuffer {
             throw new IllegalArgumentException("Wrong message type");
         }
         return buffer;
+    }
+
+    @Override
+    protected void clearEntry(Entry entry) {
+        channel().config().getByteBufferPool().release((ByteBuffer) entry.getMessage());
     }
 }

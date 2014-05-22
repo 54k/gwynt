@@ -43,6 +43,7 @@ public class ChannelOutboundBuffer {
     public void remove() {
         Entry entry = entries.poll();
         if (entry != null) {
+            clearEntry(entry);
             entry.channelPromise.complete();
         }
     }
@@ -58,12 +59,20 @@ public class ChannelOutboundBuffer {
     public void clear(Throwable e) {
         while (entries.peek() != null) {
             Entry entry = entries.poll();
+            clearEntry(entry);
             entry.channelPromise.complete(e);
         }
+    }
+
+    protected void clearEntry(Entry entry) {
     }
 
     protected static class Entry {
         private Object message;
         private ChannelPromise channelPromise;
+
+        public Object getMessage() {
+            return message;
+        }
     }
 }

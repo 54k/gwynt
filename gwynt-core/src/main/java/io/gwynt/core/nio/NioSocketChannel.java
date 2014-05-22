@@ -2,7 +2,6 @@ package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.NioSocketChannelOutboundBuffer;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;

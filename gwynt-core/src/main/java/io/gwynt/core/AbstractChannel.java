@@ -302,6 +302,11 @@ public abstract class AbstractChannel implements Channel {
         public void doWrite() throws IOException {
             assert scheduler().inSchedulerThread();
 
+            if (!isActive()) {
+                channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
+                return;
+            }
+
             if (!channelOutboundBuffer.isEmpty()) {
                 doWriteMessages(channelOutboundBuffer);
             }
