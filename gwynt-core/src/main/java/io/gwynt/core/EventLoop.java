@@ -2,9 +2,8 @@ package io.gwynt.core;
 
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
-public interface EventLoop {
+public interface EventLoop extends EventLoopGroup, EventExecutor {
 
-    EventLoop parent();
 
     HandlerContextInvoker asInvoker();
 

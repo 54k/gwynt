@@ -17,8 +17,8 @@ public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        NioEventLoopGroup eventLoopGroup = new NioEventLoopGroup();
-        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioServerSocketChannel.class).setScheduler(eventLoopGroup).addHandler(new AbstractHandler<byte[], String>() {
+        NioEventLoopGroup eventLoop = new NioEventLoopGroup();
+        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioServerSocketChannel.class).setScheduler(eventLoop).addHandler(new AbstractHandler<byte[], String>() {
             private Charset charset = Charset.forName("UTF-8");
 
             @Override

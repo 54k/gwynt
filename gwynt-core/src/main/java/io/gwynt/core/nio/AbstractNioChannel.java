@@ -2,7 +2,7 @@ package io.gwynt.core.nio;
 
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelOutboundBuffer;
-import io.gwynt.core.EventScheduler;
+import io.gwynt.core.EventLoop;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
@@ -28,8 +28,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     }
 
     @Override
-    protected boolean isEventSchedulerCompatible(EventScheduler eventScheduler) {
-        return eventScheduler instanceof NioEventLoop;
+    protected boolean isEventLoopCompatible(EventLoop eventLoop) {
+        return eventLoop instanceof NioEventLoop;
     }
 
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> {
@@ -82,7 +82,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterRegister() {
             try {
-                selectionKey = javaChannel().register(((NioEventLoop) scheduler()).selector, 0, AbstractNioChannel.this);
+                selectionKey = javaChannel().register(((NioEventLoop) eventLoop()).selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
                 throw new ChannelException(e);
             }
@@ -122,7 +122,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
             if (selectionKey.isValid()) {
                 selectionKey.interestOps(interestOps);
-                ((NioEventLoop) scheduler()).wakeUpSelector();
+                ((NioEventLoop) eventLoop()).wakeUpSelector();
             }
         }
 

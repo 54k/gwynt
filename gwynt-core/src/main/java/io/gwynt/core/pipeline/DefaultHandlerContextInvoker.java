@@ -1,14 +1,14 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.EventScheduler;
+import io.gwynt.core.EventExecutor;
 
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
-    private EventScheduler scheduler;
+    private EventExecutor executor;
 
-    public DefaultHandlerContextInvoker(EventScheduler scheduler) {
-        this.scheduler = scheduler;
+    public DefaultHandlerContextInvoker(EventExecutor executor) {
+        this.executor = executor;
     }
 
     private static void invokeOnHandlerAddedNow(HandlerContext context) {
@@ -99,10 +99,10 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @Override
     public void invokeOnHandlerAdded(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnHandlerAddedNow(context);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnHandlerAddedNow(context);
@@ -113,10 +113,10 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @Override
     public void invokeOnHandlerRemoved(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnHandlerRemovedNow(context);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnHandlerRemovedNow(context);
@@ -127,7 +127,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @Override
     public void invokeOnRegistered(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnRegisteredNow(context);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
@@ -140,13 +140,13 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     }
                 };
             }
-            scheduler.schedule(event);
+            executor.execute(event);
         }
     }
 
     @Override
     public void invokeOnUnregistered(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnUnregisteredNow(context);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
@@ -159,13 +159,13 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     }
                 };
             }
-            scheduler.schedule(event);
+            executor.execute(event);
         }
     }
 
     @Override
     public void invokeOnOpen(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnOpenNow(context);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
@@ -178,13 +178,13 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     }
                 };
             }
-            scheduler.schedule(event);
+            executor.execute(event);
         }
     }
 
     @Override
     public void invokeOnRead(final HandlerContext context, final ChannelPromise channelPromise) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnReadNow(context, channelPromise);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
@@ -197,17 +197,17 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     }
                 };
             }
-            scheduler.schedule(event);
+            executor.execute(event);
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void invokeOnMessageReceived(final HandlerContext context, final Object message) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnMessageReceivedNow(context, message);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnMessageReceivedNow(context, message);
@@ -219,10 +219,10 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
     @SuppressWarnings("unchecked")
     @Override
     public void invokeOnMessageSent(final HandlerContext context, final Object message, final ChannelPromise channelPromise) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnMessageSentNow(context, message, channelPromise);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnMessageSentNow(context, message, channelPromise);
@@ -233,10 +233,10 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @Override
     public void invokeOnClosing(final HandlerContext context, final ChannelPromise channelPromise) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnClosingNow(context, channelPromise);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnClosingNow(context, channelPromise);
@@ -247,7 +247,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     @Override
     public void invokeOnClosed(final HandlerContext context) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnCloseNow(context);
         } else {
             DefaultHandlerContext dctx = (DefaultHandlerContext) context;
@@ -260,16 +260,16 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     }
                 };
             }
-            scheduler.schedule(event);
+            executor.execute(event);
         }
     }
 
     @Override
     public void invokeOnExceptionCaught(final HandlerContext context, final Throwable e) {
-        if (scheduler.inSchedulerThread()) {
+        if (executor.inExecutorThread()) {
             invokeOnExceptionCaughtNow(context, e);
         } else {
-            scheduler.schedule(new Runnable() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     invokeOnExceptionCaughtNow(context, e);

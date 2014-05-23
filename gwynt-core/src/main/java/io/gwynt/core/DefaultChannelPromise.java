@@ -65,7 +65,7 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private void notifyListeners() {
         if (notifyingListeners.getAndSet(true)) {
-            channel().scheduler().schedule(new Runnable() {
+            channel().eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
                     notifyListeners();
@@ -75,10 +75,10 @@ public class DefaultChannelPromise implements ChannelPromise {
         }
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
-            if (channel.scheduler().inSchedulerThread()) {
+            if (channel.eventLoop().inExecutorThread()) {
                 channelFutureListener.onComplete(this);
             } else {
-                channel.scheduler().schedule(new Runnable() {
+                channel.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
                         channelFutureListener.onComplete(DefaultChannelPromise.this);
@@ -91,7 +91,7 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private void notifyPromises() {
         if (notifyingPromises.getAndSet(true)) {
-            channel().scheduler().schedule(new Runnable() {
+            channel().eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
                     notifyPromises();
@@ -101,10 +101,10 @@ public class DefaultChannelPromise implements ChannelPromise {
         }
         while (promises.peek() != null) {
             final ChannelPromise promise = promises.poll();
-            if (channel.scheduler().inSchedulerThread()) {
+            if (channel.eventLoop().inExecutorThread()) {
                 promise.complete();
             } else {
-                channel.scheduler().schedule(new Runnable() {
+                channel.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
                         promise.complete();

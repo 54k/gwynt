@@ -1,7 +1,9 @@
 package io.gwynt.core.nio;
 
-import io.gwynt.core.AbstractEventScheduler;
-import io.gwynt.core.EventScheduler;
+import io.gwynt.core.EventLoop;
+import io.gwynt.core.SingleThreadedEventLoop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
@@ -11,24 +13,25 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop extends AbstractEventScheduler {
+public class NioEventLoop extends SingleThreadedEventLoop implements EventLoop {
+
+    private static final Logger logger = LoggerFactory.getLogger(io.gwynt.core.nio.NioEventLoop.class);
 
     private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
     Selector selector;
-    private NioEventLoop parent;
+    private EventLoop parent;
     private int ioRatio = 50;
-
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {
         this(null);
     }
 
-    public NioEventLoop(NioEventLoop parent) {
+    public NioEventLoop(EventLoop parent) {
         this(parent, SelectorProvider.provider());
     }
 
-    public NioEventLoop(NioEventLoop parent, SelectorProvider selectorProvider) {
+    public NioEventLoop(EventLoop parent, SelectorProvider selectorProvider) {
         if (selectorProvider == null) {
             throw new IllegalArgumentException("selectorProvider");
         }
@@ -86,12 +89,12 @@ public class NioEventLoop extends AbstractEventScheduler {
     }
 
     @Override
-    public EventScheduler parent() {
+    public EventLoop parent() {
         return parent;
     }
 
     @Override
-    public EventScheduler next() {
+    public EventLoop next() {
         return this;
     }
 
@@ -102,15 +105,15 @@ public class NioEventLoop extends AbstractEventScheduler {
     }
 
     void wakeUpSelector() {
-        if (!inSchedulerThread() && !selectorAwakened.getAndSet(true)) {
+        if (!inExecutorThread() && !selectorAwakened.getAndSet(true)) {
             selector.wakeup();
         }
     }
 
     @Override
-    public void run() {
+    protected void run() {
         try (Selector sel = selector) {
-            while (isRunning()) {
+            while (!isShutdown()) {
                 int keyCount = 0;
                 try {
                     selectorAwakened.set(false);

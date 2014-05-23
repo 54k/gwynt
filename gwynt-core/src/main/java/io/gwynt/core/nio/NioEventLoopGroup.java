@@ -1,6 +1,6 @@
 package io.gwynt.core.nio;
 
-import io.gwynt.core.EventScheduler;
+import io.gwynt.core.EventLoop;
 
 public class NioEventLoopGroup extends NioEventLoop {
 
@@ -20,10 +20,10 @@ public class NioEventLoopGroup extends NioEventLoop {
     }
 
     @Override
-    public EventScheduler next() {
+    public EventLoop next() {
         if (workers.length > 0) {
             currentWorker = currentWorker % workers.length;
-            EventScheduler scheduler = workers[currentWorker];
+            EventLoop scheduler = workers[currentWorker];
             currentWorker++;
             return scheduler;
         }
@@ -38,18 +38,10 @@ public class NioEventLoopGroup extends NioEventLoop {
     }
 
     @Override
-    public void runThread() {
+    public void shutdown() {
         for (NioEventLoop worker : workers) {
-            worker.runThread();
+            worker.shutdown();
         }
-        super.runThread();
-    }
-
-    @Override
-    public void shutdownThread() {
-        for (NioEventLoop worker : workers) {
-            worker.shutdownThread();
-        }
-        super.shutdownThread();
+        super.shutdown();
     }
 }

@@ -18,7 +18,7 @@ public abstract class AbstractChannel implements Channel {
 
     private volatile Channel parent;
     private volatile Object attachment;
-    private volatile EventScheduler eventScheduler;
+    private volatile EventLoop eventLoop;
     private volatile boolean registered;
 
     private Object ch;
@@ -100,8 +100,8 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public EventScheduler scheduler() {
-        return eventScheduler;
+    public EventLoop eventLoop() {
+        return eventLoop;
     }
 
     @Override
@@ -146,16 +146,16 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelFuture unregister() {
-        return eventScheduler.unregister(this, newChannelPromise());
+        return eventLoop.unregister(this, newChannelPromise());
     }
 
     @Override
-    public ChannelFuture register(EventScheduler eventScheduler) {
-        if (!isEventSchedulerCompatible(eventScheduler)) {
-            throw new RegistrationException("eventScheduler is not compatible");
+    public ChannelFuture register(EventLoop eventLoop) {
+        if (!isEventLoopCompatible(eventLoop)) {
+            throw new RegistrationException("eventLoop is not compatible");
         }
 
-        return eventScheduler.register(this, newChannelPromise());
+        return eventLoop.register(this, newChannelPromise());
     }
 
     @Override
@@ -163,7 +163,7 @@ public abstract class AbstractChannel implements Channel {
         return ch;
     }
 
-    protected abstract boolean isEventSchedulerCompatible(EventScheduler eventScheduler);
+    protected abstract boolean isEventLoopCompatible(EventLoop eventLoop);
 
     @Override
     public Unsafe unsafe() {
@@ -238,11 +238,11 @@ public abstract class AbstractChannel implements Channel {
         protected abstract void closeRequested();
 
         @Override
-        public void register(EventScheduler eventScheduler) {
-            assert eventScheduler.inSchedulerThread();
+        public void register(EventLoop eventScheduler) {
+            assert eventScheduler.inExecutorThread();
 
             registered = true;
-            AbstractChannel.this.eventScheduler = eventScheduler;
+            AbstractChannel.this.eventLoop = eventScheduler;
             pipeline.fireRegistered();
             afterRegister();
         }
@@ -251,7 +251,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void unregister() {
-            assert eventScheduler.inSchedulerThread();
+            assert eventLoop.inExecutorThread();
 
             registered = false;
             pipeline.fireUnregistered();
@@ -262,7 +262,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doRead() throws IOException {
-            assert scheduler().inSchedulerThread();
+            assert eventLoop().inExecutorThread();
 
             int messagesRead = 0;
             for (int i = 0; i < config().getReadSpinCount(); i++) {
@@ -286,7 +286,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doWrite() throws IOException {
-            assert scheduler().inSchedulerThread();
+            assert eventLoop().inExecutorThread();
 
             if (!isActive()) {
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
@@ -326,7 +326,7 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            assert scheduler().inSchedulerThread();
+            assert eventLoop().inExecutorThread();
 
             if (!closePromise.isDone() && isActive()) {
                 pendingClose = true;
@@ -361,7 +361,7 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void invokeLater(Runnable task) {
-            scheduler().schedule(task);
+            eventLoop().execute(task);
         }
     }
 }

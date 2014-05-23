@@ -1,8 +1,8 @@
 package io.gwynt.core;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
-public interface EventExecutor extends Executor {
+public interface EventExecutor extends ExecutorService {
 
-    boolean inEventThread();
+    boolean inExecutorThread();
 }

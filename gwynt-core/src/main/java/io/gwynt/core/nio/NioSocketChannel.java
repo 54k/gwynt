@@ -136,7 +136,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public void doConnect() throws IOException {
-            assert scheduler().inSchedulerThread();
+            assert eventLoop().inExecutorThread();
 
             boolean wasActive = isActive();
             if (javaChannel().finishConnect()) {

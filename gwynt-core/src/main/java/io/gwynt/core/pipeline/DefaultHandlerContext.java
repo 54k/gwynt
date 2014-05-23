@@ -59,7 +59,7 @@ public class DefaultHandlerContext implements HandlerContext {
 
     public HandlerContextInvoker invoker() {
         if (invoker == null) {
-            return channel.scheduler().asInvoker();
+            return channel.eventLoop().asInvoker();
         }
         return invoker;
     }

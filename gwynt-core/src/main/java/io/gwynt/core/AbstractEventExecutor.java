@@ -9,13 +9,13 @@ import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-// TODO run method start thread shutting down thread
 public abstract class AbstractEventExecutor extends AbstractExecutorService implements EventExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventExecutor.class);
 
     private Thread thread;
     private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+    private volatile boolean running;
 
     protected Runnable peekTask() {
         return tasks.peek();
@@ -54,12 +54,17 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     @Override
-    public boolean inEventThread() {
+    public boolean inExecutorThread() {
         return Thread.currentThread() == thread;
     }
 
     @Override
     public void shutdown() {
+        if (!running) {
+            return;
+        }
+        running = false;
+        thread = null;
     }
 
     @Deprecated
@@ -70,12 +75,12 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     public boolean isShutdown() {
-        return false;
+        return !running;
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        return !running && !hasTasks();
     }
 
     @Deprecated
@@ -86,10 +91,26 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     public void execute(Runnable command) {
-
+        addTask(command);
+        if (!running) {
+            runThread();
+        }
     }
 
-    protected abstract void runTasks();
+    private void runThread() {
+        if (running) {
+            return;
+        }
+        running = true;
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                AbstractEventExecutor.this.run();
+            }
+        });
+        thread.start();
+        this.thread = thread;
+    }
 
-    protected abstract void runTasks(int timeout);
+    protected abstract void run();
 }

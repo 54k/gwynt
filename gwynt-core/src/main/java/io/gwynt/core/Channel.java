@@ -20,7 +20,7 @@ public interface Channel {
 
     Pipeline pipeline();
 
-    EventScheduler scheduler();
+    EventLoop eventLoop();
 
     SocketAddress getLocalAddress();
 
@@ -42,7 +42,7 @@ public interface Channel {
 
     ChannelFuture closeFuture();
 
-    ChannelFuture register(EventScheduler eventScheduler);
+    ChannelFuture register(EventLoop eventLoop);
 
     ChannelFuture unregister();
 
@@ -62,7 +62,7 @@ public interface Channel {
 
         void close(ChannelPromise channelFuture);
 
-        void register(EventScheduler eventScheduler);
+        void register(EventLoop eventLoop);
 
         void unregister();
 

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class EndpointBootstrap implements Endpoint {
 
-    protected EventScheduler eventLoop = new NioEventLoop();
+    protected EventLoop eventLoop = new NioEventLoop();
     protected List<Handler> handlers = new ArrayList<>();
     protected ChannelFactory channelFactory = new DefaultChannelFactory();
     protected Class<? extends Channel> channelClazz;
@@ -58,17 +58,17 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public EventScheduler getScheduler() {
+    public EventLoop getScheduler() {
         return eventLoop;
     }
 
     @Override
-    public Endpoint setScheduler(EventScheduler eventScheduler) {
-        if (eventScheduler == null) {
-            throw new IllegalArgumentException("scheduler");
+    public Endpoint setScheduler(EventLoop eventLoop) {
+        if (eventLoop == null) {
+            throw new IllegalArgumentException("eventLoop");
         }
 
-        this.eventLoop = eventScheduler;
+        this.eventLoop = eventLoop;
         return this;
     }
 
@@ -102,7 +102,6 @@ public class EndpointBootstrap implements Endpoint {
 
     @SuppressWarnings("unchecked")
     private ChannelFuture initAndRegisterChannel() {
-        startEventLoop();
         Channel channel = channelFactory.createChannel(channelClazz);
         if (channel instanceof NioServerSocketChannel) {
             channel.pipeline().addFirst(new DefaultChannelAcceptor());
@@ -114,13 +113,8 @@ public class EndpointBootstrap implements Endpoint {
         return channel.register(eventLoop);
     }
 
-    private void startEventLoop() {
-        eventLoop.runThread();
-    }
-
     @Override
     public Endpoint shutdown() {
-        eventLoop.shutdownThread();
         return this;
     }
 

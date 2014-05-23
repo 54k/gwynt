@@ -43,7 +43,7 @@ public class NioServerSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void closeRequested() {
-            scheduler().schedule(CLOSE_TASK);
+            eventLoop().execute(CLOSE_TASK);
         }
 
         @Override

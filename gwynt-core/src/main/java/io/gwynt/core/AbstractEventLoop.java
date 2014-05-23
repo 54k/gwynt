@@ -1,0 +1,63 @@
+package io.gwynt.core;
+
+import io.gwynt.core.exception.ChannelException;
+import io.gwynt.core.pipeline.DefaultHandlerContextInvoker;
+import io.gwynt.core.pipeline.HandlerContextInvoker;
+
+public abstract class AbstractEventLoop extends AbstractEventExecutor implements EventLoop, EventLoopGroup {
+
+    private final HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
+
+    @Override
+    public HandlerContextInvoker asInvoker() {
+        return invoker;
+    }
+
+    @Override
+    public ChannelFuture register(Channel channel) {
+        return register(channel, channel.newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture unregister(Channel channel) {
+        return unregister(channel, channel.newChannelPromise());
+    }
+
+    @Override
+    public ChannelFuture register(final Channel channel, final ChannelPromise channelPromise) {
+        if (channel == null || channelPromise == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    channel.unsafe().register(AbstractEventLoop.this);
+                    channelPromise.complete();
+                } catch (ChannelException e) {
+                    channelPromise.complete(e);
+                }
+            }
+        });
+        return channelPromise;
+    }
+
+    @Override
+    public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
+        if (channel == null || channelPromise == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    channel.unsafe().unregister();
+                    channelPromise.complete();
+                } catch (ChannelException e) {
+                    channelPromise.complete(e);
+                }
+            }
+        });
+        return channelPromise;
+    }
+}

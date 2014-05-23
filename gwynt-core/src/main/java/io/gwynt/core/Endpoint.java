@@ -55,19 +55,19 @@ public interface Endpoint {
     Endpoint setChannelClass(Class<? extends Channel> channel);
 
     /**
-     * Returns instance of {@link EventScheduler} in which all {@link Handler} events dispatched
+     * Returns instance of {@link EventLoop} in which all {@link Handler} events dispatched
      *
-     * @return current {@link EventScheduler}
+     * @return current {@link EventLoop}
      */
-    EventScheduler getScheduler();
+    EventLoop getScheduler();
 
     /**
-     * Set specific {@link EventScheduler} implementation, which will dispatch all events to {@link Handler}
+     * Set specific {@link EventLoop} implementation, which will dispatch all events to {@link Handler}
      *
-     * @param eventScheduler {@link EventScheduler} implementation
+     * @param eventScheduler {@link EventLoop} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint setScheduler(EventScheduler eventScheduler);
+    Endpoint setScheduler(EventLoop eventScheduler);
 
     /**
      * Start listening for incoming connections

@@ -352,8 +352,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     private void invokeHandlerAdded(final DefaultHandlerContext context) {
-        if (context.channel().isRegistered() && !context.channel().scheduler().inSchedulerThread()) {
-            context.channel().scheduler().schedule(new Runnable() {
+        if (context.channel().isRegistered() && !context.channel().eventLoop().inExecutorThread()) {
+            context.channel().eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
                     context.handler().onHandlerAdded(context);
@@ -364,8 +364,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     private void invokeHandlerRemoved(final DefaultHandlerContext context) {
-        if (context.channel().isRegistered() && !context.channel().scheduler().inSchedulerThread()) {
-            context.channel().scheduler().schedule(new Runnable() {
+        if (context.channel().isRegistered() && !context.channel().eventLoop().inExecutorThread()) {
+            context.channel().eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
                     context.handler().onHandlerRemoved(context);
