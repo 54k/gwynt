@@ -138,7 +138,7 @@ public class NioEventLoop extends AbstractEventScheduler {
                 unregister((AbstractNioChannel) selectionKey.attachment());
                 selectionKey.channel().close();
             }
-            runTasks(1000);
+            runTasks();
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception", e);
         }

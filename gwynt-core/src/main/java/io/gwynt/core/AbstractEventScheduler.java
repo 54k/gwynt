@@ -38,6 +38,17 @@ public abstract class AbstractEventScheduler implements EventScheduler {
         tasks.add(task);
     }
 
+    protected void runTasks() {
+        Runnable task;
+        while ((task = tasks.poll()) != null) {
+            try {
+                task.run();
+            } catch (Throwable e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
     protected void runTasks(long timeout) {
         long elapsedTime = 0;
         Runnable task;
