@@ -9,6 +9,7 @@ import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
+// TODO run method start thread shutting down thread
 public abstract class AbstractEventExecutor extends AbstractExecutorService implements EventExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventExecutor.class);
@@ -53,21 +54,8 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     @Override
-    public boolean inExecutorThread() {
+    public boolean inEventThread() {
         return Thread.currentThread() == thread;
-    }
-
-    @Override
-    public void runThread() {
-    }
-
-    @Override
-    public void shutdownThread() {
-    }
-
-    @Override
-    public boolean isRunning() {
-        return false;
     }
 
     @Override
@@ -100,4 +88,8 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     public void execute(Runnable command) {
 
     }
+
+    protected abstract void runTasks();
+
+    protected abstract void runTasks(int timeout);
 }
