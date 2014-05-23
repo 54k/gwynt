@@ -17,4 +17,8 @@ public interface ChannelConfig {
     int getReadSpinCount();
 
     ChannelConfig setReadSpinCount(int readSpinCount);
+
+    RecvByteBufferAllocator getRecvByteBufferAllocator();
+
+    ChannelConfig setRecvByteBufferAllocator(RecvByteBufferAllocator byteBufferAllocator);
 }

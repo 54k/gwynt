@@ -4,7 +4,8 @@ public class DefaultChannelConfig implements ChannelConfig {
 
     private Channel channel;
     private boolean autoRead = true;
-    private ByteBufferPool byteBufferPool = ByteBufferPool.DEFAULT;
+    private RecvByteBufferAllocator recvByteBufferAllocator = AdaptiveRecvByteBufferAllocator.DEFAULT;
+    private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
     private int writeSpinCount = 8;
     private int readSpinCount = 8;
 
@@ -59,6 +60,17 @@ public class DefaultChannelConfig implements ChannelConfig {
             throw new IllegalArgumentException("Must be in range [1...16]");
         }
         this.readSpinCount = readSpinCount;
+        return this;
+    }
+
+    @Override
+    public RecvByteBufferAllocator getRecvByteBufferAllocator() {
+        return recvByteBufferAllocator;
+    }
+
+    @Override
+    public ChannelConfig setRecvByteBufferAllocator(RecvByteBufferAllocator recvByteBufferAllocator) {
+        this.recvByteBufferAllocator = recvByteBufferAllocator;
         return this;
     }
 }

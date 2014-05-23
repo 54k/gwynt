@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ArrayByteBufferPool implements ByteBufferPool {
 
+    public static ByteBufferPool DEFAULT = new ArrayByteBufferPool();
+
     private final int min;
     private final Bucket[] direct;
     private final Bucket[] indirect;

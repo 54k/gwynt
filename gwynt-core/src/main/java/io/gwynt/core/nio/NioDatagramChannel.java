@@ -1,5 +1,6 @@
 package io.gwynt.core.nio;
 
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelPromise;
 
 import java.io.IOException;
@@ -24,6 +25,11 @@ public class NioDatagramChannel extends AbstractNioChannel {
     @Override
     protected Unsafe newUnsafe() {
         return new NioDatagramChannelUnsafe();
+    }
+
+    @Override
+    protected ChannelConfig newConfig() {
+        return new NioDatagramChannelConfig(this);
     }
 
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {

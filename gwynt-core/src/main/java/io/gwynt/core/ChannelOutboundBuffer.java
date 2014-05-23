@@ -61,6 +61,8 @@ public class ChannelOutboundBuffer {
             Entry entry = entries.poll();
             clearEntry(entry);
             entry.channelPromise.complete(e);
+            entry.message = null;
+            entry.channelPromise = null;
         }
     }
 

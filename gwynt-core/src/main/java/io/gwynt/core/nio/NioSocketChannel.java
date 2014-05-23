@@ -3,6 +3,7 @@ package io.gwynt.core.nio;
 import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.RecvByteBufferAllocator;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class NioSocketChannel extends AbstractNioChannel {
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
         private final ChannelPromise connectPromise = newChannelPromise();
+        private RecvByteBufferAllocator.Handle allocHandle;
 
         @Override
         protected void closeRequested() {
@@ -68,7 +70,10 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected int doReadMessages(List<Object> messages) {
-            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
+            if (allocHandle == null) {
+                allocHandle = config().getRecvByteBufferAllocator().newHandle();
+            }
+            ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             Throwable error = null;
             int bytesRead = 0;
             int messagesRead = 0;
@@ -92,6 +97,10 @@ public class NioSocketChannel extends AbstractNioChannel {
 
             if (bytesRead == -1) {
                 doClose();
+            }
+
+            if (bytesRead > 0) {
+                allocHandle.record(bytesRead);
             }
 
             config().getByteBufferPool().release(buffer);

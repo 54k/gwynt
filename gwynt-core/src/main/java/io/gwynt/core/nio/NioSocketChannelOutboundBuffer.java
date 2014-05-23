@@ -16,13 +16,15 @@ public class NioSocketChannelOutboundBuffer extends ChannelOutboundBuffer {
         ByteBuffer buffer;
         if (message instanceof byte[]) {
             byte[] bytes = (byte[]) message;
-            buffer = channel().config().getByteBufferPool().acquire(bytes.length, true);
+            buffer = channel().config().getByteBufferPool().acquire(bytes.length, false);
             buffer.put(bytes);
             buffer.flip();
         } else if (message instanceof ByteBuffer) {
             ByteBuffer byteBuffer = (ByteBuffer) message;
             byteBuffer.flip();
-            buffer = byteBuffer;
+            buffer = channel().config().getByteBufferPool().acquire(byteBuffer.limit(), false);
+            buffer.put(byteBuffer);
+            buffer.flip();
         } else {
             throw new IllegalArgumentException("Wrong message type");
         }
