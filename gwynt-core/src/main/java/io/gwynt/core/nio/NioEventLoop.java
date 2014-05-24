@@ -20,7 +20,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
     private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
     Selector selector;
     private EventLoop parent;
-    private int ioRatio = 50;
+    private int ioRatio = 100;
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {
@@ -129,12 +129,17 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
                 }
-
-                long start = System.currentTimeMillis();
                 Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
-                processSelectedKeys(keys);
-                long ioTime = System.currentTimeMillis() - start;
-                runTasks(ioTime * (100 - ioRatio) / ioRatio);
+
+                if (ioRatio == 100) {
+                    processSelectedKeys(keys);
+                    runTasks();
+                } else {
+                    long start = System.currentTimeMillis();
+                    processSelectedKeys(keys);
+                    long ioTime = System.currentTimeMillis() - start;
+                    runTasks(ioTime * (100 - ioRatio) / ioRatio);
+                }
             }
 
             for (SelectionKey selectionKey : selector.keys()) {

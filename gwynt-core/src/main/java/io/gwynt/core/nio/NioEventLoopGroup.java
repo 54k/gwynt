@@ -57,4 +57,11 @@ public class NioEventLoopGroup extends NioEventLoop {
     public ChannelFuture register(Channel channel) {
         return next().register(channel);
     }
+
+    @Override
+    public void setIoRatio(int ioRatio) {
+        for (NioEventLoop eventLoop : workers) {
+            eventLoop.setIoRatio(ioRatio);
+        }
+    }
 }
