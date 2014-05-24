@@ -114,6 +114,7 @@ public class EndpointBootstrap implements Endpoint {
 
     @Override
     public Endpoint shutdown() {
+        eventLoop.shutdown();
         return this;
     }
 
