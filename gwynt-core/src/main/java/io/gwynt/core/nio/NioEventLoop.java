@@ -112,7 +112,8 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     @Override
     protected void run() {
-        try (Selector sel = selector) {
+        try {
+            Selector sel = selector;
             while (!isShutdown()) {
                 int keyCount = 0;
                 try {

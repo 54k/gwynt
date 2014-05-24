@@ -28,18 +28,26 @@ public abstract class AbstractEventLoop extends AbstractEventExecutor implements
         if (channel == null || channelPromise == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    channel.unsafe().register(AbstractEventLoop.this);
-                    channelPromise.complete();
-                } catch (ChannelException e) {
-                    channelPromise.complete(e);
+        if (inExecutorThread()) {
+            register0(channel, channelPromise);
+        } else {
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    register0(channel, channelPromise);
                 }
-            }
-        });
+            });
+        }
         return channelPromise;
+    }
+
+    private void register0(Channel channel, ChannelPromise channelPromise) {
+        try {
+            channel.unsafe().register(AbstractEventLoop.this);
+            channelPromise.complete();
+        } catch (ChannelException e) {
+            channelPromise.complete(e);
+        }
     }
 
     @Override
@@ -47,17 +55,25 @@ public abstract class AbstractEventLoop extends AbstractEventExecutor implements
         if (channel == null || channelPromise == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    channel.unsafe().unregister();
-                    channelPromise.complete();
-                } catch (ChannelException e) {
-                    channelPromise.complete(e);
+        if (inExecutorThread()) {
+            unregister0(channel, channelPromise);
+        } else {
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    unregister0(channel, channelPromise);
                 }
-            }
-        });
+            });
+        }
         return channelPromise;
+    }
+
+    private void unregister0(Channel channel, ChannelPromise channelPromise) {
+        try {
+            channel.unsafe().unregister();
+            channelPromise.complete();
+        } catch (ChannelException e) {
+            channelPromise.complete(e);
+        }
     }
 }

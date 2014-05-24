@@ -102,12 +102,12 @@ public class DefaultChannelPromise implements ChannelPromise {
         while (promises.peek() != null) {
             final ChannelPromise promise = promises.poll();
             if (channel.eventLoop().inExecutorThread()) {
-                promise.complete();
+                promise.complete(error);
             } else {
                 channel.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
-                        promise.complete();
+                        promise.complete(error);
                     }
                 });
             }

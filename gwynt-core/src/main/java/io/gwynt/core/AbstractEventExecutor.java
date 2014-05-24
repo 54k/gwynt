@@ -13,16 +13,30 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractEventExecutor.class);
 
+    private static final Runnable WAKE_TASK = new WakeTask();
+
     private Thread thread;
     private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
     private volatile boolean running;
 
     protected Runnable peekTask() {
-        return tasks.peek();
+        for (; ; ) {
+            Runnable task = tasks.peek();
+            if (task instanceof WakeTask) {
+                continue;
+            }
+            return task;
+        }
     }
 
     protected Runnable pollTask() {
-        return tasks.poll();
+        for (; ; ) {
+            Runnable task = tasks.poll();
+            if (task instanceof WakeTask) {
+                continue;
+            }
+            return task;
+        }
     }
 
     protected boolean hasTasks() {
@@ -34,7 +48,9 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
             throw new IllegalArgumentException("task");
         }
         if (tasks.add(task)) {
-            taskAdded(task);
+            if (!(task instanceof WakeTask)) {
+                taskAdded(task);
+            }
         }
     }
 
@@ -63,6 +79,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         if (!running) {
             return;
         }
+        addTask(WAKE_TASK);
         running = false;
         thread = null;
     }
@@ -113,4 +130,10 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     protected abstract void run();
+
+    private static class WakeTask implements Runnable {
+        @Override
+        public void run() {
+        }
+    }
 }

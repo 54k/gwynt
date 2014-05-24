@@ -8,7 +8,7 @@ import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
-import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioEventLoop;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -34,13 +34,15 @@ public class Main {
         final LoggingHandler lh = new LoggingHandler();
         final EchoHandler eh = new EchoHandler();
 
-        NioEventLoopGroup dispatcher = new NioEventLoopGroup();
+        NioEventLoop dispatcher = new NioEventLoop();
 
         Endpoint tcpEndpoint = new EndpointBootstrap().setEventLoop(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
         tcpEndpoint.bind(3002).await();
 
+        NioEventLoop dispatcher2 = new NioEventLoop();
+
         final Endpoint tcpClient = new EndpointBootstrap();
-        tcpClient.setEventLoop(tcpEndpoint.getEventLoop()).setChannelClass(NioSocketChannel.class).addHandler(new ChannelInitializer() {
+        tcpClient.setEventLoop(dispatcher2).setChannelClass(NioSocketChannel.class).addHandler(new ChannelInitializer() {
 
             @Override
             protected void initialize(Channel session) {
@@ -51,12 +53,12 @@ public class Main {
 
                     @Override
                     public void onOpen(HandlerContext context) {
-                        context.write("exit\r\n");
+                        context.write("@echo");
                     }
 
                     @Override
                     public void onMessageReceived(HandlerContext context, String message) {
-                        context.write(message);
+                        /*context.write(message);*/
                     }
 
                     @Override
@@ -66,6 +68,13 @@ public class Main {
                 });
             }
         }).connect("localhost", 3002).await();
+
+        for (int i = 0; i < 5; i++) {
+            Thread.sleep(10);
+            tcpEndpoint.shutdown();
+            Thread.sleep(1);
+            tcpEndpoint.bind(3002).await();
+        }
 
         //        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(tcpEndpoint.getEventLoop()).addHandler(lh).addHandler(new AbstractHandler() {
         //            @Override

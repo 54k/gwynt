@@ -135,21 +135,25 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void doConnect() throws IOException {
+        public void doConnect() {
             assert eventLoop().inExecutorThread();
 
             boolean wasActive = isActive();
-            if (javaChannel().finishConnect()) {
-                connectPromise.complete();
-                if (!wasActive && isActive()) {
-                    if (config().isAutoRead()) {
-                        interestOps(SelectionKey.OP_READ);
+            try {
+                if (javaChannel().finishConnect()) {
+                    connectPromise.complete();
+                    if (!wasActive && isActive()) {
+                        if (config().isAutoRead()) {
+                            interestOps(SelectionKey.OP_READ);
+                        }
+                        pipeline().fireOpen();
                     }
-                    pipeline().fireOpen();
+                } else {
+                    closeForcibly();
+                    throw new ChannelException("Connection failed");
                 }
-            } else {
-                closeForcibly();
-                throw new ChannelException("Connection failed");
+            } catch (IOException e) {
+                connectPromise.complete(e);
             }
         }
 
