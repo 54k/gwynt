@@ -59,15 +59,15 @@ public interface Endpoint {
      *
      * @return current {@link EventLoop}
      */
-    EventLoop getScheduler();
+    EventLoop getEventLoop();
 
     /**
      * Set specific {@link EventLoop} implementation, which will dispatch all events to {@link Handler}
      *
-     * @param eventScheduler {@link EventLoop} implementation
+     * @param eventLoop {@link EventLoop} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint setScheduler(EventLoop eventScheduler);
+    Endpoint setEventLoop(EventLoop eventLoop);
 
     /**
      * Start listening for incoming connections

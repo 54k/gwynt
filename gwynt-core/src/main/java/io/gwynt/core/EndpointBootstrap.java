@@ -58,12 +58,12 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public EventLoop getScheduler() {
+    public EventLoop getEventLoop() {
         return eventLoop;
     }
 
     @Override
-    public Endpoint setScheduler(EventLoop eventLoop) {
+    public Endpoint setEventLoop(EventLoop eventLoop) {
         if (eventLoop == null) {
             throw new IllegalArgumentException("eventLoop");
         }
