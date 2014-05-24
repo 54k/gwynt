@@ -3,9 +3,9 @@ package io.gwynt.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SingleThreadedEventLoop extends AbstractEventLoop {
+public abstract class SingleThreadEventLoop extends AbstractEventLoop {
 
-    private static final Logger logger = LoggerFactory.getLogger(SingleThreadedEventLoop.class);
+    private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventLoop.class);
 
     protected void runTasks() {
         Runnable task;
