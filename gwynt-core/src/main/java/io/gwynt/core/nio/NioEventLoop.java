@@ -75,7 +75,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     public void setIoRatio(int ioRatio) {
         if (ioRatio < 1 || ioRatio > 100) {
-            throw new IllegalArgumentException("Mus be in range[1...100]");
+            throw new IllegalArgumentException("Must be in range[1...100]");
         }
         this.ioRatio = ioRatio;
     }
