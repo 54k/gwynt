@@ -4,7 +4,6 @@ import io.gwynt.core.pipeline.HandlerContextInvoker;
 
 public interface EventLoop extends EventLoopGroup, EventExecutor {
 
-
     HandlerContextInvoker asInvoker();
 
     ChannelFuture register(Channel channel);
