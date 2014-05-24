@@ -1,5 +1,8 @@
 package io.gwynt.core.nio;
 
+import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 
 public class NioEventLoopGroup extends NioEventLoop {
@@ -8,7 +11,7 @@ public class NioEventLoopGroup extends NioEventLoop {
     private volatile int currentWorker = 0;
 
     public NioEventLoopGroup() {
-        this(Math.max(1, Runtime.getRuntime().availableProcessors() * 2 - 1));
+        this(Math.max(1, Runtime.getRuntime().availableProcessors() * 2));
     }
 
     public NioEventLoopGroup(int workersCount) {
@@ -43,5 +46,15 @@ public class NioEventLoopGroup extends NioEventLoop {
             worker.shutdown();
         }
         super.shutdown();
+    }
+
+    @Override
+    public ChannelFuture register(Channel channel, ChannelPromise channelPromise) {
+        return next().register(channel, channelPromise);
+    }
+
+    @Override
+    public ChannelFuture register(Channel channel) {
+        return next().register(channel);
     }
 }

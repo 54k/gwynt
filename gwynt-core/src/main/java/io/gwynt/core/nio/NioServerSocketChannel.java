@@ -2,6 +2,7 @@ package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.ServerChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,7 +12,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 
-public class NioServerSocketChannel extends AbstractNioChannel {
+public class NioServerSocketChannel extends AbstractNioChannel implements ServerChannel {
 
     public NioServerSocketChannel() throws IOException {
         super(ServerSocketChannel.open());

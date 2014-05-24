@@ -2,7 +2,6 @@ package io.gwynt.core;
 
 import io.gwynt.core.nio.AbstractNioChannel;
 import io.gwynt.core.nio.NioEventLoop;
-import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.net.InetSocketAddress;
@@ -103,7 +102,7 @@ public class EndpointBootstrap implements Endpoint {
     @SuppressWarnings("unchecked")
     private ChannelFuture initAndRegisterChannel() {
         Channel channel = channelFactory.createChannel(channelClazz);
-        if (channel instanceof NioServerSocketChannel) {
+        if (channel instanceof ServerChannel) {
             channel.pipeline().addFirst(new DefaultChannelAcceptor());
         } else {
             for (Handler handler : getHandlers()) {
