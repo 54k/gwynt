@@ -1,10 +1,15 @@
 package io.gwynt.core;
 
 import io.gwynt.core.concurrent.Future;
+import io.gwynt.core.concurrent.FutureListener;
 
-public interface ChannelFuture extends Future<Channel> {
+public interface ChannelFuture extends Future<Void> {
 
     Channel channel();
 
-    ChannelFuture addListener(ChannelFutureListener channelFutureListener, ChannelFutureListener... channelFutureListeners);
+    @Override
+    ChannelFuture addListener(FutureListener<? extends Future<? super Void>> futureListener);
+
+    @Override
+    ChannelFuture addListener(FutureListener<? extends Future<? super Void>>... futureListeners);
 }

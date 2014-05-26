@@ -44,9 +44,9 @@ public abstract class AbstractEventLoop extends AbstractEventExecutor implements
     private void register0(Channel channel, ChannelPromise channelPromise) {
         try {
             channel.unsafe().register(AbstractEventLoop.this);
-            channelPromise.complete();
+            channelPromise.setSuccess();
         } catch (ChannelException e) {
-            channelPromise.complete(e);
+            channelPromise.setFailure(e);
         }
     }
 
@@ -71,9 +71,9 @@ public abstract class AbstractEventLoop extends AbstractEventExecutor implements
     private void unregister0(Channel channel, ChannelPromise channelPromise) {
         try {
             channel.unsafe().unregister();
-            channelPromise.complete();
+            channelPromise.setSuccess();
         } catch (ChannelException e) {
-            channelPromise.complete(e);
+            channelPromise.setFailure(e);
         }
     }
 }

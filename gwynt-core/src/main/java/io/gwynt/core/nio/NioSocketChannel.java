@@ -53,10 +53,10 @@ public class NioSocketChannel extends AbstractNioChannel {
                 if (!connected) {
                     interestOps(SelectionKey.OP_CONNECT);
                 } else {
-                    connectPromise.complete();
+                    connectPromise.setSuccess();
                 }
             } catch (IOException e) {
-                connectPromise.complete(e);
+                connectPromise.setFailure(e);
             }
         }
 
@@ -141,7 +141,7 @@ public class NioSocketChannel extends AbstractNioChannel {
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {
-                    connectPromise.complete();
+                    connectPromise.setSuccess();
                     if (!wasActive && isActive()) {
                         if (config().isAutoRead()) {
                             interestOps(SelectionKey.OP_READ);
@@ -153,7 +153,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     throw new ChannelException("Connection failed");
                 }
             } catch (IOException e) {
-                connectPromise.complete(e);
+                connectPromise.setFailure(e);
             }
         }
 

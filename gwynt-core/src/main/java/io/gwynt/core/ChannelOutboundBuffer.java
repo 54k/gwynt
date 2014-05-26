@@ -44,7 +44,7 @@ public class ChannelOutboundBuffer {
         Entry entry = entries.poll();
         if (entry != null) {
             clearEntry(entry);
-            entry.channelPromise.complete();
+            entry.channelPromise.setSuccess();
         }
     }
 
@@ -60,7 +60,7 @@ public class ChannelOutboundBuffer {
         while (entries.peek() != null) {
             Entry entry = entries.poll();
             clearEntry(entry);
-            entry.channelPromise.complete(e);
+            entry.channelPromise.setFailure(e);
             entry.message = null;
             entry.channelPromise = null;
         }

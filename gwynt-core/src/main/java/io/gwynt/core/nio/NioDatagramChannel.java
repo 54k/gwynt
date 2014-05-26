@@ -43,10 +43,10 @@ public class NioDatagramChannel extends AbstractNioChannel {
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
-                channelPromise.complete();
+                channelPromise.setSuccess();
                 pipeline().fireOpen();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                channelPromise.setFailure(e);
             }
         }
 
@@ -54,10 +54,10 @@ public class NioDatagramChannel extends AbstractNioChannel {
         public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().connect(address);
-                channelPromise.complete();
+                channelPromise.setSuccess();
                 pipeline().fireOpen();
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                channelPromise.setFailure(e);
             }
         }
 

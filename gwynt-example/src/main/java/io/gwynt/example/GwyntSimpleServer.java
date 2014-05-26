@@ -4,6 +4,7 @@ import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
+import io.gwynt.core.EventLoop;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -17,7 +18,7 @@ public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        NioEventLoopGroup eventLoop = new NioEventLoopGroup();
+        EventLoop eventLoop = new NioEventLoopGroup();
         Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioServerSocketChannel.class).setEventLoop(eventLoop).addHandler(new AbstractHandler<byte[], String>() {
             private Charset charset = Charset.forName("UTF-8");
 

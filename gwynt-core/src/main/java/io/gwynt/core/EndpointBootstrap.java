@@ -141,12 +141,12 @@ public class EndpointBootstrap implements Endpoint {
     private class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
 
         @Override
-        public void onMessageReceived(HandlerContext context, Channel message) {
+        public void onMessageReceived(HandlerContext context, Channel channel) {
             for (Handler handler : getHandlers()) {
-                message.pipeline().addLast(handler);
+                channel.pipeline().addLast(handler);
             }
 
-            message.register(eventLoop.next()).addListener(new ChannelFutureListener() {
+            channel.register(eventLoop.next()).addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
                     if (channelFuture.channel().config().isAutoRead()) {

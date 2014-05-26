@@ -204,9 +204,9 @@ public abstract class AbstractChannel implements Channel {
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 readRequested();
-                channelPromise.complete();
+                channelPromise.setSuccess();
             } else {
-                channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
+                channelPromise.setFailure(CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
@@ -218,7 +218,7 @@ public abstract class AbstractChannel implements Channel {
                 channelOutboundBuffer.addMessage(message, channelPromise);
                 writeRequested();
             } else {
-                channelPromise.complete(CLOSED_CHANNEL_EXCEPTION);
+                channelPromise.setFailure(CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
@@ -332,7 +332,7 @@ public abstract class AbstractChannel implements Channel {
                 pendingClose = true;
                 closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
-                closePromise.complete();
+                closePromise.setSuccess();
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {

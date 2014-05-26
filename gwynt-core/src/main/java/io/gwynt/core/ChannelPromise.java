@@ -2,11 +2,19 @@ package io.gwynt.core;
 
 import io.gwynt.core.concurrent.Promise;
 
-public interface ChannelPromise extends ChannelFuture, Promise<Channel> {
+public interface ChannelPromise extends ChannelFuture, Promise<Void> {
 
-    ChannelPromise complete();
+    ChannelPromise setSuccess();
 
-    ChannelPromise complete(Throwable error);
+    @Override
+    ChannelPromise setSuccess(Void result);
 
-    ChannelPromise chainPromise(ChannelPromise channelPromise, ChannelPromise... channelPromises);
+    @Override
+    ChannelPromise setFailure(Throwable error);
+
+    @Override
+    ChannelPromise chainPromise(Promise<Void>... promises);
+
+    @Override
+    ChannelPromise chainPromise(Promise<Void> promise);
 }

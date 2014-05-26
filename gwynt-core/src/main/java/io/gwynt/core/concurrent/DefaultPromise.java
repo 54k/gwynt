@@ -3,7 +3,6 @@ package io.gwynt.core.concurrent;
 import io.gwynt.core.EventExecutor;
 import io.gwynt.core.exception.BlockingOperationException;
 
-import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -16,8 +15,10 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     private final Queue<FutureListener> listeners = new ConcurrentLinkedQueue<>();
     private volatile short waiters;
     private EventExecutor eventExecutor;
+
     private T result;
     private Throwable cause;
+
     private volatile Promise<T> chainedPromise;
 
     public DefaultPromise() {
@@ -86,22 +87,28 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
         return true;
     }
 
-    @SafeVarargs
     @Override
-    public final Promise<T> chainPromise(Promise<T> promise, Promise<T>... promises) {
+    public Promise<T> chainPromise(Promise<T> promise) {
         if (promise == null) {
-            throw new IllegalArgumentException("channelPromise");
+            throw new IllegalArgumentException("promise");
         }
-        chainPromise(promise);
-        for (Promise<T> p : promises) {
-            chainPromise(p);
-        }
+        chainPromise0(promise);
         notifyIfNeeded();
         return this;
     }
 
-    @SuppressWarnings("unchecked")
-    private void chainPromise(Promise<T> promise) {
+    @Override
+    public Promise<T> chainPromise(Promise<T>... promises) {
+        if (promises == null) {
+            throw new IllegalArgumentException("promises");
+        }
+        for (Promise<T> p : promises) {
+            chainPromise(p);
+        }
+        return this;
+    }
+
+    private void chainPromise0(Promise<T> promise) {
         if (chainedPromise == null) {
             chainedPromise = promise;
         } else {
@@ -110,13 +117,25 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Future<T> addListener(FutureListener futureListener, FutureListener... futureListeners) {
+    public Future<T> addListener(FutureListener<? extends Future<? super T>> futureListener) {
         if (futureListener == null) {
             throw new IllegalArgumentException("futureListener");
         }
+
         listeners.add(futureListener);
-        Collections.addAll(listeners, futureListeners);
         notifyIfNeeded();
+        return this;
+    }
+
+    @Override
+    public Future<T> addListener(FutureListener<? extends Future<? super T>>... futureListeners) {
+        if (futureListeners == null) {
+            throw new IllegalArgumentException("futureListeners");
+        }
+
+        for (FutureListener<? extends Future<? super T>> l : futureListeners) {
+            addListener(l);
+        }
         return this;
     }
 
@@ -169,23 +188,23 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
         if (isFailed()) {
             if (executor().inExecutorThread()) {
-                chainedPromise.fail(getCause());
+                chainedPromise.setFailure(getCause());
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.fail(getCause());
+                        chainedPromise.setFailure(getCause());
                     }
                 });
             }
         } else {
             if (executor().inExecutorThread()) {
-                chainedPromise.complete(result);
+                chainedPromise.setSuccess(result);
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.complete(result);
+                        chainedPromise.setSuccess(result);
                     }
                 });
             }
@@ -213,31 +232,33 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public T fail(Throwable cause) {
+    public Promise<T> setFailure(Throwable cause) {
         if (done.getAndSet(true)) {
             throw new IllegalStateException("Promise already completed");
         }
         this.cause = cause;
+        notifyAllListeners();
         synchronized (this) {
             if (hasWaiters()) {
                 notifyAll();
             }
         }
-        return result;
+        return this;
     }
 
     @Override
-    public T complete(T result) {
+    public Promise<T> setSuccess(T result) {
         if (done.getAndSet(true)) {
             throw new IllegalStateException("Promise already completed");
         }
         this.result = result;
+        notifyAllListeners();
         synchronized (this) {
             if (hasWaiters()) {
                 notifyAll();
             }
         }
-        return result;
+        return this;
     }
 
     @Override
