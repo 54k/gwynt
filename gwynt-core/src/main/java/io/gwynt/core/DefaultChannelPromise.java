@@ -127,7 +127,7 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     @Override
     public boolean isFailed() {
-        return cause != null;
+        return isDone() && cause != null;
     }
 
     @Override
@@ -137,34 +137,30 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     @Override
     public ChannelFuture await() {
-        if (!isDone()) {
-            checkDeadlock();
-            synchronized (this) {
-                while (!isDone()) {
-                    try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        throw new ChannelFutureInterruptedException();
-                    }
-                }
-            }
-        }
-        if (isFailed()) {
-            throw new ChannelFutureFailedException(cause);
-        }
-        return this;
+        return await0(false, 0);
     }
 
     @Override
     public ChannelFuture await(long timeout, TimeUnit unit) {
+        if (timeout < 0) {
+            throw new IllegalArgumentException("timeout");
+        }
+        return await0(true, unit.toMillis(timeout));
+    }
+
+    private ChannelFuture await0(boolean timed, long timeoutMillis) {
         if (!isDone()) {
             checkDeadlock();
             synchronized (this) {
                 while (!isDone()) {
                     try {
-                        wait(unit.toMillis(timeout));
-                        if (!isDone()) {
-                            throw TIMEOUT_EXCEPTION;
+                        if (!timed) {
+                            wait();
+                        } else {
+                            wait(timeoutMillis);
+                            if (!isDone()) {
+                                throw TIMEOUT_EXCEPTION;
+                            }
                         }
                     } catch (InterruptedException e) {
                         throw new ChannelFutureInterruptedException();
@@ -172,6 +168,7 @@ public class DefaultChannelPromise implements ChannelPromise {
                 }
             }
         }
+
         if (isFailed()) {
             throw new ChannelFutureFailedException(cause);
         }
