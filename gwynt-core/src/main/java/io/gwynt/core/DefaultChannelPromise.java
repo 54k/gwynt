@@ -24,6 +24,8 @@ public class DefaultChannelPromise implements ChannelPromise {
     private volatile ChannelPromise chainedPromise;
     private volatile Throwable cause;
 
+    private volatile short waiters;
+
     public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
     }
@@ -150,9 +152,10 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private ChannelFuture await0(boolean timed, long timeoutMillis) {
         if (!isDone()) {
-            checkDeadlock();
             synchronized (this) {
                 while (!isDone()) {
+                    checkDeadlock();
+                    incWaiters();
                     try {
                         if (!timed) {
                             wait();
@@ -164,6 +167,8 @@ public class DefaultChannelPromise implements ChannelPromise {
                         }
                     } catch (InterruptedException e) {
                         throw new ChannelFutureInterruptedException();
+                    } finally {
+                        decWaiters();
                     }
                 }
             }
@@ -184,14 +189,16 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     @Override
     public ChannelPromise complete(Throwable cause) {
-        if (!done.getAndSet(true)) {
-            this.cause = cause;
-            notifyAllListeners();
-            synchronized (this) {
+        if (done.getAndSet(true)) {
+            throw new IllegalStateException("Promise already completed");
+        }
+
+        this.cause = cause;
+        notifyAllListeners();
+        synchronized (this) {
+            if (hasWaiters()) {
                 notifyAll();
             }
-        } else {
-            throw new IllegalStateException("Already completed");
         }
         return this;
     }
@@ -199,5 +206,20 @@ public class DefaultChannelPromise implements ChannelPromise {
     @Override
     public ChannelPromise complete() {
         return complete(null);
+    }
+
+    private void incWaiters() {
+        if (waiters == Short.MAX_VALUE) {
+            throw new IllegalStateException("Too many waiters");
+        }
+        waiters++;
+    }
+
+    private void decWaiters() {
+        waiters--;
+    }
+
+    private boolean hasWaiters() {
+        return waiters > 0;
     }
 }
