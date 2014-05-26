@@ -1,5 +1,6 @@
 package io.gwynt.core;
 
+import io.gwynt.core.exception.ChannelFutureDeadlockException;
 import io.gwynt.core.exception.ChannelFutureFailedException;
 import io.gwynt.core.exception.ChannelFutureInterruptedException;
 import io.gwynt.core.exception.ChannelFutureTimeoutException;
@@ -7,7 +8,6 @@ import io.gwynt.core.exception.ChannelFutureTimeoutException;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -16,15 +16,13 @@ public class DefaultChannelPromise implements ChannelPromise {
     private static final ChannelFutureTimeoutException TIMEOUT_EXCEPTION = new ChannelFutureTimeoutException();
 
     private final Channel channel;
-    private final CountDownLatch lock = new CountDownLatch(1);
     private final AtomicBoolean done = new AtomicBoolean();
-    private final AtomicBoolean notifyingListeners = new AtomicBoolean();
-    private final AtomicBoolean notifyingPromises = new AtomicBoolean();
+    private final AtomicBoolean notifying = new AtomicBoolean();
 
-    private Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
-    private Queue<ChannelPromise> promises = new ConcurrentLinkedQueue<>();
+    private final Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
 
-    private Throwable error;
+    private volatile ChannelPromise chainedPromise;
+    private volatile Throwable cause;
 
     public DefaultChannelPromise(Channel channel) {
         this.channel = channel;
@@ -36,16 +34,13 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     @Override
-    public ChannelFuture addListener(ChannelFutureListener callback, ChannelFutureListener... callbacks) {
-        if (callback == null) {
+    public ChannelFuture addListener(ChannelFutureListener channelFutureListener, ChannelFutureListener... channelFutureListeners) {
+        if (channelFutureListener == null) {
             throw new IllegalArgumentException("callback");
         }
-
-        listeners.add(callback);
-        Collections.addAll(listeners, callbacks);
-        if (isDone()) {
-            notifyListeners();
-        }
+        listeners.add(channelFutureListener);
+        Collections.addAll(listeners, channelFutureListeners);
+        notifyIfNeeded();
         return this;
     }
 
@@ -54,31 +49,51 @@ public class DefaultChannelPromise implements ChannelPromise {
         if (channelPromise == null) {
             throw new IllegalArgumentException("channelPromise");
         }
-
-        promises.add(channelPromise);
-        Collections.addAll(promises, channelPromises);
-        if (isDone()) {
-            notifyPromises();
+        chainPromise(channelPromise);
+        for (ChannelPromise p : channelPromises) {
+            chainPromise(p);
         }
+        notifyIfNeeded();
         return this;
     }
 
-    private void notifyListeners() {
-        if (notifyingListeners.getAndSet(true)) {
-            channel().eventLoop().execute(new Runnable() {
+    private void notifyIfNeeded() {
+        if (isDone()) {
+            notifyAllListeners();
+        }
+    }
+
+    private void chainPromise(ChannelPromise channelPromise) {
+        if (chainedPromise == null) {
+            chainedPromise = channelPromise;
+        } else {
+            chainedPromise.chainPromise(channelPromise);
+        }
+    }
+
+    private void notifyAllListeners() {
+        if (notifying.getAndSet(true)) {
+            channel.eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {
-                    notifyListeners();
+                    notifyAllListeners();
                 }
             });
-            return;
+        } else {
+            notifyListeners();
+            notifyChainedPromise();
+            notifying.set(false);
         }
+    }
+
+    private void notifyListeners() {
+        EventLoop eventLoop = channel.eventLoop();
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
-            if (channel.eventLoop().inExecutorThread()) {
+            if (eventLoop.inExecutorThread()) {
                 channelFutureListener.onComplete(this);
             } else {
-                channel.eventLoop().execute(new Runnable() {
+                eventLoop.execute(new Runnable() {
                     @Override
                     public void run() {
                         channelFutureListener.onComplete(DefaultChannelPromise.this);
@@ -86,33 +101,23 @@ public class DefaultChannelPromise implements ChannelPromise {
                 });
             }
         }
-        notifyingListeners.set(false);
     }
 
-    private void notifyPromises() {
-        if (notifyingPromises.getAndSet(true)) {
-            channel().eventLoop().execute(new Runnable() {
-                @Override
-                public void run() {
-                    notifyPromises();
-                }
-            });
+    private void notifyChainedPromise() {
+        if (chainedPromise == null) {
             return;
         }
-        while (promises.peek() != null) {
-            final ChannelPromise promise = promises.poll();
-            if (channel.eventLoop().inExecutorThread()) {
-                promise.complete(error);
-            } else {
-                channel.eventLoop().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        promise.complete(error);
-                    }
-                });
-            }
+        EventLoop eventLoop = channel.eventLoop();
+        if (eventLoop.inExecutorThread()) {
+            chainedPromise.complete(cause);
+        } else {
+            eventLoop.execute(new Runnable() {
+                @Override
+                public void run() {
+                    chainedPromise.complete(cause);
+                }
+            });
         }
-        notifyingPromises.set(false);
     }
 
     @Override
@@ -122,48 +127,74 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     @Override
     public boolean isFailed() {
-        return error != null;
+        return cause != null;
     }
 
     @Override
-    public Throwable getError() {
-        return error;
+    public Throwable getCause() {
+        return cause;
     }
 
     @Override
     public ChannelFuture await() {
-        try {
-            lock.await();
-        } catch (InterruptedException e) {
-            throw new ChannelFutureInterruptedException();
+        if (!isDone()) {
+            checkDeadlock();
+            synchronized (this) {
+                while (!isDone()) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        throw new ChannelFutureInterruptedException();
+                    }
+                }
+            }
         }
-
-        if (error != null) {
-            throw new ChannelFutureFailedException(error);
+        if (isFailed()) {
+            throw new ChannelFutureFailedException(cause);
         }
         return this;
     }
 
     @Override
     public ChannelFuture await(long timeout, TimeUnit unit) {
-        try {
-            if (lock.await(timeout, unit)) {
-                return await();
+        if (!isDone()) {
+            checkDeadlock();
+            synchronized (this) {
+                while (!isDone()) {
+                    try {
+                        wait(unit.toMillis(timeout));
+                        if (!isDone()) {
+                            throw TIMEOUT_EXCEPTION;
+                        }
+                    } catch (InterruptedException e) {
+                        throw new ChannelFutureInterruptedException();
+                    }
+                }
             }
-        } catch (InterruptedException e) {
-            throw new ChannelFutureInterruptedException();
         }
-        throw TIMEOUT_EXCEPTION;
+        if (isFailed()) {
+            throw new ChannelFutureFailedException(cause);
+        }
+        return this;
+    }
+
+    private void checkDeadlock() {
+        EventLoop eventLoop = channel.eventLoop();
+        if (eventLoop != null && eventLoop.inExecutorThread()) {
+            throw new ChannelFutureDeadlockException();
+        }
     }
 
     @Override
-    public ChannelPromise complete(Throwable error) {
-        boolean wasDone = done.getAndSet(true);
-        if (!wasDone) {
-            this.error = error;
-            lock.countDown();
-            notifyListeners();
-            notifyPromises();
+    public ChannelPromise complete(Throwable cause) {
+        if (!done.getAndSet(true)) {
+            this.cause = cause;
+            notifyAllListeners();
+            synchronized (this) {
+                notifyAll();
+            }
+        } else {
+            throw new IllegalStateException("Already completed");
         }
         return this;
     }

@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 //import io.gwynt.core.Channel;
 //import io.gwynt.core.nio.Datagram;
@@ -73,7 +74,7 @@ public class Main {
             Thread.sleep(10);
             tcpEndpoint.shutdown();
             Thread.sleep(1);
-            tcpEndpoint.bind(3002).await();
+            tcpEndpoint.bind(3002).await(10, TimeUnit.MILLISECONDS);
         }
 
         //        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(tcpEndpoint.getEventLoop()).addHandler(lh).addHandler(new AbstractHandler() {

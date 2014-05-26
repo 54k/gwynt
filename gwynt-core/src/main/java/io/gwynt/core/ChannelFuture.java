@@ -6,7 +6,7 @@ public interface ChannelFuture {
 
     Channel channel();
 
-    ChannelFuture addListener(ChannelFutureListener callback, ChannelFutureListener... callbacks);
+    ChannelFuture addListener(ChannelFutureListener channelFutureListener, ChannelFutureListener... channelFutureListeners);
 
     ChannelFuture await();
 
@@ -16,5 +16,5 @@ public interface ChannelFuture {
 
     boolean isFailed();
 
-    Throwable getError();
+    Throwable getCause();
 }
