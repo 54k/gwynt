@@ -88,14 +88,22 @@ public class EndpointBootstrap implements Endpoint {
     @Override
     public ChannelFuture bind(final int port) {
         ChannelFuture regFuture = initAndRegisterChannel();
-        regFuture.await();
+        try {
+            regFuture.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return regFuture.channel().bind(new InetSocketAddress(port));
     }
 
     @Override
     public ChannelFuture connect(final String host, final int port) {
         ChannelFuture regFuture = initAndRegisterChannel();
-        regFuture.await();
+        try {
+            regFuture.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return regFuture.channel().connect(new InetSocketAddress(host, port));
     }
 

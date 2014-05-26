@@ -1,6 +1,6 @@
 package io.gwynt.core;
 
-public interface ChannelFutureListener {
+import io.gwynt.core.concurrent.FutureListener;
 
-    void onComplete(ChannelFuture channelFuture);
+public interface ChannelFutureListener extends FutureListener<ChannelFuture> {
 }

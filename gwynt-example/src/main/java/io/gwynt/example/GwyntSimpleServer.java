@@ -46,6 +46,9 @@ public class GwyntSimpleServer implements Runnable {
             }
         });
 
-        endpoint.bind(3001).await();
+        try {
+            endpoint.bind(3001).await();
+        } catch (InterruptedException ignore) {
+        }
     }
 }

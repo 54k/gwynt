@@ -1,6 +1,8 @@
 package io.gwynt.core;
 
-public interface ChannelPromise extends ChannelFuture {
+import io.gwynt.core.concurrent.Promise;
+
+public interface ChannelPromise extends ChannelFuture, Promise<Channel> {
 
     ChannelPromise complete();
 

@@ -1,20 +1,10 @@
 package io.gwynt.core;
 
-import java.util.concurrent.TimeUnit;
+import io.gwynt.core.concurrent.Future;
 
-public interface ChannelFuture {
+public interface ChannelFuture extends Future<Channel> {
 
     Channel channel();
 
     ChannelFuture addListener(ChannelFutureListener channelFutureListener, ChannelFutureListener... channelFutureListeners);
-
-    ChannelFuture await();
-
-    ChannelFuture await(long timeout, TimeUnit unit);
-
-    boolean isDone();
-
-    boolean isFailed();
-
-    Throwable getCause();
 }
