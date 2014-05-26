@@ -16,16 +16,15 @@ public class DefaultChannelPromise implements ChannelPromise {
     private static final ChannelFutureTimeoutException TIMEOUT_EXCEPTION = new ChannelFutureTimeoutException();
 
     private final Channel channel;
+    private final EventExecutor eventExecutor;
+
     private final AtomicBoolean done = new AtomicBoolean();
     private final AtomicBoolean inNotify = new AtomicBoolean();
-
     private final Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
-
-    private volatile ChannelPromise chainedPromise;
-    private volatile Throwable cause;
-
     private volatile short waiters;
-    private EventExecutor eventExecutor;
+    private volatile ChannelPromise chainedPromise;
+
+    private Throwable cause;
 
     public DefaultChannelPromise(Channel channel) {
         this(channel, null);
