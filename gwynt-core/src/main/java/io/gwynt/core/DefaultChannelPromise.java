@@ -95,8 +95,16 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void notifyListeners() {
-        while (listeners.peek() != null) {
-            final ChannelFutureListener channelFutureListener = listeners.poll();
+        ChannelFutureListener channelFutureListener;
+        while ((channelFutureListener = listeners.poll()) != null) {
+            notifyListener(channelFutureListener);
+        }
+    }
+
+    private void notifyListener(final ChannelFutureListener channelFutureListener) {
+        if (executor().inExecutorThread()) {
+            channelFutureListener.onComplete(DefaultChannelPromise.this);
+        } else {
             execute(new Runnable() {
                 @Override
                 public void run() {
@@ -110,12 +118,17 @@ public class DefaultChannelPromise implements ChannelPromise {
         if (chainedPromise == null) {
             return;
         }
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                chainedPromise.complete(cause);
-            }
-        });
+
+        if (executor().inExecutorThread()) {
+            chainedPromise.complete(cause);
+        } else {
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    chainedPromise.complete(cause);
+                }
+            });
+        }
     }
 
     @Override
@@ -183,13 +196,12 @@ public class DefaultChannelPromise implements ChannelPromise {
         }
     }
 
+    private EventExecutor executor() {
+        return eventExecutor != null ? eventExecutor : channel.eventLoop();
+    }
+
     private void execute(Runnable task) {
-        EventExecutor eventLoop = eventExecutor != null ? eventExecutor : channel.eventLoop();
-        if (eventLoop.inExecutorThread()) {
-            task.run();
-        } else {
-            eventLoop.execute(task);
-        }
+        executor().execute(task);
     }
 
     @Override
