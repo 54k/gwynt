@@ -17,7 +17,7 @@ public class DefaultChannelPromise implements ChannelPromise {
 
     private final Channel channel;
     private final AtomicBoolean done = new AtomicBoolean();
-    private final AtomicBoolean notifying = new AtomicBoolean();
+    private final AtomicBoolean inNotify = new AtomicBoolean();
 
     private final Queue<ChannelFutureListener> listeners = new ConcurrentLinkedQueue<>();
 
@@ -80,8 +80,8 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void notifyAllListeners() {
-        if (notifying.getAndSet(true)) {
-            channel.eventLoop().execute(new Runnable() {
+        if (inNotify.getAndSet(true)) {
+            execute(new Runnable() {
                 @Override
                 public void run() {
                     notifyAllListeners();
@@ -90,7 +90,7 @@ public class DefaultChannelPromise implements ChannelPromise {
         } else {
             notifyListeners();
             notifyChainedPromise();
-            notifying.set(false);
+            inNotify.set(false);
         }
     }
 
