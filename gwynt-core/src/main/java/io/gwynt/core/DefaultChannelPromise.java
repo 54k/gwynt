@@ -25,9 +25,15 @@ public class DefaultChannelPromise implements ChannelPromise {
     private volatile Throwable cause;
 
     private volatile short waiters;
+    private EventExecutor eventExecutor;
 
     public DefaultChannelPromise(Channel channel) {
+        this(channel, null);
+    }
+
+    public DefaultChannelPromise(Channel channel, EventExecutor eventExecutor) {
         this.channel = channel;
+        this.eventExecutor = eventExecutor;
     }
 
     @Override
@@ -89,19 +95,14 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void notifyListeners() {
-        EventLoop eventLoop = channel.eventLoop();
         while (listeners.peek() != null) {
             final ChannelFutureListener channelFutureListener = listeners.poll();
-            if (eventLoop.inExecutorThread()) {
-                channelFutureListener.onComplete(this);
-            } else {
-                eventLoop.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        channelFutureListener.onComplete(DefaultChannelPromise.this);
-                    }
-                });
-            }
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    channelFutureListener.onComplete(DefaultChannelPromise.this);
+                }
+            });
         }
     }
 
@@ -109,17 +110,12 @@ public class DefaultChannelPromise implements ChannelPromise {
         if (chainedPromise == null) {
             return;
         }
-        EventLoop eventLoop = channel.eventLoop();
-        if (eventLoop.inExecutorThread()) {
-            chainedPromise.complete(cause);
-        } else {
-            eventLoop.execute(new Runnable() {
-                @Override
-                public void run() {
-                    chainedPromise.complete(cause);
-                }
-            });
-        }
+        execute(new Runnable() {
+            @Override
+            public void run() {
+                chainedPromise.complete(cause);
+            }
+        });
     }
 
     @Override
@@ -181,9 +177,18 @@ public class DefaultChannelPromise implements ChannelPromise {
     }
 
     private void checkDeadlock() {
-        EventLoop eventLoop = channel.eventLoop();
+        EventExecutor eventLoop = eventExecutor != null ? eventExecutor : channel.eventLoop();
         if (eventLoop != null && eventLoop.inExecutorThread()) {
             throw new ChannelFutureDeadlockException();
+        }
+    }
+
+    private void execute(Runnable task) {
+        EventExecutor eventLoop = eventExecutor != null ? eventExecutor : channel.eventLoop();
+        if (eventLoop.inExecutorThread()) {
+            task.run();
+        } else {
+            eventLoop.execute(task);
         }
     }
 
