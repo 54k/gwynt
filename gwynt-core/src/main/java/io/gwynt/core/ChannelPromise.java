@@ -4,6 +4,8 @@ import io.gwynt.core.concurrent.Promise;
 
 public interface ChannelPromise extends ChannelFuture, Promise<Void> {
 
+    boolean trySuccess();
+
     ChannelPromise setSuccess();
 
     @Override

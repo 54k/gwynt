@@ -36,6 +36,14 @@ public abstract class AbstractChannel implements Channel {
         unsafe = newUnsafe();
     }
 
+    protected static void safeSetSuccess(ChannelPromise channelPromise) {
+        channelPromise.trySuccess();
+    }
+
+    protected static void safeSetFailure(ChannelPromise channelPromise, Throwable error) {
+        channelPromise.tryFailure(error);
+    }
+
     @Override
     public Channel parent() {
         return parent;
@@ -204,9 +212,9 @@ public abstract class AbstractChannel implements Channel {
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose && isActive()) {
                 readRequested();
-                channelPromise.setSuccess();
+                safeSetSuccess(channelPromise);
             } else {
-                channelPromise.setFailure(CLOSED_CHANNEL_EXCEPTION);
+                safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
             }
         }
 
@@ -218,7 +226,7 @@ public abstract class AbstractChannel implements Channel {
                 channelOutboundBuffer.addMessage(message, channelPromise);
                 writeRequested();
             } else {
-                channelPromise.setFailure(CLOSED_CHANNEL_EXCEPTION);
+                safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
             }
         }
 

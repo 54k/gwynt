@@ -246,6 +246,15 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
+    public boolean trySuccess(T result) {
+        if (done.getAndSet(true)) {
+            return false;
+        }
+        setSuccess(result);
+        return true;
+    }
+
+    @Override
     public Promise<T> setFailure(Throwable cause) {
         if (done.getAndSet(true)) {
             throw new IllegalStateException("Promise already completed");
@@ -258,6 +267,15 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
         }
         notifyAllListeners();
         return this;
+    }
+
+    @Override
+    public boolean tryFailure(Throwable error) {
+        if (done.getAndSet(true)) {
+            return false;
+        }
+        setFailure(error);
+        return true;
     }
 
     @Override

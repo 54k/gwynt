@@ -52,9 +52,9 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
             try {
                 javaChannel().bind(address);
                 interestOps(SelectionKey.OP_ACCEPT);
-                channelPromise.setSuccess();
+                safeSetSuccess(channelPromise);
             } catch (IOException e) {
-                channelPromise.setFailure(e);
+                safeSetFailure(channelPromise, e);
             }
         }
 
