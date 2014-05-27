@@ -1,6 +1,5 @@
 package io.gwynt.core.concurrent;
 
-import io.gwynt.core.EventExecutor;
 import io.gwynt.core.exception.BlockingOperationException;
 
 import java.util.Queue;

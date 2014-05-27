@@ -1,7 +1,7 @@
 package io.gwynt.core.pipeline;
 
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.EventExecutor;
+import io.gwynt.core.concurrent.EventExecutor;
 
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 

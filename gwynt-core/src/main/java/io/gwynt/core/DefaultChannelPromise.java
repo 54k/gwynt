@@ -1,6 +1,7 @@
 package io.gwynt.core;
 
 import io.gwynt.core.concurrent.DefaultPromise;
+import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 import io.gwynt.core.concurrent.Promise;

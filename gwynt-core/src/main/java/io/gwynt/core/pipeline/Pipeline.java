@@ -33,4 +33,6 @@ public interface Pipeline {
     void remove(String name);
 
     void clear();
+
+    void copy(Pipeline pipeline);
 }

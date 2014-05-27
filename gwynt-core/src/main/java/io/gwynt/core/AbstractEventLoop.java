@@ -1,5 +1,6 @@
 package io.gwynt.core;
 
+import io.gwynt.core.concurrent.AbstractEventExecutor;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.pipeline.DefaultHandlerContextInvoker;
 import io.gwynt.core.pipeline.HandlerContextInvoker;

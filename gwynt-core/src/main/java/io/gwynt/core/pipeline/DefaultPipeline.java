@@ -323,6 +323,15 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         } while (context != null);
     }
 
+    @Override
+    public void copy(Pipeline pipeline) {
+        clear();
+        DefaultPipeline p = (DefaultPipeline) pipeline;
+        for (DefaultHandlerContext ctx : p) {
+            addFirst(ctx.name(), ctx.handler());
+        }
+    }
+
     private DefaultHandlerContext getContext(Handler handler) {
         DefaultHandlerContext contextByName;
         if ((contextByName = getContext(generateName(handler))) != null) {

@@ -1,7 +1,5 @@
 package io.gwynt.core.concurrent;
 
-import io.gwynt.core.EventExecutor;
-
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
