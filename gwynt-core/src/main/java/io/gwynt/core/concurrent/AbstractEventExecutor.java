@@ -8,7 +8,7 @@ import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractEventExecutor extends AbstractExecutorService implements EventExecutor {
@@ -134,6 +134,17 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     protected abstract void run();
 
     @Override
+    protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
+        //        new PromiseTask<>()
+        return super.newTaskFor(runnable, value);
+    }
+
+    @Override
+    protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
+        return super.newTaskFor(callable);
+    }
+
+    @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return null;
     }
@@ -151,6 +162,21 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         return null;
+    }
+
+    @Override
+    public Future<?> submit(Runnable task) {
+        return (Future<?>) super.submit(task);
+    }
+
+    @Override
+    public <T> Future<T> submit(Runnable task, T result) {
+        return (Future<T>) super.submit(task, result);
+    }
+
+    @Override
+    public <T> Future<T> submit(Callable<T> task) {
+        return (Future<T>) super.submit(task);
     }
 
     private static class WakeTask implements Runnable {
