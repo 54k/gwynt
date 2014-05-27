@@ -3,6 +3,7 @@ package io.gwynt.core.concurrent;
 import io.gwynt.core.exception.FutureExecutionException;
 import io.gwynt.core.exception.FutureTimeoutException;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -24,6 +25,9 @@ public abstract class AbstractFuture<T> implements Future<T> {
         await();
         Throwable cause = getCause();
         if (cause == null) {
+            if (isCancelled()) {
+                throw new CancellationException();
+            }
             return getNow();
         }
         throw new ExecutionException(cause);
@@ -46,6 +50,9 @@ public abstract class AbstractFuture<T> implements Future<T> {
         if (await(timeoutMillis)) {
             Throwable cause = getCause();
             if (cause == null) {
+                if (isCancelled()) {
+                    throw new CancellationException();
+                }
                 return getNow();
             }
             throw new ExecutionException(cause);
