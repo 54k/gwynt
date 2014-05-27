@@ -154,7 +154,6 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     protected void notifyListener(final FutureListener futureListener) {
         if (executor().inExecutorThread()) {
             futureListener.onComplete(DefaultPromise.this);
