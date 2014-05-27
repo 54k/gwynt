@@ -4,6 +4,7 @@ import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
+import io.gwynt.core.exception.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,12 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
     private static String generateName(Handler handler) {
         return handler.getClass() + "@" + handler.hashCode();
+    }
+
+    private void checkMultiplicity(String name) {
+        if (name2context.containsKey(name)) {
+            throw new PipelineException("Duplicate name: " + name);
+        }
     }
 
     public void fireRegistered() {
@@ -88,6 +95,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
         synchronized (lock) {
+            checkMultiplicity(name);
             DefaultHandlerContext next = head.getNext();
             next.setPrev(context);
             context.setNext(next);
@@ -115,6 +123,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
         synchronized (lock) {
+            checkMultiplicity(name);
             DefaultHandlerContext prev = tail.getPrev();
             prev.setNext(context);
             context.setNext(tail);
@@ -133,7 +142,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContext(before);
+            DefaultHandlerContext beforeContext = getContextOrDie(before);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
             if (beforeContext != null) {
@@ -148,7 +157,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContext(beforeName);
+            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
             if (beforeContext != null) {
@@ -163,7 +172,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContext(before);
+            checkMultiplicity(name);
+            DefaultHandlerContext beforeContext = getContextOrDie(before);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (beforeContext != null) {
@@ -178,7 +188,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContext(beforeName);
+            checkMultiplicity(name);
+            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (beforeContext != null) {
@@ -204,7 +215,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContext(after);
+            DefaultHandlerContext afterContext = getContextOrDie(after);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
             if (afterContext != null) {
@@ -219,7 +230,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContext(afterName);
+            DefaultHandlerContext afterContext = getContextOrDie(afterName);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
             if (afterContext != null) {
@@ -234,7 +245,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContext(after);
+            checkMultiplicity(name);
+            DefaultHandlerContext afterContext = getContextOrDie(after);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (afterContext != null) {
@@ -249,7 +261,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContext(afterName);
+            checkMultiplicity(name);
+            DefaultHandlerContext afterContext = getContextOrDie(afterName);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(name);
             if (afterContext != null) {
@@ -321,6 +334,27 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             }
         }
         return null;
+    }
+
+    private DefaultHandlerContext getContextOrDie(Handler handler) {
+        DefaultHandlerContext contextByName;
+        if ((contextByName = getContext(generateName(handler))) != null) {
+            return contextByName;
+        }
+        for (DefaultHandlerContext context : this) {
+            if (context.handler() == handler) {
+                return context;
+            }
+        }
+        throw new PipelineException("Context not found: " + handler);
+    }
+
+    private DefaultHandlerContext getContextOrDie(String name) {
+        DefaultHandlerContext context = name2context.get(name);
+        if (context == null) {
+            throw new PipelineException("Context not found: " + name);
+        }
+        return context;
     }
 
     private DefaultHandlerContext getContext(String name) {
