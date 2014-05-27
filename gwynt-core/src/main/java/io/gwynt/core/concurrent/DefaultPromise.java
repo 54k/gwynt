@@ -4,11 +4,14 @@ import io.gwynt.core.EventExecutor;
 import io.gwynt.core.exception.BlockingOperationException;
 
 import java.util.Queue;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
+
+    private final static CancelledResult CANCELLED_RESULT = new CancelledResult(new CancellationException());
 
     private final AtomicBoolean done = new AtomicBoolean();
     private final AtomicBoolean inNotify = new AtomicBoolean();
@@ -16,10 +19,14 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     private volatile short waiters;
     private EventExecutor eventExecutor;
 
-    private T result;
+    private Object result;
     private Throwable cause;
 
     private volatile Promise<T> chainedPromise;
+
+    static {
+        CANCELLED_RESULT.cause.setStackTrace(new StackTraceElement[0]);
+    }
 
     public DefaultPromise() {
         this(null);
@@ -186,6 +193,8 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
             return;
         }
 
+        final Object res = result != CANCELLED_RESULT ? result : null;
+
         if (isFailed()) {
             if (executor().inExecutorThread()) {
                 chainedPromise.setFailure(getCause());
@@ -199,12 +208,12 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
             }
         } else {
             if (executor().inExecutorThread()) {
-                chainedPromise.setSuccess(result);
+                chainedPromise.setSuccess((T) res);
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.setSuccess(result);
+                        chainedPromise.setSuccess((T) res);
                     }
                 });
             }
@@ -228,7 +237,11 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
     @Override
     public T getNow() {
-        return result;
+        if (result == CANCELLED_RESULT) {
+            return null;
+        }
+
+        return (T) result;
     }
 
     @Override
@@ -237,12 +250,12 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
             throw new IllegalStateException("Promise already completed");
         }
         this.cause = cause;
-        notifyAllListeners();
         synchronized (this) {
             if (hasWaiters()) {
                 notifyAll();
             }
         }
+        notifyAllListeners();
         return this;
     }
 
@@ -252,12 +265,12 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
             throw new IllegalStateException("Promise already completed");
         }
         this.result = result;
-        notifyAllListeners();
         synchronized (this) {
             if (hasWaiters()) {
                 notifyAll();
             }
         }
+        notifyAllListeners();
         return this;
     }
 
@@ -279,5 +292,35 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
     protected boolean hasWaiters() {
         return waiters > 0;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return isDone() && result == CANCELLED_RESULT;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        if (done.getAndSet(true)) {
+            return false;
+        }
+
+        result = CANCELLED_RESULT;
+        synchronized (this) {
+            if (hasWaiters()) {
+                notifyAll();
+            }
+        }
+        notifyAllListeners();
+        return true;
+    }
+
+    private static class CancelledResult {
+
+        private CancellationException cause;
+
+        private CancelledResult(CancellationException cause) {
+            this.cause = cause;
+        }
     }
 }
