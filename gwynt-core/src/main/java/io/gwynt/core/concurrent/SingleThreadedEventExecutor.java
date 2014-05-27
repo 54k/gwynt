@@ -1,11 +1,11 @@
-package io.gwynt.core;
+package io.gwynt.core.concurrent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SingleThreadEventLoop extends AbstractEventLoop {
+public abstract class SingleThreadedEventExecutor extends AbstractEventExecutor {
 
-    private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventLoop.class);
+    private static final Logger logger = LoggerFactory.getLogger(SingleThreadedEventExecutor.class);
 
     protected void runTasks() {
         Runnable task;

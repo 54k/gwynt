@@ -245,7 +245,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
     @Override
     public boolean trySuccess(T result) {
-        if (done.getAndSet(true)) {
+        if (isDone()) {
             return false;
         }
         setSuccess(result);
@@ -269,7 +269,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
     @Override
     public boolean tryFailure(Throwable error) {
-        if (done.getAndSet(true)) {
+        if (isDone()) {
             return false;
         }
         setFailure(error);

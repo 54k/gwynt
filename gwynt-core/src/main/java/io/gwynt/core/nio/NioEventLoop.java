@@ -1,7 +1,7 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.EventLoop;
-import io.gwynt.core.SingleThreadEventLoop;
+import io.gwynt.core.SingleThreadedEventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
+public class NioEventLoop extends SingleThreadedEventLoop implements EventLoop {
 
     private static final Logger logger = LoggerFactory.getLogger(io.gwynt.core.nio.NioEventLoop.class);
 
