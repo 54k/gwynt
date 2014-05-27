@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("unchecked")
 public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
 
     private final static CancelledResult CANCELLED_RESULT = new CancelledResult(new CancellationException());
