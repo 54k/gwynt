@@ -4,29 +4,29 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public interface Future<T> extends java.util.concurrent.Future<T> {
+public interface Future<V> extends java.util.concurrent.Future<V> {
 
     boolean isFailed();
 
-    T getNow();
+    V getNow();
 
     Throwable getCause();
 
-    Future<T> await() throws InterruptedException;
+    Future<V> await() throws InterruptedException;
 
     boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
     boolean await(long timeoutMillis) throws InterruptedException;
 
-    T get(long timeoutMillis) throws InterruptedException, ExecutionException, TimeoutException;
+    V get(long timeoutMillis) throws InterruptedException, ExecutionException, TimeoutException;
 
-    Future<T> addListener(FutureListener<? extends Future<? super T>> futureListener);
+    Future<V> addListener(FutureListener<? extends Future<? super V>> futureListener);
 
-    Future<T> addListener(FutureListener<? extends Future<? super T>>... futureListeners);
+    Future<V> addListener(FutureListener<? extends Future<? super V>>... futureListeners);
 
-    T sync() throws InterruptedException;
+    V sync() throws InterruptedException;
 
-    T sync(long timeout, TimeUnit unit) throws InterruptedException;
+    V sync(long timeout, TimeUnit unit) throws InterruptedException;
 
-    T sync(long timeoutMillis) throws InterruptedException;
+    V sync(long timeoutMillis) throws InterruptedException;
 }

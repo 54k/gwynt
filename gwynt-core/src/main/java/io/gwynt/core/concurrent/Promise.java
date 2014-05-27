@@ -1,16 +1,16 @@
 package io.gwynt.core.concurrent;
 
-public interface Promise<T> extends Future<T> {
+public interface Promise<V> extends Future<V> {
 
-    boolean trySuccess(T result);
+    boolean trySuccess(V result);
 
-    Promise<T> setSuccess(T result);
+    Promise<V> setSuccess(V result);
 
     boolean tryFailure(Throwable error);
 
-    Promise<T> setFailure(Throwable error);
+    Promise<V> setFailure(Throwable error);
 
-    Promise<T> chainPromise(Promise<T> promise);
+    Promise<V> chainPromise(Promise<V> promise);
 
-    Promise<T> chainPromise(Promise<T>... promises);
+    Promise<V> chainPromise(Promise<V>... promises);
 }

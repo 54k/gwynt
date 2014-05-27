@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public abstract class AbstractFuture<T> implements Future<T> {
+public abstract class AbstractFuture<V> implements Future<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -21,7 +21,7 @@ public abstract class AbstractFuture<T> implements Future<T> {
     }
 
     @Override
-    public T get() throws InterruptedException, ExecutionException {
+    public V get() throws InterruptedException, ExecutionException {
         await();
         Throwable cause = getCause();
         if (cause == null) {
@@ -34,7 +34,7 @@ public abstract class AbstractFuture<T> implements Future<T> {
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (await(timeout, unit)) {
             Throwable cause = getCause();
             if (cause == null) {
@@ -46,7 +46,7 @@ public abstract class AbstractFuture<T> implements Future<T> {
     }
 
     @Override
-    public T get(long timeoutMillis) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeoutMillis) throws InterruptedException, ExecutionException, TimeoutException {
         if (await(timeoutMillis)) {
             Throwable cause = getCause();
             if (cause == null) {
@@ -61,7 +61,7 @@ public abstract class AbstractFuture<T> implements Future<T> {
     }
 
     @Override
-    public T sync() throws InterruptedException {
+    public V sync() throws InterruptedException {
         await();
         Throwable cause = getCause();
         if (cause == null) {
@@ -71,12 +71,12 @@ public abstract class AbstractFuture<T> implements Future<T> {
     }
 
     @Override
-    public T sync(long timeout, TimeUnit unit) throws InterruptedException {
+    public V sync(long timeout, TimeUnit unit) throws InterruptedException {
         return sync(unit.toMillis(timeout));
     }
 
     @Override
-    public T sync(long timeoutMillis) throws InterruptedException {
+    public V sync(long timeoutMillis) throws InterruptedException {
         if (await(timeoutMillis)) {
             Throwable cause = getCause();
             if (cause == null) {

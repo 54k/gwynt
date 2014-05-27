@@ -1,21 +1,22 @@
 package io.gwynt.core.concurrent;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class DefaultScheduledPromise<T> extends DefaultPromise<T> implements ScheduledFuture<T> {
+public class ScheduledTask<V> extends PromiseTask<V> implements ScheduledFuture<V> {
 
     private static final long START_TIME = System.currentTimeMillis();
 
     private long deadlineMillis;
 
-    public DefaultScheduledPromise(long deadlineMillis) {
-        this(null, deadlineMillis);
+    public ScheduledTask(Callable<V> task, long deadlineMillis) {
+        this(null, task, deadlineMillis);
     }
 
-    public DefaultScheduledPromise(EventExecutor eventExecutor, long deadlineMillis) {
-        super(eventExecutor);
+    public ScheduledTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis) {
+        super(eventExecutor, task);
         if (deadlineMillis < 0) {
             throw new IllegalArgumentException("deadlineMillis");
         }
@@ -45,7 +46,7 @@ public class DefaultScheduledPromise<T> extends DefaultPromise<T> implements Sch
             return 0;
         }
 
-        DefaultScheduledPromise<?> that = (DefaultScheduledPromise<?>) o;
+        ScheduledTask<?> that = (ScheduledTask<?>) o;
         long d = delayMillis() - that.delayMillis();
         if (d < 0) {
             return -1;

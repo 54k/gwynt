@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("unchecked")
-public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
+public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private final static CancelledResult CANCELLED_RESULT = new CancelledResult(new CancellationException());
 
@@ -22,7 +22,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     private Object result;
     private Throwable cause;
 
-    private volatile Promise<T> chainedPromise;
+    private volatile Promise<V> chainedPromise;
 
     static {
         CANCELLED_RESULT.cause.setStackTrace(new StackTraceElement[0]);
@@ -47,7 +47,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> await() throws InterruptedException {
+    public Promise<V> await() throws InterruptedException {
         if (!isDone()) {
             synchronized (this) {
                 while (!isDone()) {
@@ -95,7 +95,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> chainPromise(Promise<T> promise) {
+    public Promise<V> chainPromise(Promise<V> promise) {
         if (promise == null) {
             throw new IllegalArgumentException("promise");
         }
@@ -105,17 +105,17 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> chainPromise(Promise<T>... promises) {
+    public Promise<V> chainPromise(Promise<V>... promises) {
         if (promises == null) {
             throw new IllegalArgumentException("promises");
         }
-        for (Promise<T> p : promises) {
+        for (Promise<V> p : promises) {
             chainPromise(p);
         }
         return this;
     }
 
-    private void chainPromise0(Promise<T> promise) {
+    private void chainPromise0(Promise<V> promise) {
         if (chainedPromise == null) {
             chainedPromise = promise;
         } else {
@@ -124,7 +124,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Future<T> addListener(FutureListener<? extends Future<? super T>> futureListener) {
+    public Future<V> addListener(FutureListener<? extends Future<? super V>> futureListener) {
         if (futureListener == null) {
             throw new IllegalArgumentException("futureListener");
         }
@@ -135,12 +135,12 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Future<T> addListener(FutureListener<? extends Future<? super T>>... futureListeners) {
+    public Future<V> addListener(FutureListener<? extends Future<? super V>>... futureListeners) {
         if (futureListeners == null) {
             throw new IllegalArgumentException("futureListeners");
         }
 
-        for (FutureListener<? extends Future<? super T>> l : futureListeners) {
+        for (FutureListener<? extends Future<? super V>> l : futureListeners) {
             addListener(l);
         }
         return this;
@@ -207,12 +207,12 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
             }
         } else {
             if (executor().inExecutorThread()) {
-                chainedPromise.setSuccess((T) res);
+                chainedPromise.setSuccess((V) res);
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.setSuccess((T) res);
+                        chainedPromise.setSuccess((V) res);
                     }
                 });
             }
@@ -235,16 +235,16 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public T getNow() {
+    public V getNow() {
         if (result == CANCELLED_RESULT) {
             return null;
         }
 
-        return (T) result;
+        return (V) result;
     }
 
     @Override
-    public boolean trySuccess(T result) {
+    public boolean trySuccess(V result) {
         if (isDone()) {
             return false;
         }
@@ -253,7 +253,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> setFailure(Throwable cause) {
+    public Promise<V> setFailure(Throwable cause) {
         if (done.getAndSet(true)) {
             throw new IllegalStateException("Promise already completed");
         }
@@ -277,7 +277,7 @@ public class DefaultPromise<T> extends AbstractFuture<T> implements Promise<T> {
     }
 
     @Override
-    public Promise<T> setSuccess(T result) {
+    public Promise<V> setSuccess(V result) {
         if (done.getAndSet(true)) {
             throw new IllegalStateException("Promise already completed");
         }

@@ -1,6 +1,6 @@
 package io.gwynt.core.concurrent;
 
-public interface FutureListener<T extends Future<?>> {
+public interface FutureListener<V extends Future<?>> {
 
-    void onComplete(T future);
+    void onComplete(V future);
 }
