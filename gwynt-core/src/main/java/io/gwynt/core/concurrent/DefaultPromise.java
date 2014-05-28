@@ -206,38 +206,53 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
         if (isFailed()) {
             if (executor().inExecutorThread()) {
-                chainedPromise.setFailure(getCause());
+                failChainedPromise(getCause());
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.setFailure(getCause());
+                        failChainedPromise(getCause());
                     }
                 });
             }
         } else if (isCancelled()) {
             if (executor().inExecutorThread()) {
-                chainedPromise.cancel(false);
+                cancelChainedPromise();
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.cancel(false);
+                        cancelChainedPromise();
                     }
                 });
             }
         } else {
             if (executor().inExecutorThread()) {
-                chainedPromise.setSuccess((V) res);
+                successChainedPromise((V) res);
             } else {
                 execute(new Runnable() {
                     @Override
                     public void run() {
-                        chainedPromise.setSuccess((V) res);
+                        successChainedPromise((V) res);
                     }
                 });
             }
         }
+    }
+
+    private void successChainedPromise(V result) {
+        chainedPromise.trySuccess(result);
+        chainedPromise = null;
+    }
+
+    private void failChainedPromise(Throwable error) {
+        chainedPromise.tryFailure(error);
+        chainedPromise = null;
+    }
+
+    private void cancelChainedPromise() {
+        chainedPromise.cancel();
+        chainedPromise = null;
     }
 
     protected EventExecutor executor() {
@@ -335,6 +350,11 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     @Override
     public boolean isCancelled() {
         return isDone() && result == CANCELLED_RESULT;
+    }
+
+    @Override
+    public boolean cancel() {
+        return cancel(false);
     }
 
     @Override

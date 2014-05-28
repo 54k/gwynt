@@ -31,4 +31,10 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
     V sync(long timeout, TimeUnit unit) throws InterruptedException;
 
     V sync(long timeoutMillis) throws InterruptedException;
+
+    boolean cancel();
+
+    @Deprecated
+    @Override
+    boolean cancel(boolean mayInterruptIfRunning);
 }
