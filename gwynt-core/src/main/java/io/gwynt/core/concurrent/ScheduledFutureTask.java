@@ -26,14 +26,13 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
         return System.currentTimeMillis() - START_TIME;
     }
 
-    @Override
-    public long deadlineMillis() {
+    private long delayMillis() {
         return Math.max(0, deadlineMillis - timeMillis());
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(deadlineMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(delayMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -47,7 +46,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
         }
 
         ScheduledFutureTask<?> that = (ScheduledFutureTask<?>) o;
-        long d = deadlineMillis() - that.deadlineMillis();
+        long d = delayMillis() - that.delayMillis();
         if (d < 0) {
             return -1;
         } else if (d > 0) {
