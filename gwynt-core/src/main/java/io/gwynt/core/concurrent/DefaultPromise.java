@@ -205,6 +205,17 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
                     }
                 });
             }
+        } else if (isCancelled()) {
+            if (executor().inExecutorThread()) {
+                chainedPromise.cancel(false);
+            } else {
+                execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        chainedPromise.cancel(false);
+                    }
+                });
+            }
         } else {
             if (executor().inExecutorThread()) {
                 chainedPromise.setSuccess((V) res);
