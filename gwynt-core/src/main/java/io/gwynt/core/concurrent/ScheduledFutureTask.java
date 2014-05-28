@@ -1,5 +1,6 @@
 package io.gwynt.core.concurrent;
 
+import java.util.Queue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
@@ -8,8 +9,9 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
     private static final long START_TIME = System.currentTimeMillis();
     private long deadline;
     private long period;
+    private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
 
-    static long currentTime() {
+    static long time() {
         return System.currentTimeMillis() - START_TIME;
     }
 
@@ -18,7 +20,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
     }
 
     private long delay() {
-        return Math.max(0, deadline - currentTime());
+        return Math.max(0, deadline - time());
     }
 
     @Override
@@ -35,7 +37,6 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
                 V result = task.call();
                 setSuccessInternal(result);
             } else {
-                // check if is done as it may was cancelled
                 if (!isCancelled()) {
                     task.call();
                     if (!executor().isShutdown()) {
@@ -43,10 +44,11 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
                         if (p > 0) {
                             deadline += p;
                         } else {
-                            deadline = currentTime() - p;
+                            deadline = time() - p;
                         }
+
                         if (!isCancelled()) {
-                            //                            delayedTaskQueue.add(this);
+                            delayedTaskQueue.add(this);
                         }
                     }
                 }
