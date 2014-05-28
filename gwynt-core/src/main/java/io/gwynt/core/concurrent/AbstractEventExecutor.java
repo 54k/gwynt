@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.Callable;
@@ -18,12 +19,13 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     private static final Runnable WAKE_TASK = new WakeTask();
 
     private Thread thread;
-    private Queue<Runnable> tasks = new ConcurrentLinkedQueue<>();
+    private Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
+    private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
     private volatile boolean running;
 
     protected Runnable peekTask() {
         for (; ; ) {
-            Runnable task = tasks.peek();
+            Runnable task = taskQueue.peek();
             if (task instanceof WakeTask) {
                 continue;
             }
@@ -33,7 +35,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     protected Runnable pollTask() {
         for (; ; ) {
-            Runnable task = tasks.poll();
+            Runnable task = taskQueue.poll();
             if (task instanceof WakeTask) {
                 continue;
             }
@@ -41,15 +43,36 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         }
     }
 
+    protected void fetchFromDelayedQueue() {
+        long millisTime = 0L;
+        for (; ; ) {
+            ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+            if (delayedTask == null) {
+                break;
+            }
+
+            if (millisTime == 0L) {
+                millisTime = ScheduledFutureTask.timeMillis();
+            }
+
+            if (delayedTask.deadlineMillis() <= millisTime) {
+                delayedTaskQueue.remove();
+                taskQueue.add(delayedTask);
+            } else {
+                break;
+            }
+        }
+    }
+
     protected boolean hasTasks() {
-        return !tasks.isEmpty();
+        return !taskQueue.isEmpty();
     }
 
     protected void addTask(Runnable task) {
         if (task == null) {
             throw new IllegalArgumentException("task");
         }
-        if (tasks.add(task)) {
+        if (taskQueue.add(task)) {
             if (!(task instanceof WakeTask)) {
                 taskAdded(task);
             }
@@ -63,7 +86,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         if (task == null) {
             throw new IllegalArgumentException("task");
         }
-        if (tasks.remove(task)) {
+        if (taskQueue.remove(task)) {
             taskRemoved(task);
         }
     }
@@ -152,6 +175,25 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
         return null;
+    }
+
+    private <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
+        if (task == null) {
+            throw new NullPointerException("task");
+        }
+
+        if (inExecutorThread()) {
+            delayedTaskQueue.add(task);
+        } else {
+            execute(new Runnable() {
+                @Override
+                public void run() {
+                    delayedTaskQueue.add(task);
+                }
+            });
+        }
+
+        return task;
     }
 
     @Override

@@ -2,20 +2,19 @@ package io.gwynt.core.concurrent;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ScheduledTask<V> extends PromiseTask<V> implements ScheduledFuture<V> {
+public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFuture<V> {
 
     private static final long START_TIME = System.currentTimeMillis();
 
     private long deadlineMillis;
 
-    public ScheduledTask(Callable<V> task, long deadlineMillis) {
+    public ScheduledFutureTask(Callable<V> task, long deadlineMillis) {
         this(null, task, deadlineMillis);
     }
 
-    public ScheduledTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis) {
+    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis) {
         super(eventExecutor, task);
         if (deadlineMillis < 0) {
             throw new IllegalArgumentException("deadlineMillis");
@@ -23,17 +22,18 @@ public class ScheduledTask<V> extends PromiseTask<V> implements ScheduledFuture<
         this.deadlineMillis = deadlineMillis;
     }
 
-    private static long timeMillis() {
+    static long timeMillis() {
         return System.currentTimeMillis() - START_TIME;
     }
 
-    private long delayMillis() {
+    @Override
+    public long deadlineMillis() {
         return Math.max(0, deadlineMillis - timeMillis());
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(delayMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(deadlineMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -46,8 +46,8 @@ public class ScheduledTask<V> extends PromiseTask<V> implements ScheduledFuture<
             return 0;
         }
 
-        ScheduledTask<?> that = (ScheduledTask<?>) o;
-        long d = delayMillis() - that.delayMillis();
+        ScheduledFutureTask<?> that = (ScheduledFutureTask<?>) o;
+        long d = deadlineMillis() - that.deadlineMillis();
         if (d < 0) {
             return -1;
         } else if (d > 0) {
