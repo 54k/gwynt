@@ -89,7 +89,7 @@ public class EndpointBootstrap implements Endpoint {
     public ChannelFuture bind(final int port) {
         ChannelFuture regFuture = initAndRegisterChannel();
         try {
-            regFuture.await();
+            regFuture.sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -100,7 +100,7 @@ public class EndpointBootstrap implements Endpoint {
     public ChannelFuture connect(final String host, final int port) {
         ChannelFuture regFuture = initAndRegisterChannel();
         try {
-            regFuture.await();
+            regFuture.sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
