@@ -1,6 +1,7 @@
 package io.gwynt.core.concurrent;
 
 import java.util.Queue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
@@ -10,6 +11,11 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
     private long deadline;
     private long period;
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
+
+    // TODO add constructors
+    public ScheduledFutureTask(Callable<V> task) {
+        super(task);
+    }
 
     static long time() {
         return System.currentTimeMillis() - START_TIME;
