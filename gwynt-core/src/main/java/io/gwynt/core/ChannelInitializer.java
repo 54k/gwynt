@@ -8,7 +8,7 @@ public abstract class ChannelInitializer extends AbstractHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ChannelInitializer.class);
 
-    protected abstract void initialize(Channel session);
+    protected abstract void initialize(Channel channel);
 
     @Override
     public void onRegistered(HandlerContext context) {
