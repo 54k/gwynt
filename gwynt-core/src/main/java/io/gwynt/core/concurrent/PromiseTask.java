@@ -50,7 +50,7 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
         throw new IllegalStateException();
     }
 
-    private PromiseTask<V> setFailureInternal(Throwable cause) {
+    protected PromiseTask<V> setFailureInternal(Throwable cause) {
         super.setFailure(cause);
         return this;
     }
@@ -65,7 +65,7 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
         throw new IllegalStateException();
     }
 
-    public PromiseTask<V> setSuccessInternal(V result) {
+    protected PromiseTask<V> setSuccessInternal(V result) {
         super.setSuccess(result);
         return this;
     }
