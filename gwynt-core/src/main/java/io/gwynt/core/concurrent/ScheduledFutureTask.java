@@ -9,16 +9,30 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
 
     private static final long START_TIME = System.currentTimeMillis();
     private long deadline;
+    /* 0 - no repeat, >0 - repeat at fixed rate, <0 - repeat with fixed delay */
     private long period;
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
 
-    // TODO add constructors
-    public ScheduledFutureTask(Callable<V> task) {
-        super(task);
+    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadline, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+        super(eventExecutor, task);
+        period = 0;
+        this.deadline = deadline;
+        this.delayedTaskQueue = delayedTaskQueue;
+    }
+
+    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadline, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+        super(eventExecutor, task);
+        this.deadline = deadline;
+        this.period = period;
+        this.delayedTaskQueue = delayedTaskQueue;
     }
 
     static long time() {
         return System.currentTimeMillis() - START_TIME;
+    }
+
+    static long deadline(long delay) {
+        return time() + delay;
     }
 
     long deadline() {

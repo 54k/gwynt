@@ -8,6 +8,7 @@ public abstract class SingleThreadedEventExecutor extends AbstractEventExecutor 
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadedEventExecutor.class);
 
     protected void runTasks() {
+        fetchFromDelayedQueue();
         Runnable task;
         while ((task = pollTask()) != null) {
             try {
@@ -19,6 +20,7 @@ public abstract class SingleThreadedEventExecutor extends AbstractEventExecutor 
     }
 
     protected void runTasks(long timeout) {
+        fetchFromDelayedQueue();
         long elapsedTime = 0;
         Runnable task;
         while ((task = pollTask()) != null) {

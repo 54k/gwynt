@@ -21,4 +21,8 @@ public interface ChannelConfig {
     RecvByteBufferAllocator getRecvByteBufferAllocator();
 
     ChannelConfig setRecvByteBufferAllocator(RecvByteBufferAllocator byteBufferAllocator);
+
+    long getConnectionTimeoutMillis();
+
+    void setConnectionTimeoutMillis(long connectionTimeoutMillis);
 }

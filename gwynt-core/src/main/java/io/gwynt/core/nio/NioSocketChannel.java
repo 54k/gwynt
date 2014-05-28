@@ -1,9 +1,12 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelConfig;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.RecvByteBufferAllocator;
+import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
@@ -13,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class NioSocketChannel extends AbstractNioChannel {
 
@@ -52,6 +56,20 @@ public class NioSocketChannel extends AbstractNioChannel {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
                     interestOps(SelectionKey.OP_CONNECT);
+
+                    final ScheduledFuture timeoutFuture = eventLoop().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            System.out.println("Connection timeout!");
+                        }
+                    }, config().getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+
+                    connectPromise.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void onComplete(ChannelFuture future) {
+                            timeoutFuture.cancel();
+                        }
+                    });
                 } else {
                     connectPromise.setSuccess();
                 }
@@ -141,7 +159,7 @@ public class NioSocketChannel extends AbstractNioChannel {
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {
-                    connectPromise.setSuccess();
+//                    connectPromise.setSuccess();
                     if (!wasActive && isActive()) {
                         if (config().isAutoRead()) {
                             interestOps(SelectionKey.OP_READ);
@@ -154,6 +172,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 }
             } catch (IOException e) {
                 connectPromise.setFailure(e);
+                doClose();
             }
         }
 

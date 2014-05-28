@@ -158,23 +158,22 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
-        //        new PromiseTask<>()
-        return super.newTaskFor(runnable, value);
+        return new PromiseTask<>(value, runnable);
     }
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Callable<T> callable) {
-        return super.newTaskFor(callable);
+        return new PromiseTask<>(callable);
     }
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return null;
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return null;
+        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadline(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     private <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
@@ -198,12 +197,12 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return null;
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), unit.toMillis(period), delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return null;
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), -unit.toMillis(delay), delayedTaskQueue));
     }
 
     @Override

@@ -8,6 +8,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
     private int writeSpinCount = 8;
     private int readSpinCount = 8;
+    private long connectionTimeoutMillis = 0;
 
     public DefaultChannelConfig(Channel channel) {
         this.channel = channel;
@@ -72,5 +73,15 @@ public class DefaultChannelConfig implements ChannelConfig {
     public ChannelConfig setRecvByteBufferAllocator(RecvByteBufferAllocator recvByteBufferAllocator) {
         this.recvByteBufferAllocator = recvByteBufferAllocator;
         return this;
+    }
+
+    @Override
+    public long getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
+    }
+
+    @Override
+    public void setConnectionTimeoutMillis(long connectionTimeoutMillis) {
+        this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 }

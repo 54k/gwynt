@@ -1,6 +1,7 @@
 package io.gwynt.core.concurrent;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RunnableFuture;
 
 public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<V> {
@@ -25,7 +26,7 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
     }
 
     static <V> Callable<V> toCallable(V result, Runnable task) {
-        return new RunnableAdapter<>(result, task);
+        return Executors.callable(task, result);
     }
 
     @Override
@@ -77,22 +78,5 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
 
     protected boolean setUncancellableInternal() {
         return super.setUncancellable();
-    }
-
-    private static class RunnableAdapter<V> implements Callable<V> {
-
-        private V result;
-        private Runnable task;
-
-        private RunnableAdapter(V result, Runnable task) {
-            this.result = result;
-            this.task = task;
-        }
-
-        @Override
-        public V call() throws Exception {
-            task.run();
-            return result;
-        }
     }
 }
