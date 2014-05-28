@@ -52,10 +52,10 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
             }
 
             if (millisTime == 0L) {
-                millisTime = ScheduledFutureTask.timeMillis();
+                millisTime = ScheduledFutureTask.currentTime();
             }
 
-            if (delayedTask.deadlineMillis() <= millisTime) {
+            if (delayedTask.deadline() <= millisTime) {
                 delayedTaskQueue.remove();
                 taskQueue.add(delayedTask);
             } else {
