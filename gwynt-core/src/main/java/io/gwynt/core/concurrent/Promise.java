@@ -2,6 +2,8 @@ package io.gwynt.core.concurrent;
 
 public interface Promise<V> extends Future<V> {
 
+    boolean setUncancellable();
+
     boolean trySuccess(V result);
 
     Promise<V> setSuccess(V result);

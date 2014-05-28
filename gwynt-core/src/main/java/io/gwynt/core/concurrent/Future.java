@@ -6,6 +6,8 @@ import java.util.concurrent.TimeoutException;
 
 public interface Future<V> extends java.util.concurrent.Future<V> {
 
+    boolean isUncancellable();
+
     boolean isFailed();
 
     V getNow();

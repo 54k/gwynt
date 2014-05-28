@@ -34,8 +34,10 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
 
         try {
             if (period == 0) {
-                V result = task.call();
-                setSuccessInternal(result);
+                if (setUncancellableInternal()) {
+                    V result = task.call();
+                    setSuccessInternal(result);
+                }
             } else {
                 if (!isCancelled()) {
                     task.call();

@@ -31,7 +31,7 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
     @Override
     public void run() {
         try {
-            if (!isCancelled()) {
+            if (setUncancellableInternal()) {
                 V result = task.call();
                 setSuccessInternal(result);
             }
@@ -68,6 +68,15 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
     protected PromiseTask<V> setSuccessInternal(V result) {
         super.setSuccess(result);
         return this;
+    }
+
+    @Override
+    public boolean setUncancellable() {
+        throw new IllegalStateException();
+    }
+
+    protected boolean setUncancellableInternal() {
+        return super.setUncancellable();
     }
 
     private static class RunnableAdapter<V> implements Callable<V> {

@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private final static CancelledResult CANCELLED_RESULT = new CancelledResult(new CancellationException());
-
     private final AtomicBoolean done = new AtomicBoolean();
     private final AtomicBoolean inNotify = new AtomicBoolean();
     private final Queue<FutureListener> listeners = new ConcurrentLinkedQueue<>();
+    private volatile boolean uncallelable;
     private volatile short waiters;
     private EventExecutor eventExecutor;
 
@@ -34,6 +34,16 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     public DefaultPromise(EventExecutor eventExecutor) {
         this.eventExecutor = eventExecutor;
+    }
+
+    @Override
+    public boolean setUncancellable() {
+        return !isDone() && (uncallelable = true);
+    }
+
+    @Override
+    public boolean isUncancellable() {
+        return uncallelable;
     }
 
     @Override
@@ -329,6 +339,10 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        if (uncallelable) {
+            return false;
+        }
+
         if (done.getAndSet(true)) {
             return false;
         }
