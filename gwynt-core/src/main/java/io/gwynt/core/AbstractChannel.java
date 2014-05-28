@@ -180,9 +180,40 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract Unsafe newUnsafe();
 
+    static final class ClosePromise extends DefaultChannelPromise {
+
+        ClosePromise(AbstractChannel ch) {
+            super(ch);
+        }
+
+        @Override
+        public ChannelPromise setSuccess() {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public ChannelPromise setFailure(Throwable cause) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public boolean trySuccess() {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public boolean tryFailure(Throwable cause) {
+            throw new IllegalStateException();
+        }
+
+        boolean setClosed() {
+            return super.trySuccess();
+        }
+    }
+
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
-        private final ChannelPromise closePromise = newChannelPromise();
+        private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
 
         private volatile boolean pendingClose;
@@ -340,7 +371,7 @@ public abstract class AbstractChannel implements Channel {
                 pendingClose = true;
                 closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
-                closePromise.setSuccess();
+                closePromise.setClosed();
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
