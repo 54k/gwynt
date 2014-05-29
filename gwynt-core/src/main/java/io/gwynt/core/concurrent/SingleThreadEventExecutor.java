@@ -214,12 +214,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         return task;
     }
 
-    @Override
-    protected void run() {
-        while (!isShutdown()) {
-            runTasks();
-        }
-    }
+    protected abstract void run();
 
     @Override
     public boolean inExecutorThread(Thread thread) {

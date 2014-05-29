@@ -20,8 +20,6 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         this.parent = parent;
     }
 
-    protected abstract void run();
-
     @Override
     public EventExecutor next() {
         return this;
