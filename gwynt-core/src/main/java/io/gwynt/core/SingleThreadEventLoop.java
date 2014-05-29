@@ -77,4 +77,14 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
             channelPromise.setFailure(e);
         }
     }
+
+    @Override
+    public EventLoop next() {
+        return (EventLoop) super.next();
+    }
+
+    @Override
+    public EventLoopGroup parent() {
+        return (EventLoopGroup) super.parent();
+    }
 }

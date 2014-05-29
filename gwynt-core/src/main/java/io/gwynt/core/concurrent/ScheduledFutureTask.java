@@ -14,14 +14,14 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
     /* 0 - no repeat, >0 - repeat at fixed rate, <0 - repeat with fixed delay */
     private long period;
 
-    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
         period = 0;
         this.deadlineMillis = deadlineMillis;
         this.delayedTaskQueue = delayedTaskQueue;
     }
 
-    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
         this.deadlineMillis = deadlineMillis;
         this.period = period;

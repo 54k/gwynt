@@ -1,8 +1,16 @@
 package io.gwynt.core;
 
-public interface EventLoopGroup {
+import io.gwynt.core.concurrent.EventExecutor;
 
-    EventLoop parent();
+public interface EventLoopGroup extends EventExecutor {
 
     EventLoop next();
+
+    ChannelFuture register(Channel channel);
+
+    ChannelFuture unregister(Channel channel);
+
+    ChannelFuture register(Channel channel, ChannelPromise channelPromise);
+
+    ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
 }

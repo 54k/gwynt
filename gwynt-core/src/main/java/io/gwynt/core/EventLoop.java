@@ -1,17 +1,11 @@
 package io.gwynt.core;
 
-import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
-public interface EventLoop extends EventLoopGroup, EventExecutor {
+public interface EventLoop extends EventLoopGroup {
 
     HandlerContextInvoker asInvoker();
 
-    ChannelFuture register(Channel channel);
-
-    ChannelFuture unregister(Channel channel);
-
-    ChannelFuture register(Channel channel, ChannelPromise channelPromise);
-
-    ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
+    @Override
+    EventLoopGroup parent();
 }
