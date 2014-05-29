@@ -1,11 +1,11 @@
 package io.gwynt.core;
 
-import io.gwynt.core.concurrent.SingleThreadedEventExecutor;
+import io.gwynt.core.concurrent.SingleThreadEventExecutor;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.pipeline.DefaultHandlerContextInvoker;
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
-public abstract class SingleThreadedEventLoop extends SingleThreadedEventExecutor implements EventLoop {
+public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor implements EventLoop {
 
     private final HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
 
@@ -44,7 +44,7 @@ public abstract class SingleThreadedEventLoop extends SingleThreadedEventExecuto
 
     private void register0(Channel channel, ChannelPromise channelPromise) {
         try {
-            channel.unsafe().register(SingleThreadedEventLoop.this);
+            channel.unsafe().register(SingleThreadEventLoop.this);
             channelPromise.setSuccess();
         } catch (ChannelException e) {
             channelPromise.setFailure(e);

@@ -3,9 +3,9 @@ package io.gwynt.core.concurrent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class SingleThreadedEventExecutor extends AbstractEventExecutor {
+public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
-    private static final Logger logger = LoggerFactory.getLogger(SingleThreadedEventExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
 
     protected void runTasks() {
         fetchFromDelayedQueue();
