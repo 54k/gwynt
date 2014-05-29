@@ -174,21 +174,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     @Override
-    public Future<?> submit(Runnable task) {
-        return (Future<?>) super.submit(task);
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        return (Future<T>) super.submit(task, result);
-    }
-
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return (Future<T>) super.submit(task);
-    }
-
-    @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(delay)), delayedTaskQueue));
     }
@@ -229,6 +214,18 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         return task;
     }
 
+    @Override
+    protected void run() {
+        while (!isShutdown()) {
+            runTasks();
+        }
+    }
+
+    @Override
+    public boolean inExecutorThread(Thread thread) {
+        return this.thread == thread;
+    }
+
     private class PurgeTask implements Runnable {
 
         @Override
@@ -241,17 +238,5 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 }
             }
         }
-    }
-
-    @Override
-    protected void run() {
-        while (!isShutdown()) {
-            runTasks();
-        }
-    }
-
-    @Override
-    public boolean inExecutorThread(Thread thread) {
-        return this.thread == thread;
     }
 }

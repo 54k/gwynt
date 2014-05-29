@@ -15,7 +15,7 @@ public interface ChannelPromise extends ChannelFuture, Promise<Void> {
     ChannelPromise setFailure(Throwable error);
 
     @Override
-    ChannelPromise chainPromise(Promise<Void>... promises);
+    ChannelPromise chainPromises(Promise<Void>... promises);
 
     @Override
     ChannelPromise chainPromise(Promise<Void> promise);

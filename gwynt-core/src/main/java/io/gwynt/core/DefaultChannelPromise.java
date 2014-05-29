@@ -62,8 +62,8 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
     }
 
     @Override
-    public ChannelPromise chainPromise(Promise<Void>... promises) {
-        super.chainPromise(promises);
+    public ChannelPromise chainPromises(Promise<Void>... promises) {
+        super.chainPromises(promises);
         return this;
     }
 
@@ -74,8 +74,8 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
     }
 
     @Override
-    public ChannelFuture addListener(FutureListener<? extends Future<? super Void>>... futureListeners) {
-        super.addListener(futureListeners);
+    public ChannelFuture addListeners(FutureListener<? extends Future<? super Void>>... futureListeners) {
+        super.addListeners(futureListeners);
         return this;
     }
 }

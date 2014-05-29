@@ -14,5 +14,5 @@ public interface Promise<V> extends Future<V> {
 
     Promise<V> chainPromise(Promise<V> promise);
 
-    Promise<V> chainPromise(Promise<V>... promises);
+    Promise<V> chainPromises(Promise<V>... promises);
 }

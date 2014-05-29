@@ -115,7 +115,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     @Override
-    public Promise<V> chainPromise(Promise<V>... promises) {
+    public Promise<V> chainPromises(Promise<V>... promises) {
         if (promises == null) {
             throw new IllegalArgumentException("promises");
         }
@@ -145,7 +145,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     @Override
-    public Future<V> addListener(FutureListener<? extends Future<? super V>>... futureListeners) {
+    public Future<V> addListeners(FutureListener<? extends Future<? super V>>... futureListeners) {
         if (futureListeners == null) {
             throw new IllegalArgumentException("futureListeners");
         }

@@ -12,7 +12,7 @@ public interface ChannelGroupFuture extends Future<Void>, Iterable<ChannelFuture
     ChannelGroupFuture addListener(FutureListener<? extends Future<? super Void>> futureListener);
 
     @Override
-    ChannelGroupFuture addListener(FutureListener<? extends Future<? super Void>>... futureListeners);
+    ChannelGroupFuture addListeners(FutureListener<? extends Future<? super Void>>... futureListeners);
 
     @Override
     ChannelGroupFuture await() throws InterruptedException;

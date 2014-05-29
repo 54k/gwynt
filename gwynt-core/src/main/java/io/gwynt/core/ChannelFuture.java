@@ -11,5 +11,5 @@ public interface ChannelFuture extends Future<Void> {
     ChannelFuture addListener(FutureListener<? extends Future<? super Void>> futureListener);
 
     @Override
-    ChannelFuture addListener(FutureListener<? extends Future<? super Void>>... futureListeners);
+    ChannelFuture addListeners(FutureListener<? extends Future<? super Void>>... futureListeners);
 }

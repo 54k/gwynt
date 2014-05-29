@@ -24,7 +24,7 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
 
     Future<V> addListener(FutureListener<? extends Future<? super V>> futureListener);
 
-    Future<V> addListener(FutureListener<? extends Future<? super V>>... futureListeners);
+    Future<V> addListeners(FutureListener<? extends Future<? super V>>... futureListeners);
 
     V sync() throws InterruptedException;
 
