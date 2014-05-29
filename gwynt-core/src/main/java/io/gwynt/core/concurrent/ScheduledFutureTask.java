@@ -8,54 +8,54 @@ import java.util.concurrent.TimeUnit;
 public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFuture<V> {
 
     private static final long START_TIME = System.currentTimeMillis();
-    private long deadline;
+
+    private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
+    private long deadlineMillis;
     /* 0 - no repeat, >0 - repeat at fixed rate, <0 - repeat with fixed delay */
     private long period;
-    private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
 
-    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadline, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
         period = 0;
-        this.deadline = deadline;
+        this.deadlineMillis = deadlineMillis;
         this.delayedTaskQueue = delayedTaskQueue;
     }
 
-    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadline, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    public ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
-        this.deadline = deadline;
+        this.deadlineMillis = deadlineMillis;
         this.period = period;
         this.delayedTaskQueue = delayedTaskQueue;
     }
 
-    static long time() {
+    static long timeMillis() {
         return System.currentTimeMillis() - START_TIME;
     }
 
-    static long deadline(long delay) {
-        return time() + delay;
+    static long deadlineMillis(long delay) {
+        return timeMillis() + delay;
     }
 
-    long deadline() {
-        return deadline;
+    long deadlineMillis() {
+        return deadlineMillis;
     }
 
-    private long delay() {
-        return Math.max(0, deadline - time());
+    private long delayMillis() {
+        return Math.max(0, deadlineMillis - timeMillis());
     }
 
     public long delayMillis(long currentTimeMillis) {
-        return Math.max(0, deadline() - (currentTimeMillis - START_TIME));
+        return Math.max(0, deadlineMillis() - (currentTimeMillis - START_TIME));
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(delay(), TimeUnit.MILLISECONDS);
+        return unit.convert(delayMillis(), TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void run() {
         assert executor().inExecutorThread();
-
         try {
             if (period == 0) {
                 if (setUncancellableInternal()) {
@@ -68,9 +68,9 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
                     if (!executor().isShutdown()) {
                         long p = period;
                         if (p > 0) {
-                            deadline += p;
+                            deadlineMillis += p;
                         } else {
-                            deadline = time() - p;
+                            deadlineMillis = timeMillis() - p;
                         }
 
                         if (!isCancelled()) {
@@ -95,7 +95,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
         }
 
         ScheduledFutureTask<?> that = (ScheduledFutureTask<?>) o;
-        long d = delay() - that.delay();
+        long d = delayMillis() - that.delayMillis();
         if (d < 0) {
             return -1;
         } else if (d > 0) {

@@ -2,11 +2,13 @@ package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.concurrent.TimeUnit;
 
 //import io.netty.channel.nio.NioEventLoopGroup;
 
@@ -20,12 +22,13 @@ public class Main {
     public static void main(String[] args) throws Exception {
         new NettySimpleServer().run();
         new GwyntSimpleServer().run();
-        //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
-        //            @Override
-        //            public void run() {
-        //                System.out.println("OPA!");
-        //            }
-        //        }, 0, 2000, TimeUnit.MILLISECONDS);
+
+//        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
+//            @Override
+//            public void run() {
+//                System.out.println("tick");
+//            }
+//        }, 0, 2000, TimeUnit.MILLISECONDS);
         //                final StringConverter sc = new StringConverter();
         //                final LoggingHandler lh = new LoggingHandler();
         //                final EchoHandler eh = new EchoHandler();

@@ -1,8 +1,6 @@
 package io.gwynt.core.concurrent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -15,9 +13,12 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractEventExecutor extends AbstractExecutorService implements EventExecutor {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractEventExecutor.class);
-
-    private static final Runnable WAKE_TASK = new WakeTask();
+    private static final Runnable WAKEUP_TASK = new Runnable() {
+        @Override
+        public void run() {
+            // Do nothing.
+        }
+    };
 
     private Thread thread;
     private Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
@@ -27,7 +28,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     protected Runnable peekTask() {
         for (; ; ) {
             Runnable task = taskQueue.peek();
-            if (task instanceof WakeTask) {
+            if (task == WAKEUP_TASK) {
                 continue;
             }
             return task;
@@ -37,7 +38,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     protected Runnable pollTask() {
         for (; ; ) {
             Runnable task = taskQueue.poll();
-            if (task instanceof WakeTask) {
+            if (task == WAKEUP_TASK) {
                 continue;
             }
             return task;
@@ -53,10 +54,10 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
             }
 
             if (millisTime == 0L) {
-                millisTime = ScheduledFutureTask.time();
+                millisTime = ScheduledFutureTask.timeMillis();
             }
 
-            if (delayedTask.deadline() <= millisTime) {
+            if (delayedTask.deadlineMillis() <= millisTime) {
                 delayedTaskQueue.remove();
                 taskQueue.add(delayedTask);
             } else {
@@ -74,7 +75,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
             throw new IllegalArgumentException("task");
         }
         if (taskQueue.add(task)) {
-            if (!(task instanceof WakeTask)) {
+            if (task != WAKEUP_TASK) {
                 taskAdded(task);
             }
         }
@@ -105,7 +106,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         if (!running) {
             return;
         }
-        addTask(WAKE_TASK);
+        addTask(WAKEUP_TASK);
         running = false;
         thread = null;
     }
@@ -113,7 +114,8 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     @Deprecated
     @Override
     public List<Runnable> shutdownNow() {
-        throw new UnsupportedOperationException();
+        shutdown();
+        return Collections.emptyList();
     }
 
     @Override
@@ -169,7 +171,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     protected <T> RunnableFuture<T> newTaskFor(Runnable runnable, T value) {
-        return new PromiseTask<>(value, runnable);
+        return new PromiseTask<>(runnable, value);
     }
 
     @Override
@@ -178,13 +180,40 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     }
 
     @Override
+    public Future<?> submit(Runnable task) {
+        return (Future<?>) super.submit(task);
+    }
+
+    @Override
+    public <T> Future<T> submit(Runnable task, T result) {
+        return (Future<T>) super.submit(task, result);
+    }
+
+    @Override
+    public <T> Future<T> submit(Callable<T> task) {
+        return (Future<T>) super.submit(task);
+    }
+
+    @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadline(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadlineMillis(unit.toMillis(delay)), delayedTaskQueue));
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(initialDelay)), unit.toMillis(period),
+                delayedTaskQueue));
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(initialDelay)), -unit.toMillis(delay),
+                delayedTaskQueue));
     }
 
     private <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
@@ -204,39 +233,6 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         }
 
         return task;
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), unit.toMillis(period),
-                delayedTaskQueue));
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), -unit.toMillis(delay),
-                delayedTaskQueue));
-    }
-
-    @Override
-    public Future<?> submit(Runnable task) {
-        return (Future<?>) super.submit(task);
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        return (Future<T>) super.submit(task, result);
-    }
-
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return (Future<T>) super.submit(task);
-    }
-
-    private static class WakeTask implements Runnable {
-        @Override
-        public void run() {
-        }
     }
 
     private class PurgeTask implements Runnable {

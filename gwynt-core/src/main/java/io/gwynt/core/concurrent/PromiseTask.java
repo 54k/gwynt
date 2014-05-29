@@ -8,12 +8,12 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
 
     protected final Callable<V> task;
 
-    PromiseTask(EventExecutor eventExecutor, V result, Runnable task) {
-        this(eventExecutor, toCallable(result, task));
+    PromiseTask(EventExecutor eventExecutor, Runnable task, V result) {
+        this(eventExecutor, toCallable(task, result));
     }
 
-    PromiseTask(V result, Runnable task) {
-        this(toCallable(result, task));
+    PromiseTask(Runnable task, V result) {
+        this(toCallable(task, result));
     }
 
     PromiseTask(Callable<V> task) {
@@ -25,7 +25,11 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
         this.task = task;
     }
 
-    static <V> Callable<V> toCallable(V result, Runnable task) {
+    static Callable<?> toCallable(Runnable task) {
+        return Executors.callable(task);
+    }
+
+    static <V> Callable<V> toCallable(Runnable task, V result) {
         return Executors.callable(task, result);
     }
 
