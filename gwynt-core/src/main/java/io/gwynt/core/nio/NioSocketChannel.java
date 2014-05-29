@@ -10,6 +10,7 @@ import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -41,7 +42,8 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
-        private final ChannelPromise connectPromise = newChannelPromise();
+        private ScheduledFuture<?> connectTimeout;
+        private ChannelPromise connectPromise;
         private RecvByteBufferAllocator.Handle allocHandle;
 
         @Override
@@ -50,24 +52,36 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            connectPromise.chainPromise(channelPromise);
+        public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
+            connectPromise = channelPromise;
             try {
                 boolean connected = javaChannel().connect(address);
                 if (!connected) {
                     interestOps(SelectionKey.OP_CONNECT);
 
-                    final ScheduledFuture timeoutFuture = eventLoop().schedule(new Runnable() {
-                        @Override
-                        public void run() {
-                            System.out.println("Connection timeout!");
-                        }
-                    }, config().getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    long connectTimeoutMillis = config().getConnectTimeoutMillis();
+                    if (connectTimeoutMillis > 0) {
+                        connectTimeout = eventLoop().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                ConnectException cause = new ConnectException("connect timeout: " + address);
+                                if (connectPromise != null && connectPromise.tryFailure(cause)) {
+                                    doClose();
+                                }
+                            }
+                        }, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    }
 
-                    connectPromise.addListener(new ChannelFutureListener() {
+                    channelPromise.addListener(new ChannelFutureListener() {
                         @Override
                         public void onComplete(ChannelFuture future) {
-                            timeoutFuture.cancel();
+                            if (future.isCancelled()) {
+                                if (connectTimeout != null) {
+                                    connectTimeout.cancel();
+                                }
+                                connectPromise = null;
+                                doClose();
+                            }
                         }
                     });
                 } else {
@@ -159,19 +173,24 @@ public class NioSocketChannel extends AbstractNioChannel {
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {
-                    connectPromise.setSuccess();
+                    boolean connectSuccess = connectPromise.trySuccess();
+
                     if (!wasActive && isActive()) {
                         if (config().isAutoRead()) {
                             interestOps(SelectionKey.OP_READ);
                         }
                         pipeline().fireOpen();
                     }
+
+                    if (!connectSuccess) {
+                        doClose();
+                    }
                 } else {
                     closeForcibly();
-                    throw new ChannelException("Connection failed");
+                    connectPromise.tryFailure(new ChannelException("Connection failed"));
                 }
             } catch (IOException e) {
-                connectPromise.setFailure(e);
+                connectPromise.tryFailure(e);
                 doClose();
             }
         }

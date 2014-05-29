@@ -22,7 +22,7 @@ public interface ChannelConfig {
 
     ChannelConfig setRecvByteBufferAllocator(RecvByteBufferAllocator byteBufferAllocator);
 
-    long getConnectionTimeoutMillis();
+    long getConnectTimeoutMillis();
 
-    void setConnectionTimeoutMillis(long connectionTimeoutMillis);
+    void setConnectTimeoutMillis(long connectionTimeoutMillis);
 }

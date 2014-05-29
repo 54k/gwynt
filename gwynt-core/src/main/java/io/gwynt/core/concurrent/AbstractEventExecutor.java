@@ -3,6 +3,7 @@ package io.gwynt.core.concurrent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -153,6 +154,7 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
             return;
         }
         running = true;
+        scheduleAtFixedRate(new PurgeTask(), 0, 1, TimeUnit.MILLISECONDS);
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -234,6 +236,20 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
     private static class WakeTask implements Runnable {
         @Override
         public void run() {
+        }
+    }
+
+    private class PurgeTask implements Runnable {
+
+        @Override
+        public void run() {
+            Iterator<ScheduledFutureTask<?>> i = delayedTaskQueue.iterator();
+            while (i.hasNext()) {
+                ScheduledFutureTask<?> task = i.next();
+                if (task.isCancelled()) {
+                    i.remove();
+                }
+            }
         }
     }
 }

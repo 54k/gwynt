@@ -8,7 +8,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
     private int writeSpinCount = 8;
     private int readSpinCount = 8;
-    private long connectionTimeoutMillis = 0;
+    private long connectTimeoutMillis = 0;
 
     public DefaultChannelConfig(Channel channel) {
         this.channel = channel;
@@ -76,12 +76,12 @@ public class DefaultChannelConfig implements ChannelConfig {
     }
 
     @Override
-    public long getConnectionTimeoutMillis() {
-        return connectionTimeoutMillis;
+    public long getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
     @Override
-    public void setConnectionTimeoutMillis(long connectionTimeoutMillis) {
-        this.connectionTimeoutMillis = connectionTimeoutMillis;
+    public void setConnectTimeoutMillis(long connectionTimeoutMillis) {
+        this.connectTimeoutMillis = connectionTimeoutMillis;
     }
 }
