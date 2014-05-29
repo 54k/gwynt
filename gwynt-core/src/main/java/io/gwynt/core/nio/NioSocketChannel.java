@@ -159,7 +159,7 @@ public class NioSocketChannel extends AbstractNioChannel {
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {
-//                    connectPromise.setSuccess();
+                    connectPromise.setSuccess();
                     if (!wasActive && isActive()) {
                         if (config().isAutoRead()) {
                             interestOps(SelectionKey.OP_READ);

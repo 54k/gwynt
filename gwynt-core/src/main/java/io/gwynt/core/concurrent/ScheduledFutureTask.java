@@ -43,6 +43,10 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
         return Math.max(0, deadline - time());
     }
 
+    public long delayMillis(long currentTimeMillis) {
+        return Math.max(0, deadline() - (currentTimeMillis - START_TIME));
+    }
+
     @Override
     public long getDelay(TimeUnit unit) {
         return unit.convert(delay(), TimeUnit.MILLISECONDS);

@@ -139,6 +139,15 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
         }
     }
 
+    protected long delayMillis(long currentTimeMillis) {
+        ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+        if (delayedTask == null) {
+            return 1;
+        }
+
+        return delayedTask.delayMillis(currentTimeMillis);
+    }
+
     private void runThread() {
         if (running) {
             return;
@@ -197,12 +206,14 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), unit.toMillis(period), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), unit.toMillis(period),
+                delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), -unit.toMillis(delay), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(null, command), ScheduledFutureTask.deadline(unit.toMillis(initialDelay)), -unit.toMillis(delay),
+                delayedTaskQueue));
     }
 
     @Override

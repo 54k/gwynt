@@ -116,12 +116,15 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
             Selector sel = selector;
             while (!isShutdown()) {
                 int keyCount = 0;
+                long currentTimeMillis = System.currentTimeMillis();
+                long selectDeadlineMillis = delayMillis(currentTimeMillis);
+
                 try {
                     selectorAwakened.set(false);
-                    if (hasTasks()) {
+                    if (hasTasks() || selectDeadlineMillis == 0) {
                         keyCount = selector.selectNow();
                     } else {
-                        keyCount = selector.select();
+                        keyCount = selector.select(selectDeadlineMillis);
                     }
                     selectorAwakened.set(true);
                 } catch (ClosedSelectorException e) {
