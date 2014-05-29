@@ -1,9 +1,10 @@
 package io.gwynt.core;
 
-import io.gwynt.core.concurrent.EventExecutor;
+import io.gwynt.core.concurrent.EventExecutorGroup;
 
-public interface EventLoopGroup extends EventExecutor {
+public interface EventLoopGroup extends EventExecutorGroup {
 
+    @Override
     EventLoop next();
 
     ChannelFuture register(Channel channel);
