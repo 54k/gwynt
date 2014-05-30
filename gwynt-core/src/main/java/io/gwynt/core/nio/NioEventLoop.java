@@ -99,12 +99,8 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
     }
 
     @Override
-    protected boolean addTask(Runnable task) {
-        if (super.addTask(task)) {
-            wakeUpSelector();
-            return true;
-        }
-        return false;
+    protected void wakeup(boolean inExecutorThread) {
+        wakeUpSelector();
     }
 
     void wakeUpSelector() {

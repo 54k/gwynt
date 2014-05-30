@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
+
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
@@ -20,6 +21,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     };
 
+    private boolean wakeUpForTask = true;
     private Thread thread;
     private Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
@@ -100,18 +102,21 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         return !taskQueue.isEmpty();
     }
 
-    protected boolean addTask(Runnable task) {
+    protected void addTask(Runnable task) {
         if (task == null) {
             throw new IllegalArgumentException("task");
         }
-        return taskQueue.add(task);
+
+        taskQueue.add(task);
+
     }
 
-    protected boolean removeTask(Runnable task) {
+    protected void removeTask(Runnable task) {
         if (task == null) {
             throw new IllegalArgumentException("task");
         }
-        return taskQueue.remove(task);
+
+        taskQueue.remove(task);
     }
 
     @Override
@@ -119,7 +124,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         if (!running) {
             return;
         }
-        addTask(WAKEUP_TASK);
+        wakeup(inExecutorThread());
         running = false;
         thread = null;
     }
@@ -145,6 +150,20 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         addTask(command);
         if (!running) {
             runThread();
+        }
+
+        if (wakeUpForTask && wakeUpForTask(command)) {
+            wakeup(inExecutorThread());
+        }
+    }
+
+    protected boolean wakeUpForTask(Runnable task) {
+        return true;
+    }
+
+    protected void wakeup(boolean inExecutorThread) {
+        if (!inExecutorThread) {
+            taskQueue.add(WAKEUP_TASK);
         }
     }
 
