@@ -7,25 +7,46 @@ import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
 
+    private static final int ST_NOT_STARTED = 1;
+    private final AtomicInteger state = new AtomicInteger(ST_NOT_STARTED);
+    private static final int ST_STARTED = 2;
+    private static final int ST_SHUTTING_DOWN = 3;
+    private static final int ST_SHUTDOWN = 4;
+    private static final int ST_TERMINATED = 5;
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
             // Do nothing.
         }
     };
-
     private boolean wakeUpForTask = true;
     private Thread thread;
-    private Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<>();
+    private Queue<Runnable> taskQueue = newTaskQueue();
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
     private volatile boolean running;
+
+    protected SingleThreadEventExecutor(boolean wakeUpForTask) {
+        this.wakeUpForTask = wakeUpForTask;
+    }
+
+    protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
+        super(parent);
+        this.wakeUpForTask = wakeUpForTask;
+    }
+
+    protected static void reject() {
+        throw new RejectedExecutionException("event executor terminated");
+    }
+
+    protected abstract Queue<Runnable> newTaskQueue();
 
     protected void runTasks() {
         fetchFromDelayedQueue();
@@ -57,26 +78,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
-    protected Runnable peekTask() {
-        for (; ; ) {
-            Runnable task = taskQueue.peek();
-            if (task == WAKEUP_TASK) {
-                continue;
-            }
-            return task;
-        }
-    }
-
-    protected Runnable pollTask() {
-        for (; ; ) {
-            Runnable task = taskQueue.poll();
-            if (task == WAKEUP_TASK) {
-                continue;
-            }
-            return task;
-        }
-    }
-
     protected void fetchFromDelayedQueue() {
         long millisTime = 0L;
         for (; ; ) {
@@ -98,6 +99,26 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
+    protected Runnable peekTask() {
+        for (; ; ) {
+            Runnable task = taskQueue.peek();
+            if (task == WAKEUP_TASK) {
+                continue;
+            }
+            return task;
+        }
+    }
+
+    protected Runnable pollTask() {
+        for (; ; ) {
+            Runnable task = taskQueue.poll();
+            if (task == WAKEUP_TASK) {
+                continue;
+            }
+            return task;
+        }
+    }
+
     protected boolean hasTasks() {
         return !taskQueue.isEmpty();
     }
@@ -107,8 +128,11 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             throw new IllegalArgumentException("task");
         }
 
-        taskQueue.add(task);
+        if (isShutdown()) {
+            reject();
+        }
 
+        taskQueue.add(task);
     }
 
     protected void removeTask(Runnable task) {
@@ -131,7 +155,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     @Override
     public boolean isShutdown() {
-        return !running;
+        return state.get() >= ST_SHUTTING_DOWN;
     }
 
     @Override
@@ -155,6 +179,11 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         if (wakeUpForTask && wakeUpForTask(command)) {
             wakeup(inExecutorThread());
         }
+    }
+
+    @Override
+    public boolean inExecutorThread(Thread thread) {
+        return this.thread == thread;
     }
 
     protected boolean wakeUpForTask(Runnable task) {
@@ -234,11 +263,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     protected abstract void run();
-
-    @Override
-    public boolean inExecutorThread(Thread thread) {
-        return this.thread == thread;
-    }
 
     private class PurgeTask implements Runnable {
 

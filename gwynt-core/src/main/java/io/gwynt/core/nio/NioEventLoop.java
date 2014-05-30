@@ -1,6 +1,7 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.SingleThreadEventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,6 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
     Selector selector;
-    private EventLoop parent;
     private int ioRatio = 100;
     private SelectorProvider selectorProvider;
 
@@ -27,15 +27,15 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         this(null);
     }
 
-    public NioEventLoop(EventLoop parent) {
+    public NioEventLoop(EventLoopGroup parent) {
         this(parent, SelectorProvider.provider());
     }
 
-    public NioEventLoop(EventLoop parent, SelectorProvider selectorProvider) {
+    public NioEventLoop(EventLoopGroup parent, SelectorProvider selectorProvider) {
+        super(parent, true);
         if (selectorProvider == null) {
             throw new IllegalArgumentException("selectorProvider");
         }
-        this.parent = parent == null ? this : parent;
         this.selectorProvider = selectorProvider;
         openSelector();
     }
@@ -86,11 +86,6 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public EventLoop parent() {
-        return parent;
     }
 
     @Override

@@ -1,13 +1,25 @@
 package io.gwynt.core;
 
+import io.gwynt.core.concurrent.EventExecutorGroup;
 import io.gwynt.core.concurrent.SingleThreadEventExecutor;
 import io.gwynt.core.exception.ChannelException;
 import io.gwynt.core.pipeline.DefaultHandlerContextInvoker;
 import io.gwynt.core.pipeline.HandlerContextInvoker;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor implements EventLoop {
 
     private final HandlerContextInvoker invoker = new DefaultHandlerContextInvoker(this);
+
+    protected SingleThreadEventLoop(boolean wakeUpForTask) {
+        super(wakeUpForTask);
+    }
+
+    protected SingleThreadEventLoop(EventExecutorGroup parent, boolean wakeUpForTask) {
+        super(parent, wakeUpForTask);
+    }
 
     @Override
     public HandlerContextInvoker asInvoker() {
@@ -86,5 +98,10 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
     @Override
     public EventLoopGroup parent() {
         return (EventLoopGroup) super.parent();
+    }
+
+    @Override
+    protected Queue<Runnable> newTaskQueue() {
+        return new ConcurrentLinkedQueue<>();
     }
 }
