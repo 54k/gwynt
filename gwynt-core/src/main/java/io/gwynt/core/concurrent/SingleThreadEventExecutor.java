@@ -9,32 +9,33 @@ import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
 
     private static final int ST_NOT_STARTED = 1;
-    private final AtomicInteger state = new AtomicInteger(ST_NOT_STARTED);
+    private volatile int state = ST_NOT_STARTED;
     private static final int ST_STARTED = 2;
     private static final int ST_SHUTTING_DOWN = 3;
     private static final int ST_SHUTDOWN = 4;
     private static final int ST_TERMINATED = 5;
+    private static final AtomicIntegerFieldUpdater<SingleThreadEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(SingleThreadEventExecutor.class, "state");
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
             // Do nothing.
         }
     };
-    private boolean wakeUpForTask = true;
+    private final boolean wakeUpForTask;
+
     private Thread thread;
     private Queue<Runnable> taskQueue = newTaskQueue();
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
-    private volatile boolean running;
 
     protected SingleThreadEventExecutor(boolean wakeUpForTask) {
-        this.wakeUpForTask = wakeUpForTask;
+        this(null, wakeUpForTask);
     }
 
     protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
@@ -119,6 +120,13 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
+    private void cancelDelayedTasks() {
+        for (ScheduledFutureTask<?> scheduledFutureTask : delayedTaskQueue) {
+            scheduledFutureTask.cancel();
+        }
+        delayedTaskQueue.clear();
+    }
+
     protected boolean hasTasks() {
         return !taskQueue.isEmpty();
     }
@@ -145,22 +153,25 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     @Override
     public void shutdown() {
-        if (!running) {
+        if (isShutdown()) {
             return;
         }
-        wakeup(inExecutorThread());
-        running = false;
+        if (wakeUpForTask) {
+            wakeup(inExecutorThread());
+        }
+
+        STATE_UPDATER.set(this, ST_NOT_STARTED);
         thread = null;
     }
 
     @Override
     public boolean isShutdown() {
-        return state.get() >= ST_SHUTTING_DOWN;
+        return state >= ST_SHUTTING_DOWN;
     }
 
     @Override
     public boolean isTerminated() {
-        return !running && !hasTasks();
+        return isShutdown() && !hasTasks();
     }
 
     @Deprecated
@@ -172,7 +183,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     @Override
     public void execute(Runnable command) {
         addTask(command);
-        if (!running) {
+        if (state == ST_NOT_STARTED) {
             runThread();
         }
 
@@ -206,18 +217,16 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     private void runThread() {
-        if (running) {
-            return;
-        }
-        running = true;
-        scheduleAtFixedRate(new PurgeTask(), 0, 1, TimeUnit.MILLISECONDS);
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
+                scheduleAtFixedRate(new PurgeTask(), 0, 1, TimeUnit.MILLISECONDS);
                 SingleThreadEventExecutor.this.run();
             }
         });
         thread.start();
+
         this.thread = thread;
     }
 
