@@ -12,8 +12,9 @@ import io.gwynt.core.exception.ChannelGroupException;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -21,7 +22,7 @@ import java.util.Map.Entry;
 public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements ChannelGroupFuture {
 
     private final ChannelGroup group;
-    private Map<Channel, ChannelFuture> futures = new HashMap<>();
+    private Map<Channel, ChannelFuture> futures;
     private int successCount;
     private int failureCount;
 
@@ -31,8 +32,6 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
             synchronized (DefaultChannelGroupFuture.this) {
                 if (future.isFailed()) {
                     failureCount++;
-                } else if (future.isCancelled()) {
-                    futures.remove(future.channel());
                 } else {
                     successCount++;
                 }
@@ -56,9 +55,12 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
         }
 
         this.group = group;
+
+        Map<Channel, ChannelFuture> futureMap = new LinkedHashMap<>();
         for (ChannelFuture f : futures) {
-            this.futures.put(f.channel(), f);
+            futureMap.put(f.channel(), f);
         }
+        this.futures = Collections.unmodifiableMap(futureMap);
 
         for (ChannelFuture f : futures) {
             f.addListener(childListener);
@@ -91,7 +93,7 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
         if (successCount + failureCount < futures.size()) {
             return;
         }
-
+        assert successCount + failureCount == futures.size();
         if (failureCount > 0) {
             List<Entry<Channel, Throwable>> failed = new ArrayList<>(failureCount);
             for (ChannelFuture f : futures.values()) {

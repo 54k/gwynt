@@ -4,6 +4,7 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ServerChannel;
+import io.gwynt.core.concurrent.EventExecutor;
 
 import java.lang.reflect.Array;
 import java.util.AbstractSet;
@@ -19,8 +20,6 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
 
     private static final Object[] EMPTY_ARRAY = {};
     private static final AtomicLong SEQ_GENERATOR = new AtomicLong(0L);
-
-    private final String name;
     private final ChannelFutureListener remover = new ChannelFutureListener() {
         @Override
         public void onComplete(ChannelFuture future) {
@@ -28,15 +27,26 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
         }
     };
 
+    private EventExecutor eventExecutor;
+    private String name;
     private Set<Channel> nonServerChannels = Collections.newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
     private Set<Channel> serverChannels = Collections.newSetFromMap(new ConcurrentHashMap<Channel, Boolean>());
 
     public DefaultChannelGroup() {
-        name = generateName();
+        this((EventExecutor) null);
     }
 
     public DefaultChannelGroup(String name) {
+        this(name, null);
+    }
+
+    public DefaultChannelGroup(EventExecutor eventExecutor) {
+        this(generateName(), eventExecutor);
+    }
+
+    public DefaultChannelGroup(String name, EventExecutor eventExecutor) {
         this.name = name;
+        this.eventExecutor = eventExecutor;
     }
 
     private static String generateName() {
@@ -101,7 +111,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
                 futures.add(ch.write(message));
             }
         }
-        return new DefaultChannelGroupFuture(this, futures);
+        return new DefaultChannelGroupFuture(eventExecutor, this, futures);
     }
 
     @Override
@@ -121,7 +131,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
                 futures.add(ch.close());
             }
         }
-        return new DefaultChannelGroupFuture(this, futures);
+        return new DefaultChannelGroupFuture(eventExecutor, this, futures);
     }
 
     @Override
@@ -140,7 +150,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
                 futures.add(ch.unregister());
             }
         }
-        return new DefaultChannelGroupFuture(this, futures);
+        return new DefaultChannelGroupFuture(eventExecutor, this, futures);
     }
 
     @Override
@@ -150,13 +160,12 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
 
     @Override
     public ChannelGroup newGroup(ChannelMatcher channelMatcher) {
-        DefaultChannelGroup newGroup = new DefaultChannelGroup();
-        return fillGroup(newGroup, channelMatcher);
+        return newGroup(channelMatcher, generateName());
     }
 
     @Override
     public ChannelGroup newGroup(ChannelMatcher channelMatcher, String name) {
-        DefaultChannelGroup newGroup = new DefaultChannelGroup(name);
+        DefaultChannelGroup newGroup = new DefaultChannelGroup(name, eventExecutor);
         return fillGroup(newGroup, channelMatcher);
     }
 

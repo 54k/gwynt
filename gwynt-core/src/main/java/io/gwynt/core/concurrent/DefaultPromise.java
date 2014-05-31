@@ -16,7 +16,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     private final AtomicBoolean done = new AtomicBoolean();
     private final AtomicBoolean inNotify = new AtomicBoolean();
     private final Queue<FutureListener> listeners = new ConcurrentLinkedQueue<>();
-    private volatile boolean uncallelable;
+    private volatile boolean uncancellable;
     private volatile short waiters;
     private EventExecutor eventExecutor;
 
@@ -39,12 +39,12 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public boolean setUncancellable() {
-        return !isDone() && (uncallelable = true);
+        return !isDone() && (uncancellable = true);
     }
 
     @Override
     public boolean isUncancellable() {
-        return uncallelable;
+        return uncancellable;
     }
 
     @Override
@@ -380,7 +380,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (uncallelable) {
+        if (uncancellable) {
             return false;
         }
 
