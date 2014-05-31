@@ -11,7 +11,7 @@ import io.gwynt.core.EventLoop;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
-import io.gwynt.core.nio.NioEventLoop;
+import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -27,7 +27,7 @@ public class GwyntSimpleChatServer implements Runnable {
     @Override
     public void run() {
         final ChatHandler chatHandler = new ChatHandler();
-        EventLoop eventLoop = new NioEventLoop();
+        EventLoop eventLoop = new NioEventLoopGroup();
         channels = new DefaultChannelGroup(eventLoop);
 
         Endpoint endpoint = new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter())
@@ -74,7 +74,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             try {
                 client.connect("localhost", 1337).sync();
             } catch (InterruptedException ignore) {
