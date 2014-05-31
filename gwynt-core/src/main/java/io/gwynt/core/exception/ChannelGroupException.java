@@ -1,7 +1,6 @@
-package io.gwynt.core.group;
+package io.gwynt.core.exception;
 
 import io.gwynt.core.Channel;
-import io.gwynt.core.exception.ChannelException;
 
 import java.util.Collection;
 import java.util.Collections;

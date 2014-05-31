@@ -8,6 +8,7 @@ import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 import io.gwynt.core.concurrent.Promise;
+import io.gwynt.core.exception.ChannelGroupException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +58,9 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
         this.group = group;
         for (ChannelFuture f : futures) {
             this.futures.put(f.channel(), f);
+        }
+
+        for (ChannelFuture f : futures) {
             f.addListener(childListener);
         }
 
@@ -152,6 +156,7 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
     }
 
     private static final class DefaultEntry<K, V> implements Map.Entry<K, V> {
+
         private final K key;
         private final V value;
 
