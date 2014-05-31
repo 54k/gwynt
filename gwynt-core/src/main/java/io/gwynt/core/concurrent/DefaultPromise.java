@@ -2,6 +2,7 @@ package io.gwynt.core.concurrent;
 
 import io.gwynt.core.exception.BlockingOperationException;
 
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -57,7 +58,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     @Override
-    public Promise<V> await() throws InterruptedException {
+    public Future<V> await() throws InterruptedException {
         if (!isDone()) {
             synchronized (this) {
                 while (!isDone()) {
@@ -153,6 +154,26 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         for (FutureListener<? extends Future<? super V>> l : futureListeners) {
             addListener(l);
         }
+        return this;
+    }
+
+    @Override
+    public Future<V> removeListener(FutureListener<? extends Future<? super V>> futureListener) {
+        if (futureListener == null) {
+            throw new IllegalArgumentException("futureListener");
+        }
+
+        listeners.remove(futureListener);
+        return this;
+    }
+
+    @Override
+    public Future<V> removeListeners(FutureListener<? extends Future<? super V>>... futureListeners) {
+        if (futureListeners == null) {
+            throw new IllegalArgumentException("futureListeners");
+        }
+
+        listeners.removeAll(Arrays.asList(futureListeners));
         return this;
     }
 

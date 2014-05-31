@@ -8,6 +8,8 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
 
     String name();
 
+    <T> T accept(ChannelGroupVisitor<T> visitor);
+
     ChannelGroupFuture read(ChannelMatcher channelMatcher);
 
     ChannelGroupFuture read();
@@ -25,4 +27,6 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
     ChannelGroupFuture unregister();
 
     ChannelGroup newGroup(ChannelMatcher channelMatcher);
+
+    ChannelGroup newGroup(ChannelMatcher channelMatcher, String name);
 }

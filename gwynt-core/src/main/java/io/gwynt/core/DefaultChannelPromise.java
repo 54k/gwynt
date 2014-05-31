@@ -78,4 +78,16 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
         super.addListeners(futureListeners);
         return this;
     }
+
+    @Override
+    public ChannelFuture removeListener(FutureListener<? extends Future<? super Void>> futureListener) {
+        super.removeListener(futureListener);
+        return this;
+    }
+
+    @Override
+    public ChannelFuture removeListeners(FutureListener<? extends Future<? super Void>>... futureListeners) {
+        super.removeListeners(futureListeners);
+        return this;
+    }
 }
