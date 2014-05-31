@@ -11,7 +11,7 @@ import io.gwynt.core.EventLoop;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
-import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioEventLoop;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -22,33 +22,34 @@ import java.util.concurrent.TimeUnit;
 
 public class GwyntSimpleChatServer implements Runnable {
 
-    private ChannelGroup channels = new DefaultChannelGroup();
+    private ChannelGroup channels;
 
     @Override
     public void run() {
         final ChatHandler chatHandler = new ChatHandler();
-        EventLoop eventLoop = new NioEventLoopGroup();
+        EventLoop eventLoop = new NioEventLoop();
+        channels = new DefaultChannelGroup(eventLoop);
 
         Endpoint endpoint = new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter())
                 .addHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addLast(new AbstractHandler<String, Object>() {
-                            private StringBuilder sb = new StringBuilder();
+                            private StringBuilder buffer = new StringBuilder();
 
                             @Override
                             public void onMessageReceived(HandlerContext context, String message) {
-                                sb.append(message);
+                                buffer.append(message);
                                 if (message.lastIndexOf("\n") > -1) {
-                                    sb.trimToSize();
-                                    context.fireMessageReceived(sb.toString());
-                                    sb.delete(0, sb.length() - 1);
+                                    buffer.trimToSize();
+                                    context.fireMessageReceived(buffer.toString());
+                                    buffer.delete(0, buffer.length());
                                 }
                             }
                         });
                         channel.pipeline().addLast(chatHandler);
                     }
-                }).addHandler(new ChatHandler());
+                });
 
         try {
             endpoint.bind(1337).sync();
@@ -73,7 +74,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 4000; i++) {
+        for (int i = 0; i < 1000; i++) {
             try {
                 client.connect("localhost", 1337).sync();
             } catch (InterruptedException ignore) {

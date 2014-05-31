@@ -160,11 +160,24 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
 
     @Override
     public ChannelGroup newGroup(ChannelMatcher channelMatcher) {
-        return newGroup(channelMatcher, generateName());
+        return newGroup(channelMatcher, generateName(), eventExecutor);
     }
 
     @Override
     public ChannelGroup newGroup(ChannelMatcher channelMatcher, String name) {
+        return newGroup(channelMatcher, name, eventExecutor);
+    }
+
+    @Override
+    public ChannelGroup newGroup(ChannelMatcher channelMatcher, EventExecutor eventExecutor) {
+        return newGroup(channelMatcher, generateName(), eventExecutor);
+    }
+
+    @Override
+    public ChannelGroup newGroup(ChannelMatcher channelMatcher, String name, EventExecutor eventExecutor) {
+        if (channelMatcher == null) {
+            throw new IllegalArgumentException("channelMatcher");
+        }
         DefaultChannelGroup newGroup = new DefaultChannelGroup(name, eventExecutor);
         return fillGroup(newGroup, channelMatcher);
     }

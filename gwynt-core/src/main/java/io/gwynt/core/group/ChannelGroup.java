@@ -1,6 +1,7 @@
 package io.gwynt.core.group;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.concurrent.EventExecutor;
 
 import java.util.Set;
 
@@ -29,4 +30,8 @@ public interface ChannelGroup extends Set<Channel>, Comparable<ChannelGroup> {
     ChannelGroup newGroup(ChannelMatcher channelMatcher);
 
     ChannelGroup newGroup(ChannelMatcher channelMatcher, String name);
+
+    ChannelGroup newGroup(ChannelMatcher channelMatcher, EventExecutor eventExecutor);
+
+    ChannelGroup newGroup(ChannelMatcher channelMatcher, String name, EventExecutor eventExecutor);
 }
