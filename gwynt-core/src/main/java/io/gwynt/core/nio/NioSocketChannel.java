@@ -93,6 +93,11 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
+        protected void doDisconnect() {
+            doClose();
+        }
+
+        @Override
         protected void afterRegister() {
             super.afterRegister();
             if (isActive()) {

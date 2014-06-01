@@ -5,29 +5,42 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
+import io.gwynt.core.DatagramChannel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
+import io.gwynt.core.nio.Datagram;
+import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class GwyntSimpleChatServer implements Runnable {
 
+    private static final Logger logger = LoggerFactory.getLogger(GwyntSimpleChatServer.class);
+
     private ChannelGroup channels;
+    private int port = 1337;
+    private EventLoop eventLoop = new NioEventLoopGroup();
+
 
     @Override
     public void run() {
         final ChatHandler chatHandler = new ChatHandler();
-        EventLoop eventLoop = new NioEventLoopGroup();
         channels = new DefaultChannelGroup(eventLoop);
 
         Endpoint endpoint = new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter())
@@ -52,10 +65,15 @@ public class GwyntSimpleChatServer implements Runnable {
                 });
 
         try {
-            endpoint.bind(1337).sync();
+            endpoint.bind(port).sync();
+            runLoopBackServer(3000).sync();
+            runDiscoveryClient(3000).sync();
+            logger.info("Server listening port {}", 1337);
         } catch (InterruptedException ignore) {
         }
+    }
 
+    private void createBots(int port) {
         Endpoint client =
                 new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
                     @Override
@@ -74,12 +92,66 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 100; i++) {
-            try {
-                client.connect("localhost", 1337).sync();
-            } catch (InterruptedException ignore) {
-            }
+        for (int i = 0; i < 50; i++) {
+            client.connect("localhost", port);
         }
+    }
+
+    private ChannelFuture runLoopBackServer(final int port) {
+        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+
+        return endpoint.bind(port).addListener(new ChannelFutureListener() {
+            @Override
+            public void onComplete(final ChannelFuture future) {
+                try {
+                    final InetAddress multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
+                    future.channel().eventLoop().scheduleWithFixedDelay(new Runnable() {
+                        @Override
+                        public void run() {
+                            ByteBuffer bb = ByteBuffer.allocate(4);
+                            bb.putInt(GwyntSimpleChatServer.this.port);
+                            bb.flip();
+                            future.channel().write(new Datagram(new InetSocketAddress(multicastAddress, port), bb));
+                        }
+                    }, 5, 5, TimeUnit.SECONDS);
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+        });
+    }
+
+    private ChannelFuture runDiscoveryClient(int port) {
+        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+        final InetAddress multicastAddress;
+        final NetworkInterface networkInterface;
+        try {
+            multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
+            networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+        endpoint.addHandler(new AbstractHandler<Datagram, Object>() {
+            @Override
+            public void onMessageReceived(HandlerContext context, Datagram message) {
+                int port = message.getMessage().getInt();
+                logger.info("Discovered port {}, creating clients", port);
+                createBots(port);
+                ((DatagramChannel) context.channel()).leaveGroup(multicastAddress, networkInterface);
+                context.close();
+            }
+        });
+
+        return endpoint.bind(port).addListener(new ChannelFutureListener() {
+            @Override
+            public void onComplete(ChannelFuture future) {
+                try {
+                    ((DatagramChannel) future.channel()).joinGroup(multicastAddress, networkInterface).sync();
+                } catch (Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+        });
     }
 
     private static class ActivityListener implements Runnable {

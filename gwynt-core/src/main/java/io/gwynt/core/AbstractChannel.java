@@ -127,6 +127,13 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
+    public ChannelFuture disconnect() {
+        ChannelPromise channelPromise = newChannelPromise();
+        unsafe().disconnect(channelPromise);
+        return channelPromise;
+    }
+
+    @Override
     public ChannelFuture read() {
         ChannelPromise channelPromise = newChannelPromise();
         pipeline.fireRead(channelPromise);
@@ -236,6 +243,38 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void disconnect(ChannelPromise channelPromise) {
+            if (!channelPromise.setUncancellable()) {
+                return;
+            }
+
+            boolean wasActive = isActive();
+            try {
+                doDisconnect();
+            } catch (Throwable t) {
+                safeSetFailure(channelPromise, t);
+                close(newChannelPromise());
+                return;
+            }
+
+            if (wasActive && !isActive()) {
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        pipeline.fireClose();
+                    }
+                });
+            }
+
+            safeSetSuccess(channelPromise);
+            close(newChannelPromise());
+        }
+
+        protected void doDisconnect() {
             throw new UnsupportedOperationException();
         }
 
