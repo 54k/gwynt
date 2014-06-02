@@ -77,11 +77,11 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
-            throw new NullPointerException("multicastAddress");
+            throw new IllegalArgumentException("multicastAddress");
         }
 
         if (networkInterface == null) {
-            throw new NullPointerException("networkInterface");
+            throw new IllegalArgumentException("networkInterface");
         }
 
         try {
@@ -148,10 +148,10 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
-            throw new NullPointerException("multicastAddress");
+            throw new IllegalArgumentException("multicastAddress");
         }
         if (networkInterface == null) {
-            throw new NullPointerException("networkInterface");
+            throw new IllegalArgumentException("networkInterface");
         }
 
         synchronized (this) {
@@ -205,13 +205,13 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
-            throw new NullPointerException("multicastAddress");
+            throw new IllegalArgumentException("multicastAddress");
         }
         if (source == null) {
-            throw new NullPointerException("sourceToBlock");
+            throw new IllegalArgumentException("sourceToBlock");
         }
         if (networkInterface == null) {
-            throw new NullPointerException("networkInterface");
+            throw new IllegalArgumentException("networkInterface");
         }
 
         synchronized (this) {
@@ -256,13 +256,13 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
-            throw new NullPointerException("multicastAddress");
+            throw new IllegalArgumentException("multicastAddress");
         }
         if (source == null) {
-            throw new NullPointerException("sourceToBlock");
+            throw new IllegalArgumentException("sourceToBlock");
         }
         if (networkInterface == null) {
-            throw new NullPointerException("networkInterface");
+            throw new IllegalArgumentException("networkInterface");
         }
 
         synchronized (this) {
