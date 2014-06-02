@@ -3,6 +3,7 @@ package io.gwynt.core.nio;
 import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.Datagram;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
@@ -348,7 +349,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
                     buffer.flip();
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
-                    messages.add(new Datagram(address, ByteBuffer.wrap(message)));
+                    messages.add(new Datagram(ByteBuffer.wrap(message), address));
                     messagesRead++;
                 }
             } catch (IOException e) {
@@ -373,8 +374,8 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
             if (message instanceof Datagram) {
                 Datagram datagram = (Datagram) message;
-                src = datagram.getMessage();
-                remoteAddress = datagram.getRecipient();
+                src = datagram.content();
+                remoteAddress = datagram.recipient();
             } else if (message instanceof ByteBuffer) {
                 src = (ByteBuffer) message;
                 remoteAddress = null;

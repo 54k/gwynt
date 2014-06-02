@@ -24,7 +24,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 //import io.gwynt.core.DatagramChannel;
-//import io.gwynt.core.nio.Datagram;
+//import io.gwynt.core.Datagram;
 //import io.gwynt.core.nio.NioDatagramChannel;
 //import java.net.InetAddress;
 //import java.net.InetSocketAddress;
@@ -143,7 +143,7 @@ public class GwyntSimpleChatServer implements Runnable {
     //        endpoint.addHandler(new AbstractHandler<Datagram, Object>() {
     //            @Override
     //            public void onMessageReceived(HandlerContext context, Datagram message) {
-    //                int port = message.getMessage().getInt();
+    //                int port = message.content().getInt();
     //                logger.info("Discovered port {}, creating clients", port);
     //                createBots(port);
     //                ((DatagramChannel) context.channel()).leaveGroup(multicastAddress, networkInterface);

@@ -11,15 +11,15 @@ import java.nio.charset.Charset;
 //import io.netty.channel.nio.NioEventLoopGroup;
 
 //import io.gwynt.core.Channel;
-//import io.gwynt.core.nio.Datagram;
+//import io.gwynt.core.Datagram;
 //import java.io.BufferedReader;
 //import java.io.InputStreamReader;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-//        new NettySimpleServer().run();
-//        new GwyntSimpleServer().run();
+        //        new NettySimpleServer().run();
+        //        new GwyntSimpleServer().run();
 
         new GwyntSimpleChatServer().run();
 
@@ -62,7 +62,7 @@ public class Main {
         //
         //                            @Override
         //                            public void onExceptionCaught(HandlerContext context, Throwable e) {
-        //                                logger.error(e.getMessage(), e);
+        //                                logger.error(e.content(), e);
         //                            }
         //                        });
         //                    }
