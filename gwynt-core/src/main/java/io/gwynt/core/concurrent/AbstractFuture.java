@@ -61,26 +61,26 @@ public abstract class AbstractFuture<V> implements Future<V> {
     }
 
     @Override
-    public V sync() throws InterruptedException {
+    public Future<V> sync() throws InterruptedException {
         await();
         Throwable cause = getCause();
         if (cause == null) {
-            return getNow();
+            return this;
         }
         throw new FutureExecutionException(cause);
     }
 
     @Override
-    public V sync(long timeout, TimeUnit unit) throws InterruptedException {
+    public Future<V> sync(long timeout, TimeUnit unit) throws InterruptedException {
         return sync(unit.toMillis(timeout));
     }
 
     @Override
-    public V sync(long timeoutMillis) throws InterruptedException {
+    public Future<V> sync(long timeoutMillis) throws InterruptedException {
         if (await(timeoutMillis)) {
             Throwable cause = getCause();
             if (cause == null) {
-                return getNow();
+                return this;
             }
             throw new FutureExecutionException(cause);
         }

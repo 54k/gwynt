@@ -66,7 +66,7 @@ public class GwyntSimpleChatServer implements Runnable {
 
         try {
             endpoint.bind(port).sync();
-            runLoopBackServer(3000).sync();
+            runDiscoveryServer(3000).sync();
             runDiscoveryClient(3000).sync();
             logger.info("Server listening port {}", 1337);
         } catch (InterruptedException ignore) {
@@ -97,7 +97,7 @@ public class GwyntSimpleChatServer implements Runnable {
         }
     }
 
-    private ChannelFuture runLoopBackServer(final int port) {
+    private ChannelFuture runDiscoveryServer(final int port) {
         Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
 
         return endpoint.bind(port).addListener(new ChannelFutureListener() {

@@ -30,11 +30,11 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
 
     Future<V> removeListeners(FutureListener<? extends Future<? super V>>... futureListeners);
 
-    V sync() throws InterruptedException;
+    Future<V> sync() throws InterruptedException;
 
-    V sync(long timeout, TimeUnit unit) throws InterruptedException;
+    Future<V> sync(long timeout, TimeUnit unit) throws InterruptedException;
 
-    V sync(long timeoutMillis) throws InterruptedException;
+    Future<V> sync(long timeoutMillis) throws InterruptedException;
 
     boolean cancel();
 

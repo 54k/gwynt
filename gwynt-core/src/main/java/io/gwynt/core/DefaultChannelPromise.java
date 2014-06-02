@@ -6,6 +6,8 @@ import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 import io.gwynt.core.concurrent.Promise;
 
+import java.util.concurrent.TimeUnit;
+
 public class DefaultChannelPromise extends DefaultPromise<Void> implements ChannelPromise {
 
     private final Channel channel;
@@ -88,6 +90,30 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
     @Override
     public ChannelFuture removeListeners(FutureListener<? extends Future<? super Void>>... futureListeners) {
         super.removeListeners(futureListeners);
+        return this;
+    }
+
+    @Override
+    public ChannelFuture sync() throws InterruptedException {
+        super.sync();
+        return this;
+    }
+
+    @Override
+    public ChannelFuture sync(long timeout, TimeUnit unit) throws InterruptedException {
+        super.sync(timeout, unit);
+        return this;
+    }
+
+    @Override
+    public ChannelFuture sync(long timeoutMillis) throws InterruptedException {
+        super.sync(timeoutMillis);
+        return this;
+    }
+
+    @Override
+    public ChannelFuture await() throws InterruptedException {
+        super.await();
         return this;
     }
 }
