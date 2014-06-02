@@ -74,12 +74,12 @@ public class GwyntSimpleChatServer implements Runnable {
         } catch (InterruptedException ignore) {
         }
 
-        GlobalEventExecutor.INSTANCE.scheduleAtFixedRate(new Runnable() {
+        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
             @Override
             public void run() {
                 logger.info("tick");
             }
-        }, 0, 3, TimeUnit.SECONDS);
+        }, 5, TimeUnit.SECONDS);
     }
 
     private void createBots(int port) {
@@ -101,7 +101,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 3000; i++) {
+        for (int i = 0; i < 2000; i++) {
             client.connect("localhost", port);
         }
     }

@@ -32,10 +32,6 @@ public final class GlobalEventExecutor extends SingleThreadEventExecutor {
                     logger.warn("Unexpected exception from the global event executor: ", t);
                 }
 
-                if (!(task instanceof PurgeTask)) {
-                    continue;
-                }
-
                 if (!hasTasks() && pendingTasks() == 1) {
                     break;
                 }
