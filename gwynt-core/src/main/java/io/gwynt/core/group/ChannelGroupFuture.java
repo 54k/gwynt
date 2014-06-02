@@ -4,6 +4,8 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 
+import java.util.concurrent.TimeUnit;
+
 public interface ChannelGroupFuture extends Future<Void>, Iterable<ChannelFuture> {
 
     ChannelGroup group();
@@ -22,4 +24,13 @@ public interface ChannelGroupFuture extends Future<Void>, Iterable<ChannelFuture
 
     @Override
     ChannelGroupFuture await() throws InterruptedException;
+
+    @Override
+    ChannelGroupFuture sync() throws InterruptedException;
+
+    @Override
+    ChannelGroupFuture sync(long timeout, TimeUnit unit) throws InterruptedException;
+
+    @Override
+    ChannelGroupFuture sync(long timeoutMillis) throws InterruptedException;
 }

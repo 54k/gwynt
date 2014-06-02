@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements ChannelGroupFuture {
 
@@ -154,6 +155,24 @@ public class DefaultChannelGroupFuture extends DefaultPromise<Void> implements C
     @Override
     public ChannelGroupFuture await() throws InterruptedException {
         super.await();
+        return this;
+    }
+
+    @Override
+    public ChannelGroupFuture sync(long timeoutMillis) throws InterruptedException {
+        super.sync(timeoutMillis);
+        return this;
+    }
+
+    @Override
+    public ChannelGroupFuture sync(long timeout, TimeUnit unit) throws InterruptedException {
+        super.sync(timeout, unit);
+        return this;
+    }
+
+    @Override
+    public ChannelGroupFuture sync() throws InterruptedException {
+        super.sync();
         return this;
     }
 
