@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,48 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
+    protected Runnable takeTask() {
+        if (!(this.taskQueue instanceof BlockingQueue)) {
+            throw new IllegalArgumentException("taskQueue is not blocking queue");
+        }
+
+        BlockingQueue<Runnable> taskQueue = (BlockingQueue<Runnable>) this.taskQueue;
+        for (; ; ) {
+            ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+
+            if (delayedTask == null) {
+                Runnable task = null;
+                try {
+                    task = taskQueue.take();
+                } catch (InterruptedException ignore) {
+                }
+                return task;
+            } else {
+                long delayMillis = delayedTask.deadlineMillis();
+                Runnable task;
+                if (delayMillis > 0) {
+                    try {
+                        task = taskQueue.poll(delayMillis, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        // Waken up.
+                        return null;
+                    }
+                } else {
+                    task = taskQueue.poll();
+                }
+
+                if (task == null) {
+                    fetchFromDelayedQueue();
+                    task = taskQueue.poll();
+                }
+
+                if (task != null) {
+                    return task;
+                }
+            }
+        }
+    }
+
     protected void fetchFromDelayedQueue() {
         long millisTime = 0L;
         for (; ; ) {
@@ -125,6 +168,10 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             scheduledFutureTask.cancel();
         }
         delayedTaskQueue.clear();
+    }
+
+    protected int pendingTasks() {
+        return delayedTaskQueue.size();
     }
 
     protected boolean hasTasks() {
@@ -221,8 +268,14 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             @Override
             public void run() {
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
-                scheduleAtFixedRate(new PurgeTask(), 0, 1, TimeUnit.MILLISECONDS);
-                SingleThreadEventExecutor.this.run();
+                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.deadlineMillis(0),
+                        TimeUnit.SECONDS.toMillis(1), delayedTaskQueue));
+                try {
+                    SingleThreadEventExecutor.this.run();
+                } catch (Throwable e) {
+                    logger.error(e.getMessage(), e);
+                }
+                STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_NOT_STARTED);
             }
         });
         thread.start();
@@ -273,7 +326,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     protected abstract void run();
 
-    private class PurgeTask implements Runnable {
+    protected class PurgeTask implements Runnable {
 
         @Override
         public void run() {

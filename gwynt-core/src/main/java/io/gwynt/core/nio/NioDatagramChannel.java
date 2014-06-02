@@ -127,8 +127,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture leaveGroup(InetAddress multicastAddress, ChannelPromise channelPromise) {
         try {
-            return leaveGroup(
-                    multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), null, channelPromise);
+            return leaveGroup(multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), null, channelPromise);
         } catch (SocketException e) {
             safeSetFailure(channelPromise, e);
         }
@@ -163,8 +162,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
                     while (keyIt.hasNext()) {
                         MembershipKey key = keyIt.next();
                         if (networkInterface.equals(key.networkInterface())) {
-                            if (source == null && key.sourceAddress() == null ||
-                                    source != null && source.equals(key.sourceAddress())) {
+                            if (source == null && key.sourceAddress() == null || source != null && source.equals(key.sourceAddress())) {
                                 key.drop();
                                 keyIt.remove();
                             }
@@ -189,8 +187,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture block(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
         try {
-            return block(
-                    multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), source, channelPromise);
+            return block(multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), source, channelPromise);
         } catch (SocketException e) {
             safeSetFailure(channelPromise, e);
         }
@@ -240,8 +237,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
         try {
-            return unblock(
-                    multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), source, channelPromise);
+            return unblock(multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), source, channelPromise);
         } catch (SocketException e) {
             safeSetFailure(channelPromise, e);
         }

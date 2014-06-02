@@ -5,15 +5,13 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
-import io.gwynt.core.DatagramChannel;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
-import io.gwynt.core.nio.Datagram;
-import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
@@ -21,13 +19,17 @@ import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
-import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+//import io.gwynt.core.DatagramChannel;
+//import io.gwynt.core.nio.Datagram;
+//import io.gwynt.core.nio.NioDatagramChannel;
+//import java.net.InetAddress;
+//import java.net.InetSocketAddress;
+//import java.net.NetworkInterface;
+//import java.nio.ByteBuffer;
 
 public class GwyntSimpleChatServer implements Runnable {
 
@@ -37,11 +39,10 @@ public class GwyntSimpleChatServer implements Runnable {
     private int port = 1337;
     private EventLoop eventLoop = new NioEventLoopGroup();
 
-
     @Override
     public void run() {
         final ChatHandler chatHandler = new ChatHandler();
-        channels = new DefaultChannelGroup(eventLoop);
+        channels = new DefaultChannelGroup();
 
         Endpoint endpoint = new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter())
                 .addHandler(new ChannelInitializer() {
@@ -66,11 +67,19 @@ public class GwyntSimpleChatServer implements Runnable {
 
         try {
             endpoint.bind(port).sync();
-            runDiscoveryServer(3000).sync();
-            runDiscoveryClient(3000).sync();
+            //            runDiscoveryServer(3000).sync();
+            //            runDiscoveryClient(3000).sync();
             logger.info("Server listening port {}", 1337);
+            createBots(port);
         } catch (InterruptedException ignore) {
         }
+
+        GlobalEventExecutor.INSTANCE.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                logger.info("tick");
+            }
+        }, 0, 3, TimeUnit.SECONDS);
     }
 
     private void createBots(int port) {
@@ -92,67 +101,67 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 3000; i++) {
             client.connect("localhost", port);
         }
     }
 
-    private ChannelFuture runDiscoveryServer(final int port) {
-        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
-
-        return endpoint.bind(port).addListener(new ChannelFutureListener() {
-            @Override
-            public void onComplete(final ChannelFuture future) {
-                try {
-                    final InetAddress multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
-                    future.channel().eventLoop().scheduleWithFixedDelay(new Runnable() {
-                        @Override
-                        public void run() {
-                            ByteBuffer bb = ByteBuffer.allocate(4);
-                            bb.putInt(GwyntSimpleChatServer.this.port);
-                            bb.flip();
-                            future.channel().write(new Datagram(new InetSocketAddress(multicastAddress, port), bb));
-                        }
-                    }, 5, 5, TimeUnit.SECONDS);
-                } catch (Throwable t) {
-                    throw new RuntimeException(t);
-                }
-            }
-        });
-    }
-
-    private ChannelFuture runDiscoveryClient(int port) {
-        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
-        final InetAddress multicastAddress;
-        final NetworkInterface networkInterface;
-        try {
-            multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
-            networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-        endpoint.addHandler(new AbstractHandler<Datagram, Object>() {
-            @Override
-            public void onMessageReceived(HandlerContext context, Datagram message) {
-                int port = message.getMessage().getInt();
-                logger.info("Discovered port {}, creating clients", port);
-                createBots(port);
-                ((DatagramChannel) context.channel()).leaveGroup(multicastAddress, networkInterface);
-                context.close();
-            }
-        });
-
-        return endpoint.bind(port).addListener(new ChannelFutureListener() {
-            @Override
-            public void onComplete(ChannelFuture future) {
-                try {
-                    ((DatagramChannel) future.channel()).joinGroup(multicastAddress, networkInterface).sync();
-                } catch (Throwable t) {
-                    throw new RuntimeException(t);
-                }
-            }
-        });
-    }
+    //    private ChannelFuture runDiscoveryServer(final int port) {
+    //        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+    //
+    //        return endpoint.bind(port).addListener(new ChannelFutureListener() {
+    //            @Override
+    //            public void onComplete(final ChannelFuture future) {
+    //                try {
+    //                    final InetAddress multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
+    //                    future.channel().eventLoop().scheduleWithFixedDelay(new Runnable() {
+    //                        @Override
+    //                        public void run() {
+    //                            ByteBuffer bb = ByteBuffer.allocate(4);
+    //                            bb.putInt(GwyntSimpleChatServer.this.port);
+    //                            bb.flip();
+    //                            future.channel().write(new Datagram(new InetSocketAddress(multicastAddress, port), bb));
+    //                        }
+    //                    }, 5, 5, TimeUnit.SECONDS);
+    //                } catch (Throwable t) {
+    //                    throw new RuntimeException(t);
+    //                }
+    //            }
+    //        });
+    //    }
+    //
+    //    private ChannelFuture runDiscoveryClient(int port) {
+    //        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+    //        final InetAddress multicastAddress;
+    //        final NetworkInterface networkInterface;
+    //        try {
+    //            multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
+    //            networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+    //        } catch (Throwable t) {
+    //            throw new RuntimeException(t);
+    //        }
+    //        endpoint.addHandler(new AbstractHandler<Datagram, Object>() {
+    //            @Override
+    //            public void onMessageReceived(HandlerContext context, Datagram message) {
+    //                int port = message.getMessage().getInt();
+    //                logger.info("Discovered port {}, creating clients", port);
+    //                createBots(port);
+    //                ((DatagramChannel) context.channel()).leaveGroup(multicastAddress, networkInterface);
+    //                context.close();
+    //            }
+    //        });
+    //
+    //        return endpoint.bind(port).addListener(new ChannelFutureListener() {
+    //            @Override
+    //            public void onComplete(ChannelFuture future) {
+    //                try {
+    //                    ((DatagramChannel) future.channel()).joinGroup(multicastAddress, networkInterface).sync();
+    //                } catch (Throwable t) {
+    //                    throw new RuntimeException(t);
+    //                }
+    //            }
+    //        });
+    //    }
 
     private static class ActivityListener implements Runnable {
 
