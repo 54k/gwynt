@@ -7,50 +7,50 @@ import java.util.concurrent.TimeUnit;
 
 public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledFuture<V> {
 
-    private static final long START_TIME = System.currentTimeMillis();
+    private static final long START_NANOS = System.nanoTime();
 
-    private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
-    private long deadlineMillis;
     /* 0 - no repeat, >0 - repeat at fixed rate, <0 - repeat with fixed delay */
     private long period;
+    private long deadlineNanos;
+    private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
 
-    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineNanos, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
         period = 0;
-        this.deadlineMillis = deadlineMillis;
+        this.deadlineNanos = deadlineNanos;
         this.delayedTaskQueue = delayedTaskQueue;
     }
 
-    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineMillis, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
+    ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long deadlineNanos, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
         super(eventExecutor, task);
-        this.deadlineMillis = deadlineMillis;
+        this.deadlineNanos = deadlineNanos;
         this.period = period;
         this.delayedTaskQueue = delayedTaskQueue;
     }
 
-    static long timeMillis() {
-        return System.currentTimeMillis() - START_TIME;
+    static long nanoTime() {
+        return System.nanoTime() - START_NANOS;
     }
 
-    static long deadlineMillis(long delay) {
-        return timeMillis() + delay;
+    static long deadlineNanos(long delayNanos) {
+        return nanoTime() + delayNanos;
     }
 
-    long deadlineMillis() {
-        return deadlineMillis;
+    long deadlineNanos() {
+        return deadlineNanos;
     }
 
-    private long delayMillis() {
-        return Math.max(0, deadlineMillis - timeMillis());
+    private long delayNanos() {
+        return Math.max(0, deadlineNanos - nanoTime());
     }
 
-    public long delayMillis(long currentTimeMillis) {
-        return Math.max(0, deadlineMillis() - (currentTimeMillis - START_TIME));
+    public long delayNanos(long currentTimeNanos) {
+        return Math.max(0, deadlineNanos() - (currentTimeNanos - START_NANOS));
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(delayMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(delayNanos(), TimeUnit.NANOSECONDS);
     }
 
     @Override
@@ -68,9 +68,9 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
                     if (!executor().isShutdown()) {
                         long p = period;
                         if (p > 0) {
-                            deadlineMillis += p;
+                            deadlineNanos += p;
                         } else {
-                            deadlineMillis = timeMillis() - p;
+                            deadlineNanos = nanoTime() - p;
                         }
 
                         if (!isCancelled()) {
@@ -95,7 +95,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
         }
 
         ScheduledFutureTask<?> that = (ScheduledFutureTask<?>) o;
-        long d = delayMillis() - that.delayMillis();
+        long d = delayNanos() - that.delayNanos();
         if (d < 0) {
             return -1;
         } else if (d > 0) {

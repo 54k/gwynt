@@ -111,7 +111,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
             while (!isShutdown()) {
                 int keyCount = 0;
                 long currentTimeMillis = System.currentTimeMillis();
-                long selectDeadlineMillis = delayMillis(currentTimeMillis);
+                long selectDeadlineMillis = closestDeadlineNanos(currentTimeMillis);
 
                 try {
                     selectorAwakened.set(false);
@@ -131,12 +131,12 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
                 if (ioRatio == 100) {
                     processSelectedKeys(keys);
-                    runTasks();
+                    runAllTasks();
                 } else {
                     long start = System.currentTimeMillis();
                     processSelectedKeys(keys);
                     long ioTime = System.currentTimeMillis() - start;
-                    runTasks(ioTime * (100 - ioRatio) / ioRatio);
+                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
             }
 
@@ -144,7 +144,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                 unregister((AbstractNioChannel) selectionKey.attachment());
                 selectionKey.channel().close();
             }
-            runTasks();
+            runAllTasks();
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception", e);
         }

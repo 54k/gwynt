@@ -23,6 +23,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     private static final int ST_SHUTDOWN = 4;
     private static final int ST_TERMINATED = 5;
     private static final AtomicIntegerFieldUpdater<SingleThreadEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(SingleThreadEventExecutor.class, "state");
+
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
@@ -30,6 +31,9 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     };
     private final boolean wakeUpForTask;
+    private int executedTasks = 0;
+
+    private long lastExecutionTimeNanos;
 
     private Thread thread;
     private Queue<Runnable> taskQueue = newTaskQueue();
@@ -50,42 +54,97 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     protected abstract Queue<Runnable> newTaskQueue();
 
-    protected void runTasks() {
-        fetchFromDelayedQueue();
-        Runnable task;
-        while ((task = pollTask()) != null) {
+    protected boolean runAllTasks() {
+        assert inExecutorThread();
+
+        fetchDelayedTasks();
+        Runnable task = pollTask();
+        if (task == null) {
+            return false;
+        }
+
+        for (; ; ) {
             try {
                 task.run();
             } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
+                logger.warn("task raised an exception", e);
+            }
+
+            executedTasks++;
+            // check every 32 tasks
+            if ((executedTasks & 0x20) == 0) {
+                if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
+                    fetchDelayedTasks();
+                }
+                executedTasks = 0;
+            }
+
+            task = pollTask();
+
+            if (task == null) {
+                return true;
             }
         }
     }
 
-    protected void runTasks(long timeout) {
-        fetchFromDelayedQueue();
-        long elapsedTime = 0;
-        Runnable task;
-        while ((task = pollTask()) != null) {
-            long startTime = System.currentTimeMillis();
+    protected boolean runAllTasks(long timeoutNanos) {
+        assert inExecutorThread();
+
+        if (timeoutNanos == 0) {
+            return runAllTasks();
+        }
+
+        fetchDelayedTasks();
+        Runnable task = pollTask();
+        if (task == null) {
+            return false;
+        }
+
+        long deadlineNanos = ScheduledFutureTask.deadlineNanos(timeoutNanos);
+        for (; ; ) {
             try {
                 task.run();
             } catch (Throwable e) {
-                logger.error(e.getMessage(), e);
+                logger.warn("task raised an exception", e);
             }
-            elapsedTime += System.currentTimeMillis() - startTime;
-            if (elapsedTime >= timeout) {
-                break;
+
+            executedTasks++;
+            // check every 32 tasks
+            if ((executedTasks & 0x20) == 0) {
+                if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
+                    fetchDelayedTasks();
+                }
+                executedTasks = 0;
+                if (deadlineNanos >= lastExecutionTimeNanos()) {
+                    return true;
+                }
+            }
+
+            task = pollTask();
+
+            if (task == null) {
+                return true;
             }
         }
+    }
+
+    protected long closestDeadlineNanos(long currentTimeNanos) {
+        ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+        if (delayedTask == null) {
+            return 1;
+        }
+
+        return delayedTask.delayNanos(currentTimeNanos);
     }
 
     protected Runnable takeTask() {
-        if (!(this.taskQueue instanceof BlockingQueue)) {
-            throw new IllegalArgumentException("taskQueue is not blocking queue");
+        if (this.taskQueue instanceof BlockingQueue) {
+            return takeTask((BlockingQueue<Runnable>) this.taskQueue);
         }
+        return pollTask();
+    }
 
-        BlockingQueue<Runnable> taskQueue = (BlockingQueue<Runnable>) this.taskQueue;
+    private Runnable takeTask(BlockingQueue<Runnable> taskQueue) {
         for (; ; ) {
             ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
 
@@ -97,11 +156,11 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 }
                 return task;
             } else {
-                long delayMillis = delayedTask.deadlineMillis();
+                long delayNanos = delayedTask.deadlineNanos();
                 Runnable task;
-                if (delayMillis > 0) {
+                if (delayNanos > 0) {
                     try {
-                        task = taskQueue.poll(delayMillis, TimeUnit.MILLISECONDS);
+                        task = taskQueue.poll(delayNanos, TimeUnit.NANOSECONDS);
                     } catch (InterruptedException e) {
                         // Waken up.
                         return null;
@@ -111,7 +170,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 }
 
                 if (task == null) {
-                    fetchFromDelayedQueue();
+                    fetchDelayedTasks();
                     task = taskQueue.poll();
                 }
 
@@ -122,19 +181,19 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
-    protected void fetchFromDelayedQueue() {
-        long millisTime = 0L;
+    protected void fetchDelayedTasks() {
+        long nanoTime = 0L;
         for (; ; ) {
             ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
             if (delayedTask == null) {
                 break;
             }
 
-            if (millisTime == 0L) {
-                millisTime = ScheduledFutureTask.timeMillis();
+            if (nanoTime == 0L) {
+                nanoTime = ScheduledFutureTask.nanoTime();
             }
 
-            if (delayedTask.deadlineMillis() <= millisTime) {
+            if (delayedTask.deadlineNanos() <= nanoTime) {
                 delayedTaskQueue.remove();
                 taskQueue.add(delayedTask);
             } else {
@@ -254,21 +313,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
-    protected long delayMillis(long currentTimeMillis) {
-        ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
-        if (delayedTask == null) {
-            return 1;
-        }
-
-        return delayedTask.delayMillis(currentTimeMillis);
-    }
-
     private void runThread() {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
-                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.deadlineMillis(0),
+                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.deadlineNanos(0),
                         TimeUnit.SECONDS.toMillis(1), delayedTaskQueue));
                 try {
                     SingleThreadEventExecutor.this.run();
@@ -285,23 +335,23 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadlineMillis(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadlineNanos(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(initialDelay)), unit.toMillis(period),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(initialDelay)), unit.toMillis(period),
                 delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineMillis(unit.toMillis(initialDelay)), -unit.toMillis(delay),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(initialDelay)), -unit.toMillis(delay),
                 delayedTaskQueue));
     }
 
@@ -325,6 +375,20 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     protected abstract void run();
+
+    protected long updateLastExecutionTime() {
+        return lastExecutionTimeNanos = System.nanoTime();
+    }
+
+    @Override
+    public long lastExecutionTimeNanos() {
+        return lastExecutionTimeNanos;
+    }
+
+    @Override
+    public long lastExecutionTime(TimeUnit timeUnit) {
+        return timeUnit.convert(lastExecutionTimeNanos, TimeUnit.NANOSECONDS);
+    }
 
     protected class PurgeTask implements Runnable {
 
