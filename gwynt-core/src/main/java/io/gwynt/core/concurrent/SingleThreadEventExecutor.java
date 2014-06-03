@@ -128,13 +128,13 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
-    protected long closestDeadlineNanos(long currentTimeNanos) {
+    protected long closestDeadlineNanos(long timeNanos) {
         ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
         if (delayedTask == null) {
             return 0;
         }
 
-        return delayedTask.getDelayNanos(currentTimeNanos);
+        return delayedTask.getDelayNanos(timeNanos);
     }
 
     protected Runnable takeTask() {
