@@ -12,14 +12,6 @@ public class PromiseTask<V> extends DefaultPromise<V> implements RunnableFuture<
         this(eventExecutor, toCallable(task, result));
     }
 
-    PromiseTask(Runnable task, V result) {
-        this(toCallable(task, result));
-    }
-
-    PromiseTask(Callable<V> task) {
-        this(null, task);
-    }
-
     PromiseTask(EventExecutor eventExecutor, Callable<V> task) {
         super(eventExecutor);
         this.task = task;
