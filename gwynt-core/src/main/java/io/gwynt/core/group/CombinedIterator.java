@@ -8,6 +8,10 @@ public class CombinedIterator<E> implements Iterator<E> {
     private int position = 0;
 
     public CombinedIterator(Iterator<E>... iterators) {
+        if (iterators == null || iterators.length == 0) {
+            throw new IllegalArgumentException("Empty iterators");
+        }
+
         this.iterators = iterators;
     }
 
