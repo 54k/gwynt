@@ -86,8 +86,9 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
                         long nanos = nanos();
 
                         if (p > 0) {
-                            triggerTime += p;
                             long d = nanos - triggerTime;
+                            triggerTime += p;
+
                             if (d >= p) {
                                 executor().execute(this);
                                 return;
