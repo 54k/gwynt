@@ -318,8 +318,8 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             @Override
             public void run() {
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
-                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.triggerTime(0),
-                        TimeUnit.SECONDS.toMillis(1), delayedTaskQueue));
+                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
+                        ScheduledFutureTask.triggerTime(TimeUnit.SECONDS.toNanos(5)), TimeUnit.SECONDS.toNanos(5), delayedTaskQueue));
                 try {
                     SingleThreadEventExecutor.this.run();
                 } catch (Throwable e) {

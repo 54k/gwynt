@@ -18,10 +18,10 @@ import java.nio.charset.Charset;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        //        new NettySimpleServer().run();
-        //        new GwyntSimpleServer().run();
+        new NettySimpleServer().run();
+        new GwyntSimpleServer().run();
 
-        new GwyntSimpleChatServer().run();
+        //        new GwyntSimpleChatServer().run();
 
         //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
         //            @Override

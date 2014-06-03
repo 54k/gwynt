@@ -37,7 +37,7 @@ public class GwyntSimpleChatServer implements Runnable {
 
     private ChannelGroup channels;
     private int port = 1337;
-    private EventLoop eventLoop = new NioEventLoopGroup();
+    private EventLoop eventLoop = new NioEventLoopGroup(2);
 
     @Override
     public void run() {
@@ -101,7 +101,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 2000; i++) {
+        for (int i = 0; i < 5000; i++) {
             client.connect("localhost", port);
         }
     }
