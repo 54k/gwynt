@@ -53,7 +53,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
 
     @Override
     public long getDelayNanos(long timeNanos) {
-        return Math.max(0, triggerTime() - (timeNanos - ORIGIN));
+        return Math.max(0, triggerTime - (timeNanos - ORIGIN));
     }
 
     @Override

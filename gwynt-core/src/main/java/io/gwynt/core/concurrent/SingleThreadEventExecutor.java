@@ -70,15 +70,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 logger.warn("task raised an exception: ", e);
             }
 
-            executedTasks++;
-            // check every 32 tasks
-            if ((executedTasks & 0x20) != 0) {
-                if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
-                    fetchDelayedTasks();
-                }
-                executedTasks = 0;
-            }
-
             task = pollTask();
 
             if (task == null) {
@@ -111,9 +102,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             executedTasks++;
             // check every 32 tasks
             if ((executedTasks & 0x20) != 0) {
-                if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
-                    fetchDelayedTasks();
-                }
                 executedTasks = 0;
                 if (deadlineNanos >= lastExecutionTimeNanos()) {
                     return true;
@@ -156,7 +144,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 }
                 return task;
             } else {
-                long delayNanos = delayedTask.triggerTime();
+                long delayNanos = delayedTask.getDelayNanos();
                 Runnable task;
                 if (delayNanos > 0) {
                     try {
