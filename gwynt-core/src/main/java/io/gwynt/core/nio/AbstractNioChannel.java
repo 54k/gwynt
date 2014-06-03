@@ -28,6 +28,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     }
 
     @Override
+    public NioEventLoop eventLoop() {
+        return (NioEventLoop) super.eventLoop();
+    }
+
+    @Override
     protected boolean isEventLoopCompatible(EventLoop eventLoop) {
         return eventLoop instanceof NioEventLoop;
     }
@@ -82,7 +87,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterRegister() {
             try {
-                selectionKey = javaChannel().register(((NioEventLoop) eventLoop()).selector, 0, AbstractNioChannel.this);
+                selectionKey = javaChannel().register(eventLoop().selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
                 throw new ChannelException(e);
             }
@@ -90,8 +95,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         protected void afterUnregister() {
-            selectionKey.cancel();
-            selectionKey.attach(null);
+            eventLoop().cancel(selectionKey);
         }
 
         @Override
@@ -122,7 +126,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
             if (selectionKey.isValid()) {
                 selectionKey.interestOps(interestOps);
-                ((NioEventLoop) eventLoop()).wakeUpSelector();
+                eventLoop().wakeUpSelector();
             }
         }
 

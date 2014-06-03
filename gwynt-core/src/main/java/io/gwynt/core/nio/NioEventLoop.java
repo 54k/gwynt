@@ -105,20 +105,33 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         }
     }
 
+    void cancel(final SelectionKey key) {
+        execute(new Runnable() {
+            @Override
+            public void run() {
+                key.cancel();
+                key.attach(null);
+            }
+        });
+    }
+
     @Override
     protected void run() {
         try {
             Selector sel = selector;
-            while (!isShutdown()) {
+            for (; ; ) {
                 int keyCount = 0;
 
                 long nanos = System.nanoTime();
-                long timeout = TimeUnit.NANOSECONDS.toMillis(closestDeadlineNanos(nanos));
+                long deadline = closestDeadlineNanos(nanos);
+                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
 
                 try {
                     selectorAwakened.set(false);
                     if (hasTasks() || timeout == 0) {
                         keyCount = selector.selectNow();
+                    } else if (timeout == -1) {
+                        keyCount = selector.select();
                     } else {
                         keyCount = selector.select(timeout);
                     }
@@ -140,13 +153,16 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                     long ioTime = System.nanoTime() - s;
                     runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
-            }
 
-            for (SelectionKey selectionKey : selector.keys()) {
-                unregister((AbstractNioChannel) selectionKey.attachment());
-                selectionKey.channel().close();
+                if (isShutdown()) {
+                    for (SelectionKey selectionKey : selector.keys()) {
+                        unregister((AbstractNioChannel) selectionKey.attachment());
+                        selectionKey.channel().close();
+                    }
+                    runAllTasks();
+                    break;
+                }
             }
-            runAllTasks();
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception", e);
         }
