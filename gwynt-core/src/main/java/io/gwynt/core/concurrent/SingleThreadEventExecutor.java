@@ -100,7 +100,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             return false;
         }
 
-        long deadlineNanos = ScheduledFutureTask.deadlineNanos(timeoutNanos);
+        long deadlineNanos = ScheduledFutureTask.triggerTime(timeoutNanos);
         for (; ; ) {
             try {
                 task.run();
@@ -134,7 +134,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             return 1;
         }
 
-        return delayedTask.delayNanos(currentTimeNanos);
+        return delayedTask.getDelayNanos(currentTimeNanos);
     }
 
     protected Runnable takeTask() {
@@ -156,7 +156,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 }
                 return task;
             } else {
-                long delayNanos = delayedTask.deadlineNanos();
+                long delayNanos = delayedTask.triggerTime();
                 Runnable task;
                 if (delayNanos > 0) {
                     try {
@@ -190,10 +190,10 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             }
 
             if (nanoTime == 0L) {
-                nanoTime = ScheduledFutureTask.nanoTime();
+                nanoTime = ScheduledFutureTask.nanos();
             }
 
-            if (delayedTask.deadlineNanos() <= nanoTime) {
+            if (delayedTask.triggerTime() <= nanoTime) {
                 delayedTaskQueue.remove();
                 taskQueue.add(delayedTask);
             } else {
@@ -318,7 +318,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             @Override
             public void run() {
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
-                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.deadlineNanos(0),
+                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.triggerTime(0),
                         TimeUnit.SECONDS.toMillis(1), delayedTaskQueue));
                 try {
                     SingleThreadEventExecutor.this.run();
@@ -335,23 +335,23 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.deadlineNanos(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.triggerTime(unit.toMillis(delay)), delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(initialDelay)), unit.toMillis(period),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(initialDelay)), unit.toMillis(period),
                 delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.deadlineNanos(unit.toMillis(initialDelay)), -unit.toMillis(delay),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(initialDelay)), -unit.toMillis(delay),
                 delayedTaskQueue));
     }
 
