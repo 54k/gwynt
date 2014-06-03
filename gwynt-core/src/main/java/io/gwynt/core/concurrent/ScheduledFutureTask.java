@@ -24,10 +24,7 @@ public class ScheduledFutureTask<V> extends PromiseTask<V> implements ScheduledF
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue;
 
     ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long delay, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
-        super(eventExecutor, task);
-        period = 0;
-        this.triggerTime = delay;
-        this.delayedTaskQueue = delayedTaskQueue;
+        this(eventExecutor, task, delay, 0, delayedTaskQueue);
     }
 
     ScheduledFutureTask(EventExecutor eventExecutor, Callable<V> task, long delay, long period, Queue<ScheduledFutureTask<?>> delayedTaskQueue) {
