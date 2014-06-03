@@ -12,6 +12,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
@@ -110,15 +111,16 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
             Selector sel = selector;
             while (!isShutdown()) {
                 int keyCount = 0;
-                long currentTimeMillis = System.currentTimeMillis();
-                long selectDeadlineMillis = closestDeadlineNanos(currentTimeMillis);
+
+                long nanos = System.nanoTime();
+                long timeout = TimeUnit.NANOSECONDS.toMillis(closestDeadlineNanos(nanos));
 
                 try {
                     selectorAwakened.set(false);
-                    if (hasTasks() || selectDeadlineMillis == 0) {
+                    if (hasTasks() || timeout == 0) {
                         keyCount = selector.selectNow();
                     } else {
-                        keyCount = selector.select(selectDeadlineMillis);
+                        keyCount = selector.select(timeout);
                     }
                     selectorAwakened.set(true);
                 } catch (ClosedSelectorException e) {
@@ -133,9 +135,9 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                     processSelectedKeys(keys);
                     runAllTasks();
                 } else {
-                    long start = System.currentTimeMillis();
+                    long s = System.nanoTime();
                     processSelectedKeys(keys);
-                    long ioTime = System.currentTimeMillis() - start;
+                    long ioTime = System.nanoTime() - s;
                     runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
             }

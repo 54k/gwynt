@@ -67,12 +67,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             try {
                 task.run();
             } catch (Throwable e) {
-                logger.warn("task raised an exception", e);
+                logger.warn("task raised an exception: ", e);
             }
 
             executedTasks++;
             // check every 32 tasks
-            if ((executedTasks & 0x20) == 0) {
+            if ((executedTasks & 0x20) != 0) {
                 if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
                     fetchDelayedTasks();
                 }
@@ -105,12 +105,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             try {
                 task.run();
             } catch (Throwable e) {
-                logger.warn("task raised an exception", e);
+                logger.warn("task raised an exception: ", e);
             }
 
             executedTasks++;
             // check every 32 tasks
-            if ((executedTasks & 0x20) == 0) {
+            if ((executedTasks & 0x20) != 0) {
                 if (closestDeadlineNanos(updateLastExecutionTime()) == 0) {
                     fetchDelayedTasks();
                 }
@@ -131,7 +131,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     protected long closestDeadlineNanos(long currentTimeNanos) {
         ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
         if (delayedTask == null) {
-            return 1;
+            return 0;
         }
 
         return delayedTask.getDelayNanos(currentTimeNanos);
@@ -335,23 +335,23 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(delay)), delayedTaskQueue));
     }
 
     @Override
     public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.triggerTime(unit.toMillis(delay)), delayedTaskQueue));
+        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.triggerTime(unit.toNanos(delay)), delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(initialDelay)), unit.toMillis(period),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(initialDelay)), unit.toNanos(period),
                 delayedTaskQueue));
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toMillis(initialDelay)), -unit.toMillis(delay),
+        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(initialDelay)), -unit.toNanos(delay),
                 delayedTaskQueue));
     }
 
