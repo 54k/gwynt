@@ -11,13 +11,21 @@ public class NioSocketChannelOutboundBuffer extends ChannelOutboundBuffer {
         super(channel);
     }
 
-    public ByteBuffer[] getByteBuffers() {
+    public ByteBuffer[] byteBuffers() {
         ByteBuffer[] byteBuffers = new ByteBuffer[entries().size()];
         int i = 0;
         for (Entry entry : entries()) {
             byteBuffers[i++] = (ByteBuffer) entry.getMessage();
         }
         return byteBuffers;
+    }
+
+    public long remaining() {
+        long bytes = 0;
+        for (Entry entry : entries()) {
+            bytes += ((ByteBuffer) entry.getMessage()).remaining();
+        }
+        return bytes;
     }
 
     @Override
