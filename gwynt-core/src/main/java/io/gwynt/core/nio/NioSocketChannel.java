@@ -150,12 +150,30 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean doWriteMessage(Object message) {
+        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) {
+            NioSocketChannelOutboundBuffer outboundBuffer = (NioSocketChannelOutboundBuffer) channelOutboundBuffer;
+            ByteBuffer[] buffers = outboundBuffer.getByteBuffers();
             Throwable error = null;
-            int bytesWritten = 0;
-            ByteBuffer src = (ByteBuffer) message;
             try {
-                bytesWritten = javaChannel().write(src);
+                for (int i = 0; i < config().getWriteSpinCount(); i++) {
+                    boolean done = true;
+                    long bytesWritten = javaChannel().write(buffers);
+
+                    if (bytesWritten == -1) {
+                        doClose();
+                        return;
+                    }
+
+                    for (ByteBuffer buffer : buffers) {
+                        if (buffer.hasRemaining()) {
+                            done = false;
+                        }
+                    }
+
+                    if (done) {
+                        break;
+                    }
+                }
             } catch (IOException e) {
                 error = e;
             }
@@ -164,11 +182,14 @@ public class NioSocketChannel extends AbstractNioChannel {
                 exceptionCaught(error);
             }
 
-            if (bytesWritten == -1) {
-                doClose();
+            for (ByteBuffer buffer : buffers) {
+                if (buffer.hasRemaining()) {
+                    interestOps(interestOps() | SelectionKey.OP_WRITE);
+                    break;
+                } else {
+                    outboundBuffer.remove();
+                }
             }
-
-            return !src.hasRemaining();
         }
 
         @Override

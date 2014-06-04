@@ -48,6 +48,10 @@ public class ChannelOutboundBuffer {
         }
     }
 
+    protected Queue<Entry> entries() {
+        return entries;
+    }
+
     public boolean isEmpty() {
         return entries.isEmpty();
     }

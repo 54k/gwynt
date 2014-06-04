@@ -82,7 +82,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
-        protected abstract boolean doWriteMessage(Object message);
+        protected boolean doWriteMessage(Object message) {
+            throw new UnsupportedOperationException();
+        }
 
         @Override
         protected void afterRegister() {

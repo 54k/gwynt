@@ -90,11 +90,6 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
-        protected boolean doWriteMessage(Object message) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public SocketAddress getLocalAddress() throws Exception {
             return javaChannel().getLocalAddress();
         }
