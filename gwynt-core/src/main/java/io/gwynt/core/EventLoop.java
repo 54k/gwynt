@@ -9,4 +9,8 @@ public interface EventLoop extends EventExecutor, EventLoopGroup {
 
     @Override
     EventLoopGroup parent();
+
+    ChannelFuture unregister(Channel channel);
+
+    ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
 }

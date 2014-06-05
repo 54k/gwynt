@@ -8,12 +8,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public final class GlobalEventExecutor extends SingleThreadEventExecutor {
 
-    public static final EventExecutor INSTANCE = new GlobalEventExecutor(false);
+    public static final EventExecutor INSTANCE = new GlobalEventExecutor();
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalEventExecutor.class);
 
-    private GlobalEventExecutor(boolean wakeUpForTask) {
-        super(wakeUpForTask);
+    private GlobalEventExecutor() {
+        super(null, false, new DefaultThreadFactory("global-event-executor-"));
     }
 
     @Override

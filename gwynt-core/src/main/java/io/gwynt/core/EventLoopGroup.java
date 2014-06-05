@@ -9,9 +9,5 @@ public interface EventLoopGroup extends EventExecutorGroup {
 
     ChannelFuture register(Channel channel);
 
-    ChannelFuture unregister(Channel channel);
-
     ChannelFuture register(Channel channel, ChannelPromise channelPromise);
-
-    ChannelFuture unregister(Channel channel, ChannelPromise channelPromise);
 }

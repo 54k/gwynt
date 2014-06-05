@@ -59,7 +59,7 @@ public interface Endpoint {
      *
      * @return current {@link EventLoop}
      */
-    EventLoop getEventLoop();
+    EventLoopGroup getEventLoop();
 
     /**
      * Set specific {@link EventLoop} implementation, which will dispatch all events to {@link Handler}
@@ -67,7 +67,7 @@ public interface Endpoint {
      * @param eventLoop {@link EventLoop} implementation
      * @return current {@link Endpoint}
      */
-    Endpoint setEventLoop(EventLoop eventLoop);
+    Endpoint setEventLoop(EventLoopGroup eventLoop);
 
     /**
      * Start listening for incoming connections

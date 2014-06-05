@@ -8,7 +8,9 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -31,20 +33,25 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     };
     private final boolean wakeUpForTask;
+    private final Executor executor;
     private int executedTasks = 0;
-
     private long lastExecutionTimeNanos;
 
     private Thread thread;
     private Queue<Runnable> taskQueue = newTaskQueue();
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
 
-    protected SingleThreadEventExecutor(boolean wakeUpForTask) {
-        this(null, wakeUpForTask);
+    protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
+        this(parent, wakeUpForTask, new ThreadPerTaskExecutor());
     }
 
-    protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
+    protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask, ThreadFactory threadFactory) {
+        this(parent, wakeUpForTask, new ThreadPerTaskExecutor(threadFactory));
+    }
+
+    protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask, Executor executor) {
         super(parent);
+        this.executor = executor;
         this.wakeUpForTask = wakeUpForTask;
     }
 
@@ -302,10 +309,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     private void runThread() {
-        Thread thread = new Thread(new Runnable() {
+        STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
+
+        executor.execute(new Runnable() {
             @Override
             public void run() {
-                STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
+                SingleThreadEventExecutor.this.thread = Thread.currentThread();
                 delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
                         ScheduledFutureTask.triggerTime(TimeUnit.SECONDS.toNanos(5)), TimeUnit.SECONDS.toNanos(5), delayedTaskQueue));
                 try {
@@ -316,9 +325,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_NOT_STARTED);
             }
         });
-        thread.start();
-
-        this.thread = thread;
     }
 
     @Override

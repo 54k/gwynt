@@ -1,26 +1,40 @@
 package io.gwynt.core.concurrent;
 
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class MultiThreadEventExecutor extends AbstractEventExecutorGroup {
+public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecutorGroup {
 
     private final AtomicInteger childIndex = new AtomicInteger();
     private final EventExecutor[] children;
     private final Chooser chooser;
 
-    protected MultiThreadEventExecutor() {
+    protected MultiThreadEventExecutorGroup() {
         this(Runtime.getRuntime().availableProcessors() * 2);
     }
 
-    protected MultiThreadEventExecutor(int nThreads) {
+    protected MultiThreadEventExecutorGroup(int nThreads) {
+        this(nThreads, new ThreadPerTaskExecutor());
+    }
+
+    protected MultiThreadEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
+        this(nThreads, new ThreadPerTaskExecutor(threadFactory));
+    }
+
+    protected MultiThreadEventExecutorGroup(int nThreads, Executor executor) {
         children = new EventExecutor[nThreads];
 
         if (isPowerOfTwo(nThreads)) {
             chooser = new PowerOfTwoChooser();
         } else {
-            chooser = new RoundRobinChooser();
+            chooser = new GenericChooser();
+        }
+
+        for (int i = 0; i < children.length; i++) {
+            children[i] = newEventExecutor(executor);
         }
     }
 
@@ -28,10 +42,13 @@ public abstract class MultiThreadEventExecutor extends AbstractEventExecutorGrou
         return (val & -val) == val;
     }
 
-    protected abstract EventExecutor newEventExecutor();
+    protected abstract EventExecutor newEventExecutor(Executor executor);
 
     @Override
     public void shutdown() {
+        for (EventExecutor c : children) {
+            c.shutdown();
+        }
     }
 
     @Override
@@ -46,7 +63,12 @@ public abstract class MultiThreadEventExecutor extends AbstractEventExecutorGrou
 
     @Override
     public boolean isShutdown() {
-        return false;
+        for (EventExecutor c : children) {
+            if (!c.isShutdown()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
@@ -70,7 +92,7 @@ public abstract class MultiThreadEventExecutor extends AbstractEventExecutorGrou
         }
     }
 
-    private final class RoundRobinChooser implements Chooser {
+    private final class GenericChooser implements Chooser {
         @Override
         public EventExecutor next() {
             return children[childIndex.getAndIncrement() % children.length];

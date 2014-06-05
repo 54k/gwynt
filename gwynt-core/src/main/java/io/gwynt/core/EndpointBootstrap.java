@@ -11,7 +11,7 @@ import java.util.List;
 
 public class EndpointBootstrap implements Endpoint {
 
-    protected EventLoop eventLoop = new NioEventLoop();
+    protected EventLoopGroup eventLoop = new NioEventLoop();
     protected List<Handler> handlers = new ArrayList<>();
     protected ChannelFactory channelFactory = new DefaultChannelFactory();
     protected Class<? extends Channel> channelClazz;
@@ -57,12 +57,12 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public EventLoop getEventLoop() {
+    public EventLoopGroup getEventLoop() {
         return eventLoop;
     }
 
     @Override
-    public Endpoint setEventLoop(EventLoop eventLoop) {
+    public Endpoint setEventLoop(EventLoopGroup eventLoop) {
         if (eventLoop == null) {
             throw new IllegalArgumentException("eventLoop");
         }
@@ -117,7 +117,7 @@ public class EndpointBootstrap implements Endpoint {
                 channel.pipeline().addLast(handler);
             }
         }
-        return channel.register(eventLoop);
+        return eventLoop.register(channel);
     }
 
     @Override

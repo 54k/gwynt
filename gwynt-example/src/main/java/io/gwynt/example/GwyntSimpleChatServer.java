@@ -7,7 +7,7 @@ import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
-import io.gwynt.core.EventLoop;
+import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
@@ -37,7 +37,7 @@ public class GwyntSimpleChatServer implements Runnable {
 
     private ChannelGroup channels;
     private int port = 1337;
-    private EventLoop eventLoop = new NioEventLoopGroup(2);
+    private EventLoopGroup eventLoop = new NioEventLoopGroup(2);
 
     @Override
     public void run() {

@@ -12,6 +12,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,6 +36,24 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     public NioEventLoop(EventLoopGroup parent, SelectorProvider selectorProvider) {
         super(parent, true);
+        if (selectorProvider == null) {
+            throw new IllegalArgumentException("selectorProvider");
+        }
+        this.selectorProvider = selectorProvider;
+        openSelector();
+    }
+
+    public NioEventLoop(EventLoopGroup parent, SelectorProvider selectorProvider, ThreadFactory threadFactory) {
+        super(parent, true, threadFactory);
+        if (selectorProvider == null) {
+            throw new IllegalArgumentException("selectorProvider");
+        }
+        this.selectorProvider = selectorProvider;
+        openSelector();
+    }
+
+    public NioEventLoop(EventLoopGroup parent, SelectorProvider selectorProvider, Executor executor) {
+        super(parent, true, executor);
         if (selectorProvider == null) {
             throw new IllegalArgumentException("selectorProvider");
         }

@@ -4,48 +4,24 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.MultiThreadEventLoopGroup;
+import io.gwynt.core.concurrent.EventExecutor;
 
-public class NioEventLoopGroup extends NioEventLoop {
+import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.Executor;
 
-    private NioEventLoop[] workers;
-    private volatile int currentWorker = 0;
+public class NioEventLoopGroup extends MultiThreadEventLoopGroup {
 
     public NioEventLoopGroup() {
-        this(Math.max(1, Runtime.getRuntime().availableProcessors() * 2));
     }
 
-    public NioEventLoopGroup(int workersCount) {
-        if (workersCount < 0) {
-            throw new IllegalArgumentException("workersCount must be positive");
-        }
-        workers = new NioEventLoop[workersCount];
-        spawnWorkers(workersCount);
+    public NioEventLoopGroup(int nThreads) {
+        super(nThreads);
     }
 
     @Override
-    public EventLoop next() {
-        if (workers.length > 0) {
-            currentWorker = currentWorker % workers.length;
-            EventLoop scheduler = workers[currentWorker];
-            currentWorker++;
-            return scheduler;
-        }
-        return this;
-    }
-
-    private void spawnWorkers(int count) {
-        for (int i = 0; i < count; i++) {
-            NioEventLoop worker = new NioEventLoop(this);
-            workers[i] = worker;
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        for (NioEventLoop worker : workers) {
-            worker.shutdown();
-        }
-        super.shutdown();
+    protected EventLoop newEventExecutor(Executor executor) {
+        return new NioEventLoop(this, SelectorProvider.provider(), executor);
     }
 
     @Override
@@ -58,10 +34,9 @@ public class NioEventLoopGroup extends NioEventLoop {
         return next().register(channel);
     }
 
-    @Override
     public void setIoRatio(int ioRatio) {
-        for (NioEventLoop eventLoop : workers) {
-            eventLoop.setIoRatio(ioRatio);
+        for (EventExecutor e : children()) {
+            ((NioEventLoop) e).setIoRatio(ioRatio);
         }
     }
 }
