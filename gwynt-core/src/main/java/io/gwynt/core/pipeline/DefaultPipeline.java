@@ -4,6 +4,7 @@ import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
+import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.exception.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,18 +83,28 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
     @Override
     public void addFirst(Handler handler) {
-        if (handler == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        addFirst(generateName(handler), handler);
+        addFirst((HandlerContextInvoker) null, handler);
     }
 
     @Override
     public void addFirst(String name, Handler handler) {
+        addFirst((HandlerContextInvoker) null, name, handler);
+    }
+
+    @Override
+    public void addFirst(EventExecutor executor, String name, Handler handler) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addFirst(new DefaultHandlerContextInvoker(executor), name, handler);
+    }
+
+    @Override
+    public void addFirst(HandlerContextInvoker invoker, String name, Handler handler) {
         if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+        DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
         synchronized (lock) {
             checkMultiplicity(name);
             DefaultHandlerContext next = head.getNext();
@@ -109,19 +120,45 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     @Override
-    public void addLast(Handler handler) {
+    public void addFirst(EventExecutor executor, Handler handler) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addFirst(new DefaultHandlerContextInvoker(executor), handler);
+    }
+
+    @Override
+    public void addFirst(HandlerContextInvoker invoker, Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        addLast(generateName(handler), handler);
+        addFirst(invoker, generateName(handler), handler);
+    }
+
+    @Override
+    public void addLast(Handler handler) {
+        addLast((HandlerContextInvoker) null, handler);
     }
 
     @Override
     public void addLast(String name, Handler handler) {
+        addLast((HandlerContextInvoker) null, name, handler);
+    }
+
+    @Override
+    public void addLast(EventExecutor executor, String name, Handler handler) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addLast(new DefaultHandlerContextInvoker(executor), name, handler);
+    }
+
+    @Override
+    public void addLast(HandlerContextInvoker invoker, String name, Handler handler) {
         if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+        DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
         synchronized (lock) {
             checkMultiplicity(name);
             DefaultHandlerContext prev = tail.getPrev();
@@ -137,61 +174,129 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     @Override
-    public void addBefore(Handler handler, Handler before) {
-        if (handler == null || before == null) {
+    public void addLast(EventExecutor executor, Handler handler) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addLast(new DefaultHandlerContextInvoker(executor), handler);
+    }
+
+    @Override
+    public void addLast(HandlerContextInvoker invoker, Handler handler) {
+        if (handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContextOrDie(before);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(generateName(handler));
-            if (beforeContext != null) {
-                addBefore(context, beforeContext);
-            }
-        }
+        addLast(invoker, generateName(handler), handler);
+    }
+
+    @Override
+    public void addBefore(Handler handler, Handler before) {
+        addBefore((HandlerContextInvoker) null, handler, before);
     }
 
     @Override
     public void addBefore(Handler handler, String beforeName) {
-        if (handler == null || beforeName == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(generateName(handler));
-            if (beforeContext != null) {
-                addBefore(context, beforeContext);
-            }
-        }
+        addBefore((HandlerContextInvoker) null, handler, beforeName);
     }
 
     @Override
     public void addBefore(String name, Handler handler, Handler before) {
-        if (name == null || handler == null || before == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        synchronized (lock) {
-            checkMultiplicity(name);
-            DefaultHandlerContext beforeContext = getContextOrDie(before);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(name);
-            if (beforeContext != null) {
-                addBefore(context, beforeContext);
-            }
-        }
+        addBefore((HandlerContextInvoker) null, name, handler, before);
     }
 
     @Override
     public void addBefore(String name, Handler handler, String beforeName) {
+        addBefore((HandlerContextInvoker) null, name, handler, beforeName);
+    }
+
+    @Override
+    public void addBefore(EventExecutor executor, String name, Handler handler, String beforeName) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addBefore(new DefaultHandlerContextInvoker(executor), name, handler, beforeName);
+    }
+
+    @Override
+    public void addBefore(HandlerContextInvoker invoker, String name, Handler handler, String beforeName) {
         if (name == null || handler == null || beforeName == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
             checkMultiplicity(name);
             DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(name);
+            if (beforeContext != null) {
+                addBefore(context, beforeContext);
+            }
+        }
+    }
+
+    @Override
+    public void addBefore(EventExecutor executor, String name, Handler handler, Handler before) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addBefore(new DefaultHandlerContextInvoker(executor), name, handler, before);
+    }
+
+    @Override
+    public void addBefore(HandlerContextInvoker invoker, String name, Handler handler, Handler before) {
+        if (name == null || handler == null || before == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            checkMultiplicity(name);
+            DefaultHandlerContext beforeContext = getContextOrDie(before);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(name);
+            if (beforeContext != null) {
+                addBefore(context, beforeContext);
+            }
+        }
+    }
+
+    @Override
+    public void addBefore(EventExecutor executor, Handler handler, String beforeName) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addBefore(new DefaultHandlerContextInvoker(executor), handler, beforeName);
+    }
+
+    @Override
+    public void addBefore(HandlerContextInvoker invoker, Handler handler, String beforeName) {
+        if (handler == null || beforeName == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(generateName(handler));
+            if (beforeContext != null) {
+                addBefore(context, beforeContext);
+            }
+        }
+    }
+
+    @Override
+    public void addBefore(EventExecutor executor, Handler handler, Handler before) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addBefore(new DefaultHandlerContextInvoker(executor), handler, before);
+    }
+
+    @Override
+    public void addBefore(HandlerContextInvoker invoker, Handler handler, Handler before) {
+        if (handler == null || before == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            DefaultHandlerContext beforeContext = getContextOrDie(before);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(generateName(handler));
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
             }
@@ -211,6 +316,105 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
     @Override
     public void addAfter(Handler handler, Handler after) {
+        addAfter((HandlerContextInvoker) null, handler, after);
+    }
+
+    @Override
+    public void addAfter(Handler handler, String afterName) {
+        addAfter((HandlerContextInvoker) null, handler, afterName);
+    }
+
+    @Override
+    public void addAfter(String name, Handler handler, Handler after) {
+        addAfter((HandlerContextInvoker) null, name, handler, after);
+    }
+
+    @Override
+    public void addAfter(String name, Handler handler, String afterName) {
+        addAfter((HandlerContextInvoker) null, name, handler, afterName);
+    }
+
+    @Override
+    public void addAfter(EventExecutor executor, String name, Handler handler, String afterName) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addAfter(new DefaultHandlerContextInvoker(executor), name, handler, afterName);
+    }
+
+    @Override
+    public void addAfter(HandlerContextInvoker invoker, String name, Handler handler, String afterName) {
+        if (name == null || handler == null || afterName == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            checkMultiplicity(name);
+            DefaultHandlerContext afterContext = getContextOrDie(afterName);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(name);
+            if (afterContext != null) {
+                addAfter(context, afterContext);
+            }
+        }
+    }
+
+    @Override
+    public void addAfter(EventExecutor executor, String name, Handler handler, Handler after) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addAfter(new DefaultHandlerContextInvoker(executor), name, handler, after);
+    }
+
+    @Override
+    public void addAfter(HandlerContextInvoker invoker, String name, Handler handler, Handler after) {
+        if (name == null || handler == null || after == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            checkMultiplicity(name);
+            DefaultHandlerContext afterContext = getContextOrDie(after);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(name);
+            if (afterContext != null) {
+                addAfter(context, afterContext);
+            }
+        }
+    }
+
+    @Override
+    public void addAfter(EventExecutor executor, Handler handler, String afterName) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addAfter(new DefaultHandlerContextInvoker(executor), handler, afterName);
+    }
+
+    @Override
+    public void addAfter(HandlerContextInvoker invoker, Handler handler, String afterName) {
+        if (handler == null || afterName == null) {
+            throw new IllegalArgumentException("all arguments are required");
+        }
+        synchronized (lock) {
+            DefaultHandlerContext afterContext = getContextOrDie(afterName);
+            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            context.setName(generateName(handler));
+            if (afterContext != null) {
+                addAfter(context, afterContext);
+            }
+        }
+    }
+
+    @Override
+    public void addAfter(EventExecutor executor, Handler handler, Handler after) {
+        if (executor == null) {
+            throw new IllegalArgumentException("executor");
+        }
+        addAfter(new DefaultHandlerContextInvoker(executor), handler, after);
+    }
+
+    @Override
+    public void addAfter(HandlerContextInvoker invoker, Handler handler, Handler after) {
         if (handler == null || after == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
@@ -218,53 +422,6 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             DefaultHandlerContext afterContext = getContextOrDie(after);
             DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
-            if (afterContext != null) {
-                addAfter(context, afterContext);
-            }
-        }
-    }
-
-    @Override
-    public void addAfter(Handler handler, String afterName) {
-        if (handler == null || afterName == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        synchronized (lock) {
-            DefaultHandlerContext afterContext = getContextOrDie(afterName);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(generateName(handler));
-            if (afterContext != null) {
-                addAfter(context, afterContext);
-            }
-        }
-    }
-
-    @Override
-    public void addAfter(String name, Handler handler, Handler after) {
-        if (name == null || handler == null || after == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        synchronized (lock) {
-            checkMultiplicity(name);
-            DefaultHandlerContext afterContext = getContextOrDie(after);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(name);
-            if (afterContext != null) {
-                addAfter(context, afterContext);
-            }
-        }
-    }
-
-    @Override
-    public void addAfter(String name, Handler handler, String afterName) {
-        if (name == null || handler == null || afterName == null) {
-            throw new IllegalArgumentException("all arguments are required");
-        }
-        synchronized (lock) {
-            checkMultiplicity(name);
-            DefaultHandlerContext afterContext = getContextOrDie(afterName);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
-            context.setName(name);
             if (afterContext != null) {
                 addAfter(context, afterContext);
             }
