@@ -97,14 +97,19 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public ChannelFuture connect(final String host, final int port) {
+    public ChannelFuture connect(String host, int port) {
+        return connect(new InetSocketAddress(host, port));
+    }
+
+    @Override
+    public ChannelFuture connect(InetSocketAddress address) {
         ChannelFuture regFuture = initAndRegisterChannel();
         try {
             regFuture.sync();
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return regFuture.channel().connect(new InetSocketAddress(host, port));
+        return regFuture.channel().connect(address);
     }
 
     @SuppressWarnings("unchecked")

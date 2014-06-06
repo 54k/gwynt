@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DefaultChannelGroup extends AbstractSet<Channel> implements ChannelGroup {
 
     private static final Object[] EMPTY_ARRAY = {};
-    private static final AtomicLong SEQ_GENERATOR = new AtomicLong(0L);
+    private static final AtomicLong sequence = new AtomicLong(0);
     private final ChannelFutureListener remover = new ChannelFutureListener() {
         @Override
         public void onComplete(ChannelFuture future) {
@@ -50,7 +50,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
     }
 
     private static String generateName() {
-        return "channel-group-" + DefaultChannelGroup.SEQ_GENERATOR.getAndIncrement();
+        return "channel-group-" + DefaultChannelGroup.sequence.incrementAndGet();
     }
 
     @SuppressWarnings("unchecked")

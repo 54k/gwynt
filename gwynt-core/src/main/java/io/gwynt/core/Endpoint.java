@@ -1,5 +1,7 @@
 package io.gwynt.core;
 
+import java.net.InetSocketAddress;
+
 public interface Endpoint {
 
     /**
@@ -82,6 +84,13 @@ public interface Endpoint {
      * @param port desired port
      */
     ChannelFuture connect(String host, int port);
+
+    /**
+     * Connect {@link io.gwynt.core.Channel} to specified host and port
+     *
+     * @param address desired address
+     */
+    ChannelFuture connect(InetSocketAddress address);
 
     /**
      * Stop listening for incoming connections
