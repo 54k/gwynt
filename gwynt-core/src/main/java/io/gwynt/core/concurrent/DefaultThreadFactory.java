@@ -5,26 +5,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class DefaultThreadFactory implements ThreadFactory {
 
-    private static final AtomicInteger poolNumber = new AtomicInteger(1);
+    private static final String DEFAULT_POOL_NAME = "gwynt-pool";
+
+    private static final AtomicInteger poolNumber = new AtomicInteger(0);
     private final ThreadGroup group;
-    private final AtomicInteger threadNumber = new AtomicInteger(1);
-    private final String namePrefix;
+    private final AtomicInteger threadNumber = new AtomicInteger(0);
+    private final String poolName;
 
     public DefaultThreadFactory() {
-        this("pool-" +
-                poolNumber.getAndIncrement() +
-                "-thread-");
+        this(DEFAULT_POOL_NAME);
     }
 
-    public DefaultThreadFactory(String namePrefix) {
+    public DefaultThreadFactory(String poolName) {
         SecurityManager s = System.getSecurityManager();
         group = (s != null) ? s.getThreadGroup() : Thread.currentThread().getThreadGroup();
-        this.namePrefix = namePrefix;
+        this.poolName = poolName + "-" + poolNumber.incrementAndGet();
     }
 
     @Override
     public Thread newThread(Runnable r) {
-        Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
+        Thread t = new Thread(group, r, poolName(), 0);
         if (t.isDaemon()) {
             t.setDaemon(false);
         }
@@ -32,5 +32,9 @@ public final class DefaultThreadFactory implements ThreadFactory {
             t.setPriority(Thread.NORM_PRIORITY);
         }
         return t;
+    }
+
+    private String poolName() {
+        return poolName + "-thread-" + threadNumber.incrementAndGet();
     }
 }

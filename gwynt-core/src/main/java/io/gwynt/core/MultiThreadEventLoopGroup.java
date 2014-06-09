@@ -3,6 +3,7 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.MultiThreadEventExecutorGroup;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadFactory;
 
 public abstract class MultiThreadEventLoopGroup extends MultiThreadEventExecutorGroup implements EventLoopGroup {
 
@@ -12,8 +13,24 @@ public abstract class MultiThreadEventLoopGroup extends MultiThreadEventExecutor
         this(DEFAULT_NUM_THREADS);
     }
 
+    protected MultiThreadEventLoopGroup(ThreadFactory threadFactory) {
+        super(DEFAULT_NUM_THREADS, threadFactory);
+    }
+
+    protected MultiThreadEventLoopGroup(Executor executor) {
+        super(DEFAULT_NUM_THREADS, executor);
+    }
+
     protected MultiThreadEventLoopGroup(int nThreads) {
         super(nThreads);
+    }
+
+    protected MultiThreadEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
+        super(nThreads, threadFactory);
+    }
+
+    protected MultiThreadEventLoopGroup(int nThreads, Executor executor) {
+        super(nThreads, executor);
     }
 
     @Override
