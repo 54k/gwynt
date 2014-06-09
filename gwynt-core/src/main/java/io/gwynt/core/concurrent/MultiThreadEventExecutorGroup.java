@@ -1,5 +1,7 @@
 package io.gwynt.core.concurrent;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
@@ -10,39 +12,43 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
 
     private final AtomicInteger childIndex = new AtomicInteger();
     private final EventExecutor[] children;
-    private final Chooser chooser;
+    private final ExecutorChooser chooser;
+    private final Set<EventExecutor> readonlyChildren;
 
-    protected MultiThreadEventExecutorGroup() {
-        this(Runtime.getRuntime().availableProcessors() * 2);
+    protected MultiThreadEventExecutorGroup(int nThreads, ThreadFactory threadFactory, Object... args) {
+        this(nThreads, threadFactory == null ? null : new ThreadPerTaskExecutor(threadFactory), args);
     }
 
-    protected MultiThreadEventExecutorGroup(int nThreads) {
-        this(nThreads, new ThreadPerTaskExecutor());
-    }
+    protected MultiThreadEventExecutorGroup(int nThreads, Executor executor, Object... args) {
+        if (nThreads < 1) {
+            throw new IllegalArgumentException("nThreads > 1");
+        }
 
-    protected MultiThreadEventExecutorGroup(int nThreads, ThreadFactory threadFactory) {
-        this(nThreads, new ThreadPerTaskExecutor(threadFactory));
-    }
+        if (executor == null) {
+            executor = new ThreadPerTaskExecutor();
+        }
 
-    protected MultiThreadEventExecutorGroup(int nThreads, Executor executor) {
         children = new EventExecutor[nThreads];
-
         if (isPowerOfTwo(nThreads)) {
-            chooser = new PowerOfTwoChooser();
+            chooser = new PowerOfTwoExecutorChooser();
         } else {
-            chooser = new GenericChooser();
+            chooser = new GenericExecutorChooser();
         }
 
         for (int i = 0; i < children.length; i++) {
-            children[i] = newEventExecutor(executor);
+            children[i] = newEventExecutor(executor, args);
         }
+
+        Set<EventExecutor> readonlyChildren = new LinkedHashSet<>(children.length);
+        Collections.addAll(readonlyChildren, children);
+        this.readonlyChildren = Collections.unmodifiableSet(readonlyChildren);
     }
 
     private static boolean isPowerOfTwo(int val) {
         return (val & -val) == val;
     }
 
-    protected abstract EventExecutor newEventExecutor(Executor executor);
+    protected abstract EventExecutor newEventExecutor(Executor executor, Object... args);
 
     @Override
     public void shutdown() {
@@ -56,9 +62,10 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
         return chooser.next();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <E extends EventExecutor> Set<E> children() {
-        return null;
+        return (Set<E>) readonlyChildren;
     }
 
     @Override
@@ -81,18 +88,18 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
         return false;
     }
 
-    private interface Chooser {
+    private interface ExecutorChooser {
         EventExecutor next();
     }
 
-    private final class PowerOfTwoChooser implements Chooser {
+    private final class PowerOfTwoExecutorChooser implements ExecutorChooser {
         @Override
         public EventExecutor next() {
             return children[childIndex.getAndIncrement() & children.length - 1];
         }
     }
 
-    private final class GenericChooser implements Chooser {
+    private final class GenericExecutorChooser implements ExecutorChooser {
         @Override
         public EventExecutor next() {
             return children[childIndex.getAndIncrement() % children.length];

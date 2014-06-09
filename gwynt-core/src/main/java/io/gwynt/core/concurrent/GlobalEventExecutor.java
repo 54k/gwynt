@@ -13,7 +13,7 @@ public final class GlobalEventExecutor extends SingleThreadEventExecutor {
     private static final Logger logger = LoggerFactory.getLogger(GlobalEventExecutor.class);
 
     private GlobalEventExecutor() {
-        super(null, false, new DefaultThreadFactory("global-event-executor-"));
+        super(null, false, new DefaultThreadFactory("gwynt-global-event-executor"));
     }
 
     @Override

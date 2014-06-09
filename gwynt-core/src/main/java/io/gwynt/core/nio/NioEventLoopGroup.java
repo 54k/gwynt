@@ -12,32 +12,32 @@ import java.util.concurrent.ThreadFactory;
 public class NioEventLoopGroup extends MultiThreadEventLoopGroup {
 
     public NioEventLoopGroup() {
-        this(new DefaultThreadFactory("gwynt-nio-eventloop"));
-    }
-
-    public NioEventLoopGroup(Executor executor) {
-        super(executor);
-    }
-
-    public NioEventLoopGroup(int nThreads, Executor executor) {
-        super(nThreads, executor);
-    }
-
-    public NioEventLoopGroup(ThreadFactory threadFactory) {
-        super(threadFactory);
+        this(0, new DefaultThreadFactory("gwynt-nio-eventloop", Thread.MAX_PRIORITY));
     }
 
     public NioEventLoopGroup(int nThreads) {
-        this(nThreads, new DefaultThreadFactory("gwynt-nio-eventloop"));
+        this(nThreads, new DefaultThreadFactory("gwynt-nio-eventloop", Thread.MAX_PRIORITY));
+    }
+
+    public NioEventLoopGroup(int nThreads, Executor executor) {
+        this(nThreads, executor, SelectorProvider.provider());
     }
 
     public NioEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
-        super(nThreads, threadFactory);
+        this(nThreads, threadFactory, SelectorProvider.provider());
+    }
+
+    public NioEventLoopGroup(int nThreads, Executor executor, SelectorProvider selectorProvider) {
+        super(nThreads, executor, selectorProvider);
+    }
+
+    public NioEventLoopGroup(int nThreads, ThreadFactory threadFactory, SelectorProvider selectorProvider) {
+        super(nThreads, threadFactory, selectorProvider);
     }
 
     @Override
-    protected EventLoop newEventExecutor(Executor executor) {
-        return new NioEventLoop(this, SelectorProvider.provider(), executor);
+    protected EventLoop newEventExecutor(Executor executor, Object... args) {
+        return new NioEventLoop(this, (SelectorProvider) args[0], executor);
     }
 
     public void setIoRatio(int ioRatio) {

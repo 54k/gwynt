@@ -9,28 +9,20 @@ public abstract class MultiThreadEventLoopGroup extends MultiThreadEventExecutor
 
     private static final int DEFAULT_NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
 
-    protected MultiThreadEventLoopGroup() {
-        this(DEFAULT_NUM_THREADS);
+    protected MultiThreadEventLoopGroup(ThreadFactory threadFactory, Object... args) {
+        super(DEFAULT_NUM_THREADS, threadFactory, args);
     }
 
-    protected MultiThreadEventLoopGroup(ThreadFactory threadFactory) {
-        super(DEFAULT_NUM_THREADS, threadFactory);
+    protected MultiThreadEventLoopGroup(Executor executor, Object... args) {
+        super(DEFAULT_NUM_THREADS, executor, args);
     }
 
-    protected MultiThreadEventLoopGroup(Executor executor) {
-        super(DEFAULT_NUM_THREADS, executor);
+    protected MultiThreadEventLoopGroup(int nThreads, ThreadFactory threadFactory, Object... args) {
+        super(nThreads > 0 ? nThreads : DEFAULT_NUM_THREADS, threadFactory, args);
     }
 
-    protected MultiThreadEventLoopGroup(int nThreads) {
-        super(nThreads);
-    }
-
-    protected MultiThreadEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
-        super(nThreads, threadFactory);
-    }
-
-    protected MultiThreadEventLoopGroup(int nThreads, Executor executor) {
-        super(nThreads, executor);
+    protected MultiThreadEventLoopGroup(int nThreads, Executor executor, Object... args) {
+        super(nThreads > 0 ? nThreads : DEFAULT_NUM_THREADS, executor, args);
     }
 
     @Override
@@ -39,7 +31,7 @@ public abstract class MultiThreadEventLoopGroup extends MultiThreadEventExecutor
     }
 
     @Override
-    protected abstract EventLoop newEventExecutor(Executor executor);
+    protected abstract EventLoop newEventExecutor(Executor executor, Object... args);
 
     @Override
     public ChannelFuture register(Channel channel) {
