@@ -25,6 +25,11 @@
             <artifactId>netty-all</artifactId>
             <version>4.0.19.Final</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+            <version>3.0.0-M2</version>
+        </dependency>
     </dependencies>
 
     <build>

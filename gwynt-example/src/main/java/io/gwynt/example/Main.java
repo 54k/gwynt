@@ -20,6 +20,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         new NettySimpleServer().run();
         new GwyntSimpleServer().run();
+        new MinaSimpleServer().run();
 
         //        new GwyntSimpleChatServer().run();
 
