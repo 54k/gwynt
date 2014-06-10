@@ -6,7 +6,7 @@ public class FixedRecvByteBufferAllocator implements RecvByteBufferAllocator {
 
     public static final RecvByteBufferAllocator DEFAULT = new FixedRecvByteBufferAllocator();
 
-    int recvSize;
+    private final int recvSize;
 
     public FixedRecvByteBufferAllocator() {
         this(2048);
@@ -18,12 +18,12 @@ public class FixedRecvByteBufferAllocator implements RecvByteBufferAllocator {
 
     @Override
     public Handle newHandle() {
-        return new HandleImpl(2048);
+        return new HandleImpl(recvSize);
     }
 
     private static final class HandleImpl implements Handle {
 
-        int size;
+        private final int size;
 
         HandleImpl(int size) {
             this.size = size;

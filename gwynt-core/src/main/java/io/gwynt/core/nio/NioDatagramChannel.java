@@ -4,6 +4,7 @@ import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
+import io.gwynt.core.RecvByteBufferAllocator;
 import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
@@ -293,6 +294,8 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
+        private RecvByteBufferAllocator.Handle allocHandle;
+
         @Override
         protected void closeRequested() {
             interestOps(SelectionKey.OP_WRITE);
@@ -339,7 +342,10 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
         @Override
         protected int doReadMessages(List<Object> messages) {
-            ByteBuffer buffer = config().getByteBufferPool().acquire(4096, true);
+            if (allocHandle == null) {
+                allocHandle = config().getRecvByteBufferAllocator().newHandle();
+            }
+            ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             Throwable error = null;
             SocketAddress address;
             int messagesRead = 0;
@@ -361,6 +367,11 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
             }
 
             config().getByteBufferPool().release(buffer);
+
+            if (!config().isAutoRead()) {
+                interestOps(interestOps() & ~SelectionKey.OP_READ);
+            }
+
             return messagesRead;
         }
 

@@ -6,15 +6,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ArrayByteBufferPool implements ByteBufferPool {
 
+    private final static int DEFAULT_MIN_SIZE = 64;
+    private final static int DEFAULT_STEP_SIZE = 1024;
+    private final static int DEFAULT_MAX_SIZE = 65536;
+
     public static ByteBufferPool DEFAULT = new ArrayByteBufferPool();
 
-    private final int min;
+    private final int minSize;
     private final Bucket[] direct;
     private final Bucket[] indirect;
-    private final int inc;
+    private final int increment;
 
     public ArrayByteBufferPool() {
-        this(0, 1024, 64 * 1024);
+        this(DEFAULT_MIN_SIZE, DEFAULT_STEP_SIZE, DEFAULT_MAX_SIZE);
     }
 
     public ArrayByteBufferPool(int minSize, int increment, int maxSize) {
@@ -24,15 +28,18 @@ public class ArrayByteBufferPool implements ByteBufferPool {
         if ((maxSize % increment) != 0 || increment >= maxSize) {
             throw new IllegalArgumentException("increment must be a divisor of maxSize");
         }
-        min = minSize;
-        inc = increment;
 
-        direct = new Bucket[maxSize / increment];
-        indirect = new Bucket[maxSize / increment];
+        this.minSize = minSize;
+        this.increment = increment;
+
+        int bucketLength = maxSize / increment;
+
+        direct = new Bucket[bucketLength];
+        indirect = new Bucket[bucketLength];
 
         int size = 0;
         for (int i = 0; i < direct.length; i++) {
-            size += inc;
+            size += this.increment;
             direct[i] = new Bucket(size);
             indirect[i] = new Bucket(size);
         }
@@ -62,6 +69,7 @@ public class ArrayByteBufferPool implements ByteBufferPool {
         }
     }
 
+    @Override
     public void clear() {
         for (int i = 0; i < direct.length; i++) {
             direct[i].queue.clear();
@@ -70,10 +78,10 @@ public class ArrayByteBufferPool implements ByteBufferPool {
     }
 
     private Bucket bucketFor(int size, boolean direct) {
-        if (size <= min) {
+        if (size <= minSize) {
             return null;
         }
-        int b = (size - 1) / inc;
+        int b = (size - 1) / increment;
         if (b >= this.direct.length) {
             return null;
         }

@@ -86,6 +86,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
             NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, ch);
             messages.add(channel);
+
+            if (!config().isAutoRead()) {
+                interestOps(interestOps() & ~SelectionKey.OP_ACCEPT);
+            }
+
             return accepted;
         }
 

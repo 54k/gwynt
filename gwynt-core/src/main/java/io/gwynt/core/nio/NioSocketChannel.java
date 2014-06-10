@@ -40,6 +40,11 @@ public class NioSocketChannel extends AbstractNioChannel {
         return new NioSocketChannelConfig(this, (SocketChannel) javaChannel());
     }
 
+    @Override
+    public NioSocketChannelConfig config() {
+        return (NioSocketChannelConfig) super.config();
+    }
+
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
         private ScheduledFuture<?> connectTimeout;
@@ -141,6 +146,9 @@ public class NioSocketChannel extends AbstractNioChannel {
             }
 
             config().getByteBufferPool().release(buffer);
+            if (!config().isAutoRead()) {
+                interestOps(interestOps() & ~SelectionKey.OP_READ);
+            }
             return messagesRead;
         }
 
