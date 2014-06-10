@@ -25,14 +25,14 @@ public class SimpleGwyntCluster implements Runnable {
         for (int i = 0; i < addresses.length; i++) {
             final int port = 9000 + i;
             Endpoint endpoint = new EndpointBootstrap();
-            endpoint.setEventLoop(eventLoopGroup);
-            endpoint.setChannelClass(NioServerSocketChannel.class);
+            endpoint.group(eventLoopGroup);
+            endpoint.channelClass(NioServerSocketChannel.class);
             endpoint.addHandler(new ChannelInitializer() {
                 @Override
                 protected void initialize(Channel channel) {
                     Endpoint client = new EndpointBootstrap();
-                    client.setEventLoop(eventLoopGroup);
-                    client.setChannelClass(NioSocketChannel.class);
+                    client.group(eventLoopGroup);
+                    client.channelClass(NioSocketChannel.class);
                     channel.pipeline().addLast(new ServerHandler());
                 }
             });

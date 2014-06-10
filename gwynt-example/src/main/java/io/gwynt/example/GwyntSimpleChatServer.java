@@ -44,8 +44,8 @@ public class GwyntSimpleChatServer implements Runnable {
         final ChatHandler chatHandler = new ChatHandler();
         channels = new DefaultChannelGroup();
 
-        Endpoint endpoint = new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter())
-                .addHandler(new ChannelInitializer() {
+        Endpoint endpoint =
+                new EndpointBootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addLast(new AbstractHandler<String, Object>() {
@@ -83,23 +83,22 @@ public class GwyntSimpleChatServer implements Runnable {
     }
 
     private void createBots(int port) {
-        Endpoint client =
-                new EndpointBootstrap().setEventLoop(eventLoop).setChannelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
+        Endpoint client = new EndpointBootstrap().group(eventLoop).channelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
+            @Override
+            public void onOpen(final HandlerContext context) {
+                context.write("hello\r\n").addListener(new ChannelFutureListener() {
                     @Override
-                    public void onOpen(final HandlerContext context) {
-                        context.write("hello\r\n").addListener(new ChannelFutureListener() {
+                    public void onComplete(final ChannelFuture future) {
+                        future.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
                             @Override
-                            public void onComplete(final ChannelFuture future) {
-                                future.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        future.channel().write(new Date().toString() + "\r\n");
-                                    }
-                                }, new Random().nextInt(120) + 15, new Random().nextInt(300) + 15, TimeUnit.SECONDS);
+                            public void run() {
+                                future.channel().write(new Date().toString() + "\r\n");
                             }
-                        });
+                        }, new Random().nextInt(120) + 15, new Random().nextInt(300) + 15, TimeUnit.SECONDS);
                     }
                 });
+            }
+        });
 
         for (int i = 0; i < 5000; i++) {
             client.connect("localhost", port);
@@ -107,14 +106,14 @@ public class GwyntSimpleChatServer implements Runnable {
     }
 
     //    private ChannelFuture runDiscoveryServer(final int port) {
-    //        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+    //        Endpoint endpoint = new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(primaryGroup);
     //
     //        return endpoint.bind(port).addListener(new ChannelFutureListener() {
     //            @Override
     //            public void onComplete(final ChannelFuture future) {
     //                try {
     //                    final InetAddress multicastAddress = InetAddress.getByName("FF01:0:0:0:0:0:0:1");
-    //                    future.channel().eventLoop().scheduleWithFixedDelay(new Runnable() {
+    //                    future.channel().primaryGroup().scheduleWithFixedDelay(new Runnable() {
     //                        @Override
     //                        public void run() {
     //                            ByteBuffer bb = ByteBuffer.allocate(4);
@@ -131,7 +130,7 @@ public class GwyntSimpleChatServer implements Runnable {
     //    }
     //
     //    private ChannelFuture runDiscoveryClient(int port) {
-    //        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(eventLoop);
+    //        Endpoint endpoint = new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(primaryGroup);
     //        final InetAddress multicastAddress;
     //        final NetworkInterface networkInterface;
     //        try {

@@ -35,13 +35,13 @@ public class Main {
         //
         //                NioEventLoop dispatcher = new NioEventLoop();
         //
-        //                Endpoint tcpEndpoint = new EndpointBootstrap().setEventLoop(dispatcher).setChannelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
+        //                Endpoint tcpEndpoint = new EndpointBootstrap().group(dispatcher).channelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
         //                tcpEndpoint.bind(3002).await();
         //
         //                NioEventLoop dispatcher2 = new NioEventLoop();
         //
         //                final Endpoint tcpClient = new EndpointBootstrap();
-        //                tcpClient.setEventLoop(dispatcher2).setChannelClass(NioSocketChannel.class).addHandler(new ChannelInitializer() {
+        //                tcpClient.group(dispatcher2).channelClass(NioSocketChannel.class).addHandler(new ChannelInitializer() {
         //
         //                    @Override
         //                    protected void initialize(Channel session) {
@@ -75,14 +75,14 @@ public class Main {
         //                    tcpEndpoint.bind(3002).await(10, TimeUnit.MILLISECONDS);
         //                }
 
-        //        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(tcpEndpoint.getEventLoop()).addHandler(lh).addHandler(new AbstractHandler() {
+        //        new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(tcpEndpoint.primaryGroup()).addHandler(lh).addHandler(new AbstractHandler() {
         //            @Override
         //            public void onMessageReceived(HandlerContext context, Object message) {
         //                context.write(message);
         //            }
         //        }).bind(3002).await();
 
-        //        new EndpointBootstrap().setChannelClass(NioDatagramChannel.class).setEventLoop(tcpEndpoint.getEventLoop()).addHandler(lh).addHandler(new AbstractHandler() {
+        //        new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(tcpEndpoint.primaryGroup()).addHandler(lh).addHandler(new AbstractHandler() {
         //            @Override
         //            public void onOpen(HandlerContext context) {
         //                context.write(new Datagram(context.channel().getRemoteAddress(), ByteBuffer.wrap("datagram".getBytes())));
@@ -95,7 +95,7 @@ public class Main {
         //            }
         //        }).connect("localhost", 3002).await();
         //
-        //        Channel channel = new EndpointBootstrap().setChannelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
+        //        Channel channel = new EndpointBootstrap().channelClass(NioSocketChannel.class).addHandler(sc).addHandler(new AbstractHandler() {
         //            @Override
         //            public void onMessageReceived(HandlerContext context, Object message) {
         //                System.out.println(message);

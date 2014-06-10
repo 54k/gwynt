@@ -15,8 +15,8 @@ public class GwyntSimpleServer implements Runnable {
     @Override
     public void run() {
         EventLoopGroup eventLoop = new NioEventLoopGroup();
-        Endpoint endpoint = new EndpointBootstrap().setChannelClass(NioServerSocketChannel.class).setEventLoop(eventLoop).addHandler(new UtfStringConverter())
-                .addHandler(new AbstractHandler() {
+        Endpoint endpoint =
+                new EndpointBootstrap().channelClass(NioServerSocketChannel.class).group(eventLoop).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
                     @Override
                     public void onMessageReceived(HandlerContext context, Object message) {
                         context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");

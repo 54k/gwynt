@@ -1,7 +1,6 @@
 package io.gwynt.core;
 
 import io.gwynt.core.nio.AbstractNioChannel;
-import io.gwynt.core.nio.NioEventLoop;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.net.InetSocketAddress;
@@ -11,10 +10,12 @@ import java.util.List;
 
 public class EndpointBootstrap implements Endpoint {
 
-    protected EventLoopGroup eventLoop = new NioEventLoop();
-    protected List<Handler> handlers = new ArrayList<>();
-    protected ChannelFactory channelFactory = new DefaultChannelFactory();
-    protected Class<? extends Channel> channelClazz;
+    private EventLoopGroup primaryGroup;
+    private EventLoopGroup secondaryGroup;
+
+    private List<Handler> handlers = new ArrayList<>();
+    private ChannelFactory channelFactory = new DefaultChannelFactory();
+    private Class<? extends Channel> channelClazz;
 
     @Override
     public Endpoint addHandler(Handler handler) {
@@ -37,17 +38,17 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public Iterable<Handler> getHandlers() {
+    public Iterable<Handler> handlers() {
         return Collections.unmodifiableList(handlers);
     }
 
     @Override
-    public ChannelFactory getChannelFactory() {
+    public ChannelFactory channelFactory() {
         return channelFactory;
     }
 
     @Override
-    public Endpoint setChannelFactory(ChannelFactory channelFactory) {
+    public Endpoint channelFactory(ChannelFactory channelFactory) {
         if (channelFactory == null) {
             throw new IllegalArgumentException("connectionFactory");
         }
@@ -57,22 +58,41 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public EventLoopGroup getEventLoop() {
-        return eventLoop;
+    public EventLoopGroup primaryGroup() {
+        return primaryGroup;
     }
 
     @Override
-    public Endpoint setEventLoop(EventLoopGroup eventLoop) {
-        if (eventLoop == null) {
-            throw new IllegalArgumentException("eventLoop");
+    public EventLoopGroup secondaryGroup() {
+        return secondaryGroup;
+    }
+
+    @Override
+    public Endpoint group(EventLoopGroup group) {
+        return group(group, group);
+    }
+
+    @Override
+    public Endpoint group(EventLoopGroup primaryGroup, EventLoopGroup secondaryGroup) {
+        if (primaryGroup == null) {
+            throw new IllegalArgumentException("primaryGroup");
+        }
+        if (secondaryGroup == null) {
+            throw new IllegalArgumentException("secondaryGroup");
         }
 
-        this.eventLoop = eventLoop;
+        this.primaryGroup = primaryGroup;
+        this.secondaryGroup = secondaryGroup;
         return this;
     }
 
     @Override
-    public Endpoint setChannelClass(Class<? extends Channel> channel) {
+    public Class<? extends Channel> channelClass() {
+        return channelClazz;
+    }
+
+    @Override
+    public Endpoint channelClass(Class<? extends Channel> channel) {
         if (channel == null) {
             throw new IllegalArgumentException("channel");
         }
@@ -81,8 +101,12 @@ public class EndpointBootstrap implements Endpoint {
     }
 
     @Override
-    public Class<? extends Channel> getChannelClass() {
-        return channelClazz;
+    public Channel newChannel() {
+        try {
+            return initAndRegisterChannel().sync().channel();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -118,20 +142,40 @@ public class EndpointBootstrap implements Endpoint {
         if (channel instanceof ServerChannel) {
             channel.pipeline().addFirst(new DefaultChannelAcceptor());
         } else {
-            for (Handler handler : getHandlers()) {
+            for (Handler handler : handlers()) {
                 channel.pipeline().addLast(handler);
             }
         }
-        return eventLoop.register(channel);
+        return primaryGroup.register(channel);
     }
 
     @Override
     public Endpoint shutdown() {
-        eventLoop.shutdown();
+        primaryGroup.shutdown();
+        secondaryGroup.shutdown();
         return this;
     }
 
-    private class DefaultChannelFactory implements ChannelFactory<AbstractNioChannel> {
+    private final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
+
+        @Override
+        public void onMessageReceived(HandlerContext context, Channel channel) {
+            for (Handler handler : handlers()) {
+                channel.pipeline().addLast(handler);
+            }
+
+            channel.register(secondaryGroup.next()).addListener(new ChannelFutureListener() {
+                @Override
+                public void onComplete(ChannelFuture channelFuture) {
+                    if (channelFuture.channel().config().isAutoRead()) {
+                        channelFuture.channel().read();
+                    }
+                }
+            });
+        }
+    }
+
+    private final class DefaultChannelFactory implements ChannelFactory<AbstractNioChannel> {
 
         @Override
         public AbstractNioChannel createChannel(Class<? extends AbstractNioChannel> channelClazz) {
@@ -140,25 +184,6 @@ public class EndpointBootstrap implements Endpoint {
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
-        }
-    }
-
-    private class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
-
-        @Override
-        public void onMessageReceived(HandlerContext context, Channel channel) {
-            for (Handler handler : getHandlers()) {
-                channel.pipeline().addLast(handler);
-            }
-
-            channel.register(eventLoop.next()).addListener(new ChannelFutureListener() {
-                @Override
-                public void onComplete(ChannelFuture channelFuture) {
-                    if (channelFuture.channel().config().isAutoRead()) {
-                        channelFuture.channel().read();
-                    }
-                }
-            });
         }
     }
 }
