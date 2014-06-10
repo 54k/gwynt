@@ -20,17 +20,17 @@ public class DefaultEnvelope<V, A extends SocketAddress> implements Envelope<V, 
 
     @Override
     public V content() {
-        return null;
+        return content;
     }
 
     @Override
     public A recipient() {
-        return null;
+        return recipient;
     }
 
     @Override
     public A sender() {
-        return null;
+        return sender;
     }
 
 }
