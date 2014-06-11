@@ -32,6 +32,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             // Do nothing.
         }
     };
+    private final Promise<Void> shutdownPromise = new DefaultPromise<>();
     private final boolean wakeUpForTask;
     private final Executor executor;
     private int executedTasks = 0;
@@ -252,6 +253,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         taskQueue.remove(task);
     }
 
+    @Deprecated
     @Override
     public void shutdown() {
         if (isShutdown()) {
@@ -285,7 +287,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     public void execute(Runnable command) {
         addTask(command);
         if (state == ST_NOT_STARTED) {
-            runThread();
+            startThread();
         }
 
         if (wakeUpForTask && wakeUpForTask(command)) {
@@ -308,20 +310,27 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         }
     }
 
-    private void runThread() {
-        STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_STARTED);
+    private void startThread() {
+        if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
+            delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
+                    ScheduledFutureTask.triggerTime(TimeUnit.SECONDS.toNanos(5)), TimeUnit.SECONDS.toNanos(5), delayedTaskQueue));
+            doStartThread();
+        }
+    }
 
+    private void doStartThread() {
+        assert thread == null;
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 SingleThreadEventExecutor.this.thread = Thread.currentThread();
-                delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
-                        ScheduledFutureTask.triggerTime(TimeUnit.SECONDS.toNanos(5)), TimeUnit.SECONDS.toNanos(5), delayedTaskQueue));
+
                 try {
                     SingleThreadEventExecutor.this.run();
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
                 }
+
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_NOT_STARTED);
             }
         });

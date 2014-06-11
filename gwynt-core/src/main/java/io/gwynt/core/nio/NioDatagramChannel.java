@@ -391,7 +391,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
                 src = (ByteBuffer) message;
                 remoteAddress = null;
             } else {
-                throw new ChannelException("Unsupported message type");
+                throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
             try {
