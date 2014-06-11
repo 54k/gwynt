@@ -278,7 +278,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     }
 
     @Override
-    public DatagramChannel javaChannel() {
+    protected DatagramChannel javaChannel() {
         return (DatagramChannel) super.javaChannel();
     }
 

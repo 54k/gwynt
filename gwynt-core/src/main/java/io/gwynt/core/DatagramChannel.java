@@ -12,9 +12,6 @@ public interface DatagramChannel extends Channel {
     @Override
     InetSocketAddress getRemoteAddress();
 
-    @Override
-    java.nio.channels.DatagramChannel javaChannel();
-
     ChannelFuture joinGroup(InetAddress multicastAddress);
 
     ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface);

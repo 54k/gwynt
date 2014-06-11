@@ -173,8 +173,7 @@ public abstract class AbstractChannel implements Channel {
         return eventLoop.register(this, newChannelPromise());
     }
 
-    @Override
-    public Object javaChannel() {
+    protected Object javaChannel() {
         return ch;
     }
 
