@@ -8,6 +8,7 @@ import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.EventLoopGroup;
+import io.gwynt.core.codec.ByteToMessageDecoder;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
@@ -19,7 +20,9 @@ import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -48,19 +51,7 @@ public class GwyntSimpleChatServer implements Runnable {
                 new EndpointBootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
-                        channel.pipeline().addLast(new AbstractHandler<String, Object>() {
-                            private StringBuilder buffer = new StringBuilder();
-
-                            @Override
-                            public void onMessageReceived(HandlerContext context, String message) {
-                                buffer.append(message);
-                                if (message.lastIndexOf("\n") > -1) {
-                                    buffer.trimToSize();
-                                    context.fireMessageReceived(buffer.toString());
-                                    buffer.delete(0, buffer.length());
-                                }
-                            }
-                        });
+                        channel.pipeline().addFirst(new MessageDecoder());
                         channel.pipeline().addLast(chatHandler);
                     }
                 });
@@ -100,7 +91,7 @@ public class GwyntSimpleChatServer implements Runnable {
             }
         });
 
-        for (int i = 0; i < 5000; i++) {
+        for (int i = 0; i < 1000; i++) {
             client.connect("localhost", port);
         }
     }
@@ -238,6 +229,24 @@ public class GwyntSimpleChatServer implements Runnable {
                 }
             } else {
                 channels.write(context.channel() + " wrote: " + message);
+            }
+        }
+    }
+
+    private class MessageDecoder extends ByteToMessageDecoder {
+
+        private StringBuilder buffer = new StringBuilder();
+
+        @Override
+        protected void decode(HandlerContext context, ByteBuffer message, List<Object> out) {
+            while (message.hasRemaining()) {
+                char c = (char) message.get();
+                buffer.append(c);
+                if (c == '\n') {
+                    buffer.trimToSize();
+                    out.add(buffer.toString());
+                    buffer.delete(0, buffer.length());
+                }
             }
         }
     }
