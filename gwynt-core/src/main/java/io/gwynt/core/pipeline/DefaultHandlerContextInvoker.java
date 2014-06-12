@@ -93,36 +93,16 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         }
     }
 
+    private static void invokeOnDisconnectNow(HandlerContext context, ChannelPromise channelPromise) {
+        try {
+            context.handler().onDisconnect(context, channelPromise);
+        } catch (Throwable e) {
+            context.handler().onExceptionCaught(context, e);
+        }
+    }
+
     private static void invokeOnExceptionCaughtNow(HandlerContext context, Throwable e) {
         context.handler().onExceptionCaught(context, e);
-    }
-
-    @Override
-    public void invokeOnHandlerAdded(final HandlerContext context) {
-        if (executor.inExecutorThread()) {
-            invokeOnHandlerAddedNow(context);
-        } else {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    invokeOnHandlerAddedNow(context);
-                }
-            });
-        }
-    }
-
-    @Override
-    public void invokeOnHandlerRemoved(final HandlerContext context) {
-        if (executor.inExecutorThread()) {
-            invokeOnHandlerRemovedNow(context);
-        } else {
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    invokeOnHandlerRemovedNow(context);
-                }
-            });
-        }
     }
 
     @Override
@@ -257,6 +237,25 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
                     @Override
                     public void run() {
                         invokeOnCloseNow(context);
+                    }
+                };
+            }
+            executor.execute(event);
+        }
+    }
+
+    @Override
+    public void invokeOnDisconnect(final HandlerContext context, final ChannelPromise channelPromise) {
+        if (executor.inExecutorThread()) {
+            invokeOnDisconnectNow(context, channelPromise);
+        } else {
+            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            Runnable event = dctx.disconnectEvent;
+            if (event == null) {
+                dctx.disconnectEvent = event = new Runnable() {
+                    @Override
+                    public void run() {
+                        invokeOnDisconnectNow(context, channelPromise);
                     }
                 };
             }

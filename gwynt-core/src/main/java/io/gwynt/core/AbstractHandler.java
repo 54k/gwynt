@@ -53,6 +53,11 @@ public abstract class AbstractHandler<I, O> implements Handler<I, O> {
     }
 
     @Override
+    public void onDisconnect(HandlerContext context, ChannelPromise channelPromise) {
+        context.disconnect(channelPromise);
+    }
+
+    @Override
     public void onExceptionCaught(HandlerContext context, Throwable e) {
         context.fireExceptionCaught(e);
     }

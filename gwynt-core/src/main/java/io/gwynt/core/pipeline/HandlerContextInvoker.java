@@ -4,10 +4,6 @@ import io.gwynt.core.ChannelPromise;
 
 public interface HandlerContextInvoker {
 
-    void invokeOnHandlerAdded(HandlerContext context);
-
-    void invokeOnHandlerRemoved(HandlerContext context);
-
     void invokeOnRegistered(HandlerContext context);
 
     void invokeOnUnregistered(HandlerContext context);
@@ -23,6 +19,8 @@ public interface HandlerContextInvoker {
     void invokeOnClosing(HandlerContext context, ChannelPromise channelPromise);
 
     void invokeOnClosed(HandlerContext context);
+
+    void invokeOnDisconnect(HandlerContext context, ChannelPromise channelPromise);
 
     void invokeOnExceptionCaught(HandlerContext context, Throwable e);
 }

@@ -85,6 +85,13 @@ public interface Handler<I, O> {
     void onClose(HandlerContext context);
 
     /**
+     * Called when {@link Channel} is requested to disconnect
+     *
+     * @param context {@link io.gwynt.core.pipeline.HandlerContext}
+     */
+    void onDisconnect(HandlerContext context, ChannelPromise channelPromise);
+
+    /**
      * Called when error occurs
      *
      * @param context {@link io.gwynt.core.pipeline.HandlerContext}

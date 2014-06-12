@@ -19,11 +19,15 @@ public interface HandlerContext {
 
     void fireOpen();
 
+    void fireMessageReceived(Object message);
+
+    void fireClose();
+
+    void fireExceptionCaught(Throwable e);
+
     ChannelFuture read();
 
     ChannelFuture read(ChannelPromise channelPromise);
-
-    void fireMessageReceived(Object message);
 
     ChannelFuture write(Object message);
 
@@ -33,9 +37,9 @@ public interface HandlerContext {
 
     ChannelFuture close(ChannelPromise channelPromise);
 
-    void fireClose();
+    ChannelFuture disconnect();
 
-    void fireExceptionCaught(Throwable e);
+    ChannelFuture disconnect(ChannelPromise channelPromise);
 
     boolean isRemoved();
 }

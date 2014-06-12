@@ -5,12 +5,13 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 
-public class DefaultHandlerContext implements HandlerContext {
+public final class DefaultHandlerContext implements HandlerContext {
 
     volatile Runnable registeredEvent;
     volatile Runnable unregisteredEvent;
     volatile Runnable openEvent;
     volatile Runnable closeEvent;
+    volatile Runnable disconnectEvent;
     volatile Runnable readEvent;
     volatile boolean removed = true;
 
@@ -93,6 +94,24 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
+    public void fireMessageReceived(Object message) {
+        DefaultHandlerContext next = findContextInbound();
+        next.invoker().invokeOnMessageReceived(next, message);
+    }
+
+    @Override
+    public void fireClose() {
+        DefaultHandlerContext next = findContextInbound();
+        next.invoker().invokeOnClosed(next);
+    }
+
+    @Override
+    public void fireExceptionCaught(Throwable e) {
+        DefaultHandlerContext next = findContextInbound();
+        next.invoker().invokeOnExceptionCaught(next, e);
+    }
+
+    @Override
     public ChannelFuture read() {
         return read(channel.newChannelPromise());
     }
@@ -102,12 +121,6 @@ public class DefaultHandlerContext implements HandlerContext {
         DefaultHandlerContext prev = findContextOutbound();
         prev.invoker().invokeOnRead(prev, channelPromise);
         return channelPromise;
-    }
-
-    @Override
-    public void fireMessageReceived(Object message) {
-        DefaultHandlerContext next = findContextInbound();
-        next.invoker().invokeOnMessageReceived(next, message);
     }
 
     @Override
@@ -135,15 +148,15 @@ public class DefaultHandlerContext implements HandlerContext {
     }
 
     @Override
-    public void fireClose() {
-        DefaultHandlerContext next = findContextInbound();
-        next.invoker().invokeOnClosed(next);
+    public ChannelFuture disconnect() {
+        return disconnect(channel.newChannelPromise());
     }
 
     @Override
-    public void fireExceptionCaught(Throwable e) {
-        DefaultHandlerContext next = findContextInbound();
-        next.invoker().invokeOnExceptionCaught(next, e);
+    public ChannelFuture disconnect(ChannelPromise channelPromise) {
+        DefaultHandlerContext prev = findContextOutbound();
+        prev.invoker().invokeOnClosing(prev, channelPromise);
+        return channelPromise;
     }
 
     @Override

@@ -591,6 +591,11 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         public void onClosing(HandlerContext context, ChannelPromise channelPromise) {
             context.channel().unsafe().close(channelPromise);
         }
+
+        @Override
+        public void onDisconnect(HandlerContext context, ChannelPromise channelPromise) {
+            context.channel().unsafe().disconnect(channelPromise);
+        }
     }
 
     private static class TailHandler extends AbstractHandler {
