@@ -72,20 +72,17 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
     }
 
     private void callDecode(HandlerContext context) {
-        Throwable error = null;
         try {
             decode(context, messageBuffer, out);
+        } catch (DecoderException e) {
+            throw e;
         } catch (Throwable e) {
-            error = e;
+            throw new DecoderException(e);
         } finally {
             for (Object m : out) {
                 context.fireMessageReceived(m);
             }
             out.clear();
-
-            if (error != null) {
-                context.fireExceptionCaught(new DecoderException(error));
-            }
         }
     }
 
