@@ -33,7 +33,7 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
 
     private void initMessageBuffer(HandlerContext context, byte[] message) {
         ByteBufferPool allocator = context.channel().config().getByteBufferPool();
-        ByteBuffer alloc = allocator.acquire(message.length, false);
+        ByteBuffer alloc = allocator.acquire(message.length, preferDirectBuffer());
         alloc.put(message);
         alloc.flip();
         messageBuffer = alloc;
@@ -45,6 +45,10 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
         alloc.put(messageBuffer);
         allocator.release(messageBuffer);
         messageBuffer = alloc;
+    }
+
+    protected boolean preferDirectBuffer() {
+        return false;
     }
 
     @Override
