@@ -1,6 +1,5 @@
 package io.gwynt.core;
 
-import io.gwynt.core.exception.RegistrationException;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
 import java.io.IOException;

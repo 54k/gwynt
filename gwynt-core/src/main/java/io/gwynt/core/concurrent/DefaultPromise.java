@@ -1,7 +1,5 @@
 package io.gwynt.core.concurrent;
 
-import io.gwynt.core.exception.BlockingOperationException;
-
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.CancellationException;

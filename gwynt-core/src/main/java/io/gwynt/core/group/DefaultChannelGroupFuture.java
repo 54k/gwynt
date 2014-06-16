@@ -8,7 +8,6 @@ import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 import io.gwynt.core.concurrent.Promise;
-import io.gwynt.core.exception.ChannelGroupException;
 
 import java.util.ArrayList;
 import java.util.Collection;

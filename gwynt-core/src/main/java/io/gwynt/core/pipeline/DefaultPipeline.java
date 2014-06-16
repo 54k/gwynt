@@ -5,7 +5,6 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 import io.gwynt.core.concurrent.EventExecutor;
-import io.gwynt.core.exception.PipelineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

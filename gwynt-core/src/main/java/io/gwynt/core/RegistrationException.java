@@ -1,4 +1,4 @@
-package io.gwynt.core.exception;
+package io.gwynt.core;
 
 public class RegistrationException extends RuntimeException {
 

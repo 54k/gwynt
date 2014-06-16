@@ -8,7 +8,7 @@ import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.Endpoint;
 import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.EventLoopGroup;
-import io.gwynt.core.codec.ByteToMessageDecoder;
+import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
@@ -48,7 +48,7 @@ public class GwyntSimpleChatServer implements Runnable {
         channels = new DefaultChannelGroup();
 
         Endpoint endpoint =
-                new EndpointBootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new ChannelInitializer() {
+                new EndpointBootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addHandler(new UtfStringConverter())*/.addHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addFirst(new MessageDecoder());
@@ -231,11 +231,21 @@ public class GwyntSimpleChatServer implements Runnable {
                 channels.write(context.channel() + " wrote: " + message);
             }
         }
+
+        @Override
+        public void onExceptionCaught(HandlerContext context, Throwable e) {
+            GwyntSimpleChatServer.logger.error(e.getMessage(), e);
+        }
     }
 
-    private class MessageDecoder extends ByteToMessageDecoder {
+    private class MessageDecoder extends ByteToMessageCodec<String> {
 
         private StringBuilder buffer = new StringBuilder();
+
+        @Override
+        protected void encode(HandlerContext context, String message, ByteBuffer out) {
+            out.put(message.getBytes());
+        }
 
         @Override
         protected void decode(HandlerContext context, ByteBuffer message, List<Object> out) {

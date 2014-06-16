@@ -1,8 +1,8 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.DefaultChannelConfig;
-import io.gwynt.core.exception.ChannelException;
 
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;

@@ -1,9 +1,9 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.DefaultChannelConfig;
 import io.gwynt.core.FixedRecvByteBufferAllocator;
-import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
 import java.net.StandardSocketOptions;

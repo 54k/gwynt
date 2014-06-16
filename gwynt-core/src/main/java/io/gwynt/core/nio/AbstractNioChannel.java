@@ -1,9 +1,9 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.AbstractChannel;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventLoop;
-import io.gwynt.core.exception.ChannelException;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;

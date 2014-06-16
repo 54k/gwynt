@@ -1,4 +1,4 @@
-package io.gwynt.core.exception;
+package io.gwynt.core.codec;
 
 public class DecoderException extends RuntimeException {
 

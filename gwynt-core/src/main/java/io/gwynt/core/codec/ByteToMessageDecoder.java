@@ -2,7 +2,6 @@ package io.gwynt.core.codec;
 
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ByteBufferPool;
-import io.gwynt.core.exception.DecoderException;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
@@ -60,6 +59,11 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
     }
 
     private void cleanup(HandlerContext context) {
+        if (messageBuffer == null) {
+            // Already cleaned up
+            return;
+        }
+
         if (messageBuffer.hasRemaining()) {
             callDecode(context);
         }
