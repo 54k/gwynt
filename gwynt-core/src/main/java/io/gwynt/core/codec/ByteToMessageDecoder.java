@@ -11,77 +11,30 @@ import java.util.List;
 public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Object> {
 
     private final List<Object> out = new ArrayList<>();
-    private ByteBuffer messageBuffer;
+    private ByteBuffer internalBuffer;
+    private boolean decodeLast;
+
+    protected ByteBuffer internalBuffer() {
+        return internalBuffer;
+    }
 
     @Override
     public void onMessageReceived(HandlerContext context, byte[] message) {
-        boolean first = messageBuffer == null;
+        boolean first = internalBuffer == null;
 
         if (first) {
-            initMessageBuffer(context, message);
+            initInternalBuffer(context, message);
         } else {
-            if (messageBuffer.remaining() < message.length) {
-                expandMessageBuffer(context, message.length);
+            if (internalBuffer.remaining() < message.length) {
+                expandInternalBuffer(context, message.length);
             }
-            messageBuffer.mark();
-            messageBuffer.put(message);
-            messageBuffer.reset();
+            internalBuffer.mark();
+            internalBuffer.put(message);
+            internalBuffer.reset();
         }
 
-        callDecode(context);
-    }
-
-    private void initMessageBuffer(HandlerContext context, byte[] message) {
-        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
-        ByteBuffer alloc = allocator.acquire(message.length, preferDirectBuffer());
-        alloc.put(message);
-        alloc.flip();
-        messageBuffer = alloc;
-    }
-
-    private void expandMessageBuffer(HandlerContext context, int readable) {
-        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
-        ByteBuffer alloc = allocator.acquire(messageBuffer.remaining() + readable, messageBuffer.isDirect());
-        alloc.put(messageBuffer);
-        allocator.release(messageBuffer);
-        messageBuffer = alloc;
-    }
-
-    protected boolean preferDirectBuffer() {
-        return false;
-    }
-
-    @Override
-    public void onHandlerRemoved(HandlerContext context) {
-        cleanup(context);
-    }
-
-    @Override
-    public void onClose(HandlerContext context) {
-        cleanup(context);
-        context.fireClose();
-    }
-
-    private void cleanup(HandlerContext context) {
-        if (messageBuffer == null) {
-            // Already cleaned up
-            return;
-        }
-
-        if (messageBuffer.hasRemaining()) {
-            callDecode(context);
-        }
-        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
-        allocator.release(messageBuffer);
-        if (!out.isEmpty()) {
-            out.clear();
-        }
-        messageBuffer = null;
-    }
-
-    private void callDecode(HandlerContext context) {
         try {
-            decode(context, messageBuffer, out);
+            callDecode(context, internalBuffer, out);
         } catch (DecoderException e) {
             throw e;
         } catch (Throwable e) {
@@ -94,5 +47,88 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
         }
     }
 
+    private void initInternalBuffer(HandlerContext context, byte[] message) {
+        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
+        ByteBuffer alloc = allocator.acquire(message.length, preferDirectBuffer());
+        alloc.put(message);
+        alloc.flip();
+        internalBuffer = alloc;
+    }
+
+    private void expandInternalBuffer(HandlerContext context, int readable) {
+        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
+        ByteBuffer alloc = allocator.acquire(internalBuffer.remaining() + readable, internalBuffer.isDirect());
+        alloc.put(internalBuffer);
+        allocator.release(internalBuffer);
+        internalBuffer = alloc;
+    }
+
+    protected boolean preferDirectBuffer() {
+        return false;
+    }
+
+    @Override
+    public void onHandlerRemoved(HandlerContext context) {
+        if (internalBuffer == null) {
+            return;
+        }
+
+        if (internalBuffer.hasRemaining()) {
+            byte[] bytes = new byte[internalBuffer.remaining()];
+            internalBuffer.get(bytes);
+            ByteBufferPool allocator = context.channel().config().getByteBufferPool();
+            allocator.release(internalBuffer);
+            internalBuffer = null;
+            if (!out.isEmpty()) {
+                out.clear();
+            }
+            context.fireMessageReceived(bytes);
+        }
+        onHandlerRemoved0(context);
+    }
+
+    protected void onHandlerRemoved0(HandlerContext context) {
+    }
+
+    @Override
+    public void onClose(HandlerContext context) {
+        if (internalBuffer == null) {
+            return;
+        }
+
+        decodeLast = true;
+        if (internalBuffer.hasRemaining()) {
+            callDecode(context, internalBuffer, out);
+        }
+        ByteBufferPool allocator = context.channel().config().getByteBufferPool();
+        allocator.release(internalBuffer);
+        if (!out.isEmpty()) {
+            for (Object m : out) {
+                context.fireMessageReceived(m);
+            }
+            out.clear();
+        }
+        internalBuffer = null;
+        context.fireClose();
+    }
+
+    protected void callDecode(HandlerContext context, ByteBuffer in, List<Object> out) {
+        try {
+            if (decodeLast) {
+                decodeLast(context, in, out);
+            } else {
+                decode(context, in, out);
+            }
+        } catch (DecoderException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new DecoderException(e);
+        }
+    }
+
     protected abstract void decode(HandlerContext context, ByteBuffer message, List<Object> out);
+
+    protected void decodeLast(HandlerContext context, ByteBuffer message, List<Object> out) {
+        decode(context, message, out);
+    }
 }
