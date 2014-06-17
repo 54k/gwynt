@@ -61,7 +61,6 @@ public abstract class StateDecoder<S> extends ByteToMessageDecoder {
                             throw new DecoderException(getClass().getSimpleName() + "#decode did not decode anything");
                         }
                     }
-
                 } catch (Signal s) {
                     if (checkpoint >= 0) {
                         in.position(checkpoint);
@@ -71,6 +70,10 @@ public abstract class StateDecoder<S> extends ByteToMessageDecoder {
 
                 if (oldPosition == in.position() && state == oldState) {
                     throw new DecoderException(getClass().getSimpleName() + "#decode did not decode anything");
+                }
+
+                if (isSingleDecode()) {
+                    break;
                 }
             }
         } catch (DecoderException e) {

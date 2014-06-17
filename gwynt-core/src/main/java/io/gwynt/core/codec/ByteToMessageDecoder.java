@@ -13,6 +13,15 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
     private final List<Object> out = new ArrayList<>();
     private ByteBuffer internalBuffer;
     private boolean decodeLast;
+    private boolean singleDecode;
+
+    protected boolean isSingleDecode() {
+        return singleDecode;
+    }
+
+    protected void setSingleDecode(boolean singleDecode) {
+        this.singleDecode = singleDecode;
+    }
 
     protected ByteBuffer internalBuffer() {
         return internalBuffer;
@@ -34,7 +43,19 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
         }
 
         try {
-            callDecode(context, internalBuffer, out);
+            while (internalBuffer.hasRemaining()) {
+                int oldPosition = internalBuffer.position();
+                int oldSize = out.size();
+                callDecode(context, internalBuffer, out);
+
+                if (oldSize == out.size() && oldPosition == internalBuffer.position()) {
+                    throw new DecoderException(getClass().getSimpleName() + "#decode did not decode anything");
+                }
+
+                if (isSingleDecode()) {
+                    break;
+                }
+            }
         } catch (DecoderException e) {
             throw e;
         } catch (Throwable e) {
