@@ -11,6 +11,7 @@
         <module>gwynt-core</module>
         <!--<module>gwynt-websocket</module>-->
         <module>gwynt-example</module>
+        <module>gwynt-http</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -28,17 +29,16 @@
                 <artifactId>gwynt-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.gwynt</groupId>
+                <artifactId>gwynt-http</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!--<dependency>-->
             <!--<groupId>io.gwynt</groupId>-->
             <!--<artifactId>gwynt-websocket</artifactId>-->
             <!--<version>${project.version}</version>-->
             <!--</dependency>-->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${junit.version}</version>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -47,6 +47,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

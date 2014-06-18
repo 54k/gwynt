@@ -21,6 +21,21 @@ public abstract class AbstractConstant<T extends AbstractConstant<T>> implements
     }
 
     @Override
+    public boolean equals(Object o) {
+        return this == o;
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public String toString() {
+        return name();
+    }
+
+    @Override
     public int compareTo(Constant<T> o) {
         if (this == o) {
             return 0;
