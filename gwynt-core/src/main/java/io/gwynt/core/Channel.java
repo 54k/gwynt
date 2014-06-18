@@ -38,6 +38,8 @@ public interface Channel {
 
     ChannelFuture read();
 
+    ChannelFuture write(Object message, ChannelPromise channelPromise);
+
     ChannelFuture write(Object message);
 
     ChannelFuture close();

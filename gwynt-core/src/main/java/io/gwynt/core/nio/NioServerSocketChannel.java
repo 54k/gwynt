@@ -24,6 +24,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
     }
 
     @Override
+    public ChannelFuture write(Object message, ChannelPromise channelPromise) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public ChannelFuture write(Object message) {
         throw new UnsupportedOperationException();
     }

@@ -140,10 +140,14 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public ChannelFuture write(Object message) {
-        ChannelPromise channelPromise = newChannelPromise();
+    public ChannelFuture write(Object message, ChannelPromise channelPromise) {
         pipeline.fireMessageSent(message, channelPromise);
         return channelPromise;
+    }
+
+    @Override
+    public ChannelFuture write(Object message) {
+        return write(message, newChannelPromise());
     }
 
     @Override
