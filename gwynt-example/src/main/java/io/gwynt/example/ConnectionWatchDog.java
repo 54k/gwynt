@@ -40,11 +40,11 @@ public class ConnectionWatchDog extends AbstractHandler implements ChannelFuture
 
     @Override
     public void onOpen(HandlerContext context) {
-//        if (!connected) {
-            connected = true;
-            address = ((InetSocketAddress) context.channel().getRemoteAddress());
-            context.fireOpen();
-//        }
+        //        if (!connected) {
+        connected = true;
+        address = ((InetSocketAddress) context.channel().getRemoteAddress());
+        context.fireOpen();
+        //        }
     }
 
     @Override

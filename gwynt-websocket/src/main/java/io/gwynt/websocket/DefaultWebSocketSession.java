@@ -88,7 +88,7 @@ public class DefaultWebSocketSession implements WebSocketSession {
         frame.setFin(fin);
         frame.setPayload(data);
         frame.setOpcode(opcode);
-//        ioSession.write(frame);
+        //        ioSession.write(frame);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class DefaultWebSocketSession implements WebSocketSession {
 
     public void close(CloseFrame frame) {
         if (!ioSession.isPendingClose()) {
-//            ioSession.write(frame);
+            //            ioSession.write(frame);
             ioSession.close();
         }
     }

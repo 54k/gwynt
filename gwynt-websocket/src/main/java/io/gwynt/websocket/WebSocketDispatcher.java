@@ -1,12 +1,12 @@
 package io.gwynt.websocket;
 
-import org.apache.commons.codec.binary.StringUtils;
-import io.gwynt.core.IoSession;
 import io.gwynt.core.IoHandler;
-import org.gwynt.core.filterchain.Decoder;
+import io.gwynt.core.IoSession;
 import io.gwynt.websocket.protocol.Frame;
 import io.gwynt.websocket.protocol.FrameUtils;
 import io.gwynt.websocket.protocol.WebSocketHandshakeCodec;
+import org.apache.commons.codec.binary.StringUtils;
+import org.gwynt.core.filterchain.Decoder;
 
 public class WebSocketDispatcher implements IoHandler<Frame> {
 
