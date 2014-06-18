@@ -1,27 +1,28 @@
 package io.gwynt.core.codec;
 
 import io.gwynt.core.pipeline.HandlerContext;
+import io.gwynt.core.util.Signal;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public abstract class StateDecoder<S> extends ByteToMessageDecoder {
+public abstract class ReplayingDecoder<S> extends ByteToMessageDecoder {
 
-    private static final Signal SIGNAL = new Signal();
+    private static final Signal REPLAY = Signal.valueOf(ReplayingDecoder.class, "REPLAY");
 
     private S state;
     private int checkpoint = -1;
 
-    protected StateDecoder() {
+    protected ReplayingDecoder() {
         this(null);
     }
 
-    protected StateDecoder(S state) {
+    protected ReplayingDecoder(S state) {
         this.state = state;
     }
 
     protected static void signal() {
-        throw SIGNAL;
+        throw REPLAY;
     }
 
     protected S state(S state) {
@@ -62,6 +63,8 @@ public abstract class StateDecoder<S> extends ByteToMessageDecoder {
                         }
                     }
                 } catch (Signal s) {
+                    REPLAY.expect(s);
+
                     if (checkpoint >= 0) {
                         in.position(checkpoint);
                     }
@@ -80,12 +83,6 @@ public abstract class StateDecoder<S> extends ByteToMessageDecoder {
             throw e;
         } catch (Throwable e) {
             throw new DecoderException(e);
-        }
-    }
-
-    private final static class Signal extends Error {
-        private Signal() {
-            setStackTrace(new StackTraceElement[0]);
         }
     }
 }
