@@ -4,6 +4,7 @@ import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.util.Signal;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ReplayingDecoder<S> extends ByteToMessageDecoder {
@@ -42,6 +43,28 @@ public abstract class ReplayingDecoder<S> extends ByteToMessageDecoder {
     protected void checkpoint(S state) {
         checkpoint();
         state(state);
+    }
+
+    @Override
+    public void onClose(HandlerContext context) {
+        List<Object> out = new ArrayList<>();
+        try {
+            callDecode(context, internalBuffer(), out);
+            decodeLast(context, internalBuffer(), out);
+        } catch (Signal s) {
+            // ignore
+            REPLAY.expect(s);
+        } catch (DecoderException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new DecoderException(e);
+        } finally {
+            for (Object m : out) {
+                context.fireMessageReceived(m);
+            }
+            out.clear();
+        }
+        context.fireClose();
     }
 
     @Override
