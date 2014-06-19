@@ -4,7 +4,7 @@ import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Endpoint;
+import io.gwynt.core.IOReactor;
 import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +18,10 @@ public class ConnectionWatchDog extends AbstractHandler implements ChannelFuture
     private boolean connected;
     private boolean shouldReconnect = true;
     private InetSocketAddress address;
-    private Endpoint endpoint;
+    private IOReactor reactor;
 
-    public ConnectionWatchDog(Endpoint endpoint) {
-        this.endpoint = endpoint;
+    public ConnectionWatchDog(IOReactor reactor) {
+        this.reactor = reactor;
     }
 
     @Override
@@ -67,7 +67,7 @@ public class ConnectionWatchDog extends AbstractHandler implements ChannelFuture
 
     private void reconnect() {
         logger.info("Reconnecting to {}", address);
-        endpoint.connect(address.getHostName(), address.getPort()).addListener(this);
+        reactor.connect(address.getHostName(), address.getPort()).addListener(this);
     }
 
     @Override

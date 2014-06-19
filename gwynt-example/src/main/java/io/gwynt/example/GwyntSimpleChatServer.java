@@ -5,9 +5,8 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
-import io.gwynt.core.Endpoint;
-import io.gwynt.core.EndpointBootstrap;
 import io.gwynt.core.EventLoopGroup;
+import io.gwynt.core.IOReactor;
 import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
@@ -47,8 +46,8 @@ public class GwyntSimpleChatServer implements Runnable {
         final ChatHandler chatHandler = new ChatHandler();
         channels = new DefaultChannelGroup();
 
-        Endpoint endpoint =
-                new EndpointBootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addHandler(new UtfStringConverter())*/.addHandler(new ChannelInitializer() {
+        IOReactor endpoint =
+                new IOReactor().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addHandler(new UtfStringConverter())*/.addHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addFirst(new MessageDecoder());
@@ -74,7 +73,7 @@ public class GwyntSimpleChatServer implements Runnable {
     }
 
     private void createBots(int port) {
-        Endpoint client = new EndpointBootstrap().group(eventLoop).channelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
+        IOReactor client = new IOReactor().group(eventLoop).channelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
             @Override
             public void onOpen(final HandlerContext context) {
                 context.write("hello\r\n").addListener(new ChannelFutureListener() {

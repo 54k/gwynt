@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class EndpointBootstrap implements Endpoint {
+public final class IOReactor {
 
     private EventLoopGroup primaryGroup;
     private EventLoopGroup secondaryGroup;
@@ -17,8 +17,7 @@ public class EndpointBootstrap implements Endpoint {
     private ChannelFactory channelFactory = new DefaultChannelFactory();
     private Class<? extends Channel> channelClazz;
 
-    @Override
-    public Endpoint addHandler(Handler handler) {
+    public IOReactor addHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -27,8 +26,7 @@ public class EndpointBootstrap implements Endpoint {
         return this;
     }
 
-    @Override
-    public Endpoint removeHandler(Handler handler) {
+    public IOReactor removeHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -37,18 +35,15 @@ public class EndpointBootstrap implements Endpoint {
         return this;
     }
 
-    @Override
     public Iterable<Handler> handlers() {
         return Collections.unmodifiableList(handlers);
     }
 
-    @Override
     public ChannelFactory channelFactory() {
         return channelFactory;
     }
 
-    @Override
-    public Endpoint channelFactory(ChannelFactory channelFactory) {
+    public IOReactor channelFactory(ChannelFactory channelFactory) {
         if (channelFactory == null) {
             throw new IllegalArgumentException("connectionFactory");
         }
@@ -57,23 +52,19 @@ public class EndpointBootstrap implements Endpoint {
         return this;
     }
 
-    @Override
     public EventLoopGroup primaryGroup() {
         return primaryGroup;
     }
 
-    @Override
     public EventLoopGroup secondaryGroup() {
         return secondaryGroup;
     }
 
-    @Override
-    public Endpoint group(EventLoopGroup group) {
+    public IOReactor group(EventLoopGroup group) {
         return group(group, group);
     }
 
-    @Override
-    public Endpoint group(EventLoopGroup primaryGroup, EventLoopGroup secondaryGroup) {
+    public IOReactor group(EventLoopGroup primaryGroup, EventLoopGroup secondaryGroup) {
         if (primaryGroup == null) {
             throw new IllegalArgumentException("primaryGroup");
         }
@@ -86,13 +77,11 @@ public class EndpointBootstrap implements Endpoint {
         return this;
     }
 
-    @Override
     public Class<? extends Channel> channelClass() {
         return channelClazz;
     }
 
-    @Override
-    public Endpoint channelClass(Class<? extends Channel> channel) {
+    public IOReactor channelClass(Class<? extends Channel> channel) {
         if (channel == null) {
             throw new IllegalArgumentException("channel");
         }
@@ -100,7 +89,6 @@ public class EndpointBootstrap implements Endpoint {
         return this;
     }
 
-    @Override
     public Channel newChannel() {
         try {
             return initAndRegisterChannel().sync().channel();
@@ -109,31 +97,16 @@ public class EndpointBootstrap implements Endpoint {
         }
     }
 
-    @Override
     public ChannelFuture bind(final int port) {
-        ChannelFuture regFuture = initAndRegisterChannel();
-        try {
-            regFuture.sync();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return regFuture.channel().bind(new InetSocketAddress(port));
+        return newChannel().bind(new InetSocketAddress(port));
     }
 
-    @Override
     public ChannelFuture connect(String host, int port) {
         return connect(new InetSocketAddress(host, port));
     }
 
-    @Override
     public ChannelFuture connect(InetSocketAddress address) {
-        ChannelFuture regFuture = initAndRegisterChannel();
-        try {
-            regFuture.sync();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        return regFuture.channel().connect(address);
+        return newChannel().connect(address);
     }
 
     @SuppressWarnings("unchecked")
@@ -149,8 +122,7 @@ public class EndpointBootstrap implements Endpoint {
         return primaryGroup.register(channel);
     }
 
-    @Override
-    public Endpoint shutdown() {
+    public IOReactor shutdown() {
         primaryGroup.shutdown();
         secondaryGroup.shutdown();
         return this;
@@ -159,7 +131,7 @@ public class EndpointBootstrap implements Endpoint {
     private final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
 
         @Override
-        public void onMessageReceived(HandlerContext context, Channel channel) {
+        public void onMessageReceived(final HandlerContext context, Channel channel) {
             for (Handler handler : handlers()) {
                 channel.pipeline().addLast(handler);
             }

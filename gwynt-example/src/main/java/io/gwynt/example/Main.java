@@ -6,7 +6,7 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
-import io.gwynt.core.EndpointBootstrap;
+import io.gwynt.core.IOReactor;
 import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoop;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -27,11 +27,11 @@ import java.nio.charset.Charset;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        //        new NettySimpleServer().run();
-        //        new GwyntSimpleServer().run();
+        new NettySimpleServer().run();
+        new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 
-        new GwyntSimpleChatServer().run();
+        //        new GwyntSimpleChatServer().run();
 
         //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
         //            @Override
@@ -85,14 +85,14 @@ public class Main {
         //                            tcpEndpoint.bind(3002).await(10, TimeUnit.MILLISECONDS);
         //                        }
 
-        new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
+        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 context.write(message);
             }
         }).bind(3002).await();
 
-        new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
+        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
             @Override
             public void onOpen(HandlerContext context) {
                 context.write(new Datagram(ByteBuffer.wrap("datagram".getBytes()), context.channel().getRemoteAddress()));
@@ -105,7 +105,7 @@ public class Main {
             }
         }).connect("localhost", 3002).await();
 
-        Channel channel = new EndpointBootstrap().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(sc).addHandler(new AbstractHandler() {
+        Channel channel = new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(sc).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 System.out.println(message);
