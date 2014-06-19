@@ -3,7 +3,7 @@ package io.gwynt.http;
 import io.gwynt.core.util.AbstractConstant;
 import io.gwynt.core.util.ConstantPool;
 
-public class HttpMethod extends AbstractConstant<HttpMethod> {
+final class HttpMethod extends AbstractConstant<HttpMethod> {
 
     public static final HttpMethod GET = pool.valueOf("GET");
     public static final HttpMethod POST = pool.valueOf("POST");
@@ -18,5 +18,9 @@ public class HttpMethod extends AbstractConstant<HttpMethod> {
 
     private HttpMethod(int id, String name) {
         super(id, name);
+    }
+
+    static HttpMethod valueOf(String name) {
+        return pool.valueOf(name);
     }
 }
