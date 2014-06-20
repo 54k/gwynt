@@ -22,7 +22,7 @@ public abstract class ReplayingDecoder<S> extends ByteToMessageDecoder {
         this.state = state;
     }
 
-    protected static void replay() {
+    protected void replay() {
         throw REPLAY;
     }
 
