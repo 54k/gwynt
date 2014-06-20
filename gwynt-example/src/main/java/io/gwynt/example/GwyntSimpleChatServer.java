@@ -11,6 +11,8 @@ import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
+import io.gwynt.core.group.ChannelGroupFuture;
+import io.gwynt.core.group.ChannelGroupFutureListener;
 import io.gwynt.core.group.DefaultChannelGroup;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
@@ -227,7 +229,12 @@ public class GwyntSimpleChatServer implements Runnable {
                     channels.add(context.channel());
                 }
             } else {
-                channels.write(context.channel() + " wrote: " + message);
+                channels.write(context.channel() + " wrote: " + message).addListener(new ChannelGroupFutureListener() {
+                    @Override
+                    public void onComplete(ChannelGroupFuture future) {
+                        System.out.println(future);
+                    }
+                });
             }
         }
 

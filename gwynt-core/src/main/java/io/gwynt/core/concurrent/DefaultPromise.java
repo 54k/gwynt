@@ -32,7 +32,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     public DefaultPromise(EventExecutor eventExecutor) {
-        this.eventExecutor = eventExecutor;
+        this.eventExecutor = eventExecutor != null ? eventExecutor : GlobalEventExecutor.INSTANCE;
     }
 
     @Override

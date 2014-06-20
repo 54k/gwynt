@@ -1,12 +1,12 @@
 package io.gwynt.core.group;
 
-import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureGroup;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.concurrent.FutureListener;
 
 import java.util.concurrent.TimeUnit;
 
-public interface ChannelGroupFuture extends Future<Void>, Iterable<ChannelFuture> {
+public interface ChannelGroupFuture extends ChannelFutureGroup {
 
     ChannelGroup group();
 

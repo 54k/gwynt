@@ -1,12 +1,13 @@
-package io.gwynt.core.group;
+package io.gwynt.core.util;
 
 import java.util.Iterator;
 
-public class CombinedIterator<E> implements Iterator<E> {
+public final class CombinedIterator<E> implements Iterator<E> {
 
     private Iterator<E>[] iterators;
     private int position = 0;
 
+    @SafeVarargs
     public CombinedIterator(Iterator<E>... iterators) {
         if (iterators == null || iterators.length == 0) {
             throw new IllegalArgumentException("Empty iterators");

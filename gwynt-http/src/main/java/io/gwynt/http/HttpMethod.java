@@ -9,6 +9,7 @@ final class HttpMethod extends AbstractConstant<HttpMethod> {
     public static final HttpMethod POST;
     public static final HttpMethod PUT;
     public static final HttpMethod DELETE;
+
     static {
         pool = new ConstantPool<HttpMethod>() {
             @Override
@@ -24,7 +25,6 @@ final class HttpMethod extends AbstractConstant<HttpMethod> {
     }
 
     private static final ConstantPool<HttpMethod> pool;
-
 
     private HttpMethod(int id, String name) {
         super(id, name);
