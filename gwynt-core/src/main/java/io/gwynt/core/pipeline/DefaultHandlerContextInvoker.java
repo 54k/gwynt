@@ -3,106 +3,23 @@ package io.gwynt.core.pipeline;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.concurrent.EventExecutor;
 
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnCloseNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnClosingNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnDisconnectNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnExceptionCaughtNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageReceivedNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageSentNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnOpenNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnReadNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnRegisteredNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnUnregisteredNow;
+
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
     private EventExecutor executor;
 
     public DefaultHandlerContextInvoker(EventExecutor executor) {
         this.executor = executor;
-    }
-
-    private static void invokeOnHandlerAddedNow(HandlerContext context) {
-        try {
-            context.handler().onHandlerAdded(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnHandlerRemovedNow(HandlerContext context) {
-        try {
-            context.handler().onHandlerRemoved(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnRegisteredNow(HandlerContext context) {
-        try {
-            context.handler().onRegistered(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnUnregisteredNow(HandlerContext context) {
-        try {
-            context.handler().onUnregistered(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnOpenNow(HandlerContext context) {
-        try {
-            context.handler().onOpen(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnReadNow(HandlerContext context, ChannelPromise channelPromise) {
-        try {
-            context.handler().onRead(context, channelPromise);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void invokeOnMessageReceivedNow(HandlerContext context, Object message) {
-        try {
-            context.handler().onMessageReceived(context, message);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void invokeOnMessageSentNow(HandlerContext context, Object message, ChannelPromise channelPromise) {
-        try {
-            context.handler().onMessageSent(context, message, channelPromise);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnClosingNow(HandlerContext context, ChannelPromise channelPromise) {
-        try {
-            context.handler().onClosing(context, channelPromise);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnCloseNow(HandlerContext context) {
-        try {
-            context.handler().onClose(context);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnDisconnectNow(HandlerContext context, ChannelPromise channelPromise) {
-        try {
-            context.handler().onDisconnect(context, channelPromise);
-        } catch (Throwable e) {
-            context.handler().onExceptionCaught(context, e);
-        }
-    }
-
-    private static void invokeOnExceptionCaughtNow(HandlerContext context, Throwable e) {
-        context.handler().onExceptionCaught(context, e);
     }
 
     @Override
