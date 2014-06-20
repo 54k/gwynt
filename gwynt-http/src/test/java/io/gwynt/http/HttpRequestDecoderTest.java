@@ -8,8 +8,6 @@ import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-
 public class HttpRequestDecoderTest {
 
     @Test
@@ -22,8 +20,6 @@ public class HttpRequestDecoderTest {
             }
         });
 
-        reactor.bind(3000).sync();
-
-        new CountDownLatch(1).await();
+        reactor.bind(3000).sync().channel().closeFuture().sync();
     }
 }

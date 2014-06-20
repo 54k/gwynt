@@ -50,6 +50,7 @@ public class HttpRequestDecoder extends ReplayingDecoder<State> {
                 request = newRequest(initialLine);
                 checkpoint(State.READ_HEADERS);
             case READ_HEADERS:
+                lineParser.parse(message);
         }
     }
 

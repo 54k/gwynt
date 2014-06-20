@@ -5,6 +5,8 @@ import io.gwynt.core.util.ConstantPool;
 
 final class HttpMethod extends AbstractConstant<HttpMethod> {
 
+    private static final ConstantPool<HttpMethod> pool;
+
     public static final HttpMethod GET;
     public static final HttpMethod POST;
     public static final HttpMethod PUT;
@@ -23,8 +25,6 @@ final class HttpMethod extends AbstractConstant<HttpMethod> {
         PUT = pool.valueOf("PUT");
         DELETE = pool.valueOf("DELETE");
     }
-
-    private static final ConstantPool<HttpMethod> pool;
 
     private HttpMethod(int id, String name) {
         super(id, name);
