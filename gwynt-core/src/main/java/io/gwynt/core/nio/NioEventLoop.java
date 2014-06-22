@@ -174,7 +174,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                     runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
 
-                if (isShutdown()) {
+                if (confirmShutdown()) {
                     for (SelectionKey selectionKey : selector.keys()) {
                         unregister((AbstractNioChannel) selectionKey.attachment());
                         selectionKey.channel().close();

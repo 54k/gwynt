@@ -3,18 +3,17 @@ package io.gwynt.core.concurrent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
+public abstract class SingleThreadEventExecutor extends AbstractScheduledEventExecutor {
+
+    private static final long PURGE_TASK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
 
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
 
@@ -36,11 +35,10 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     private final boolean wakeUpForTask;
     private final Executor executor;
     private int executedTasks = 0;
-    private long lastExecutionTimeNanos;
 
     private Thread thread;
     private Queue<Runnable> taskQueue = newTaskQueue();
-    private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
+    private long lastExecutionTimeNanos;
 
     protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
         this(parent, wakeUpForTask, new ThreadPerTaskExecutor());
@@ -125,7 +123,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     protected long closestDeadlineNanos(long timeNanos) {
-        ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+        ScheduledFutureTask<?> delayedTask = peekDelayedTask();
         if (delayedTask == null) {
             return -1;
         }
@@ -142,7 +140,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     private Runnable takeTask(BlockingQueue<Runnable> taskQueue) {
         for (; ; ) {
-            ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+            ScheduledFutureTask<?> delayedTask = peekDelayedTask();
 
             if (delayedTask == null) {
                 Runnable task = null;
@@ -178,33 +176,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
     }
 
     protected void fetchDelayedTasks() {
-        long nanoTime = 0L;
         for (; ; ) {
-            ScheduledFutureTask<?> delayedTask = delayedTaskQueue.peek();
+            ScheduledFutureTask<?> delayedTask = fetchDelayedTask();
             if (delayedTask == null) {
                 break;
             }
-
-            if (nanoTime == 0L) {
-                nanoTime = ScheduledFutureTask.nanos();
-            }
-
-            if (delayedTask.triggerTime() <= nanoTime) {
-                delayedTaskQueue.remove();
-                taskQueue.add(delayedTask);
-            } else {
-                break;
-            }
-        }
-    }
-
-    protected Runnable peekTask() {
-        for (; ; ) {
-            Runnable task = taskQueue.peek();
-            if (task == WAKEUP_TASK) {
-                continue;
-            }
-            return task;
+            taskQueue.add(delayedTask);
         }
     }
 
@@ -216,17 +193,6 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             }
             return task;
         }
-    }
-
-    private void cancelDelayedTasks() {
-        for (ScheduledFutureTask<?> scheduledFutureTask : delayedTaskQueue) {
-            scheduledFutureTask.cancel();
-        }
-        delayedTaskQueue.clear();
-    }
-
-    protected int pendingTasks() {
-        return delayedTaskQueue.size();
     }
 
     protected boolean hasTasks() {
@@ -263,8 +229,28 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
             wakeup(inExecutorThread());
         }
 
-        STATE_UPDATER.set(this, ST_NOT_STARTED);
+        STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
         thread = null;
+    }
+
+    public Future shutdownGracefully() {
+        if (!isShutdown()) {
+            STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
+            if (wakeUpForTask) {
+                wakeup(inExecutorThread());
+            }
+        }
+        return shutdownPromise;
+    }
+
+    protected boolean confirmShutdown() {
+        if (isShutdown()) {
+            cancelDelayedTasks();
+            shutdownPromise.setSuccess(null);
+            STATE_UPDATER.set(this, ST_SHUTDOWN);
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -312,8 +298,7 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
 
     private void startThread() {
         if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
-            delayedTaskQueue.add(new ScheduledFutureTask<>(SingleThreadEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
-                    ScheduledFutureTask.triggerTime(TimeUnit.SECONDS.toNanos(5)), TimeUnit.SECONDS.toNanos(5), delayedTaskQueue));
+            schedulePurgeTask();
             doStartThread();
         }
     }
@@ -330,58 +315,12 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
                 } catch (Throwable e) {
                     logger.error(e.getMessage(), e);
                 }
-
                 STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_NOT_STARTED);
             }
         });
     }
 
-    @Override
-    public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(delay)), delayedTaskQueue));
-    }
-
-    @Override
-    public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, callable, ScheduledFutureTask.triggerTime(unit.toNanos(delay)), delayedTaskQueue));
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(initialDelay)), unit.toNanos(period),
-                delayedTaskQueue));
-    }
-
-    @Override
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        return schedule(new ScheduledFutureTask<>(this, PromiseTask.toCallable(command), ScheduledFutureTask.triggerTime(unit.toNanos(initialDelay)), -unit.toNanos(delay),
-                delayedTaskQueue));
-    }
-
-    private <V> ScheduledFuture<V> schedule(final ScheduledFutureTask<V> task) {
-        if (task == null) {
-            throw new NullPointerException("task");
-        }
-
-        if (inExecutorThread()) {
-            delayedTaskQueue.add(task);
-        } else {
-            execute(new Runnable() {
-                @Override
-                public void run() {
-                    delayedTaskQueue.add(task);
-                }
-            });
-        }
-
-        return task;
-    }
-
     protected abstract void run();
-
-    protected long updateLastExecutionTime() {
-        return lastExecutionTimeNanos = System.nanoTime();
-    }
 
     @Override
     public long lastExecutionTimeNanos() {
@@ -393,17 +332,4 @@ public abstract class SingleThreadEventExecutor extends AbstractEventExecutor {
         return timeUnit.convert(lastExecutionTimeNanos, TimeUnit.NANOSECONDS);
     }
 
-    protected class PurgeTask implements Runnable {
-
-        @Override
-        public void run() {
-            Iterator<ScheduledFutureTask<?>> i = delayedTaskQueue.iterator();
-            while (i.hasNext()) {
-                ScheduledFutureTask<?> task = i.next();
-                if (task.isCancelled()) {
-                    i.remove();
-                }
-            }
-        }
-    }
 }
