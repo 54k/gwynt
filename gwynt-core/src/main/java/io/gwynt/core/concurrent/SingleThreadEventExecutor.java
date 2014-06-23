@@ -233,6 +233,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         thread = null;
     }
 
+    @Override
     public Future<?> shutdownGracefully() {
         if (!isShutdown()) {
             STATE_UPDATER.set(this, ST_SHUTTING_DOWN);

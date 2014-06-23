@@ -74,7 +74,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     }
 
     @Override
-    public FutureGroup<?> shutdownFutureGroup() {
+    public FutureGroup<?> shutdownFuture() {
         return shutdownFutureGroup;
     }
 

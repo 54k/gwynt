@@ -55,8 +55,8 @@ public abstract class AbstractScheduledEventExecutor extends AbstractEventExecut
     }
 
     private ScheduledFutureTask<?> newPurgeTask() {
-        return new ScheduledFutureTask<>(AbstractScheduledEventExecutor.this, PromiseTask.toCallable(new PurgeTask()),
-                ScheduledFutureTask.triggerTime(PURGE_TASK_INTERVAL), -PURGE_TASK_INTERVAL, delayedTaskQueue);
+        return new ScheduledFutureTask<>(AbstractScheduledEventExecutor.this, PromiseTask.toCallable(new PurgeTask()), ScheduledFutureTask.triggerTime(PURGE_TASK_INTERVAL),
+                -PURGE_TASK_INTERVAL, delayedTaskQueue);
     }
 
     @Override
