@@ -3,17 +3,21 @@ package io.gwynt.example;
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
+import io.gwynt.core.concurrent.FutureGroup;
+import io.gwynt.core.concurrent.FutureGroupListener;
+import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        EventLoopGroup eventLoop = new NioEventLoopGroup();
+        final EventLoopGroup eventLoop = new NioEventLoopGroup();
         IOReactor reactor = new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
@@ -27,5 +31,17 @@ public class GwyntSimpleServer implements Runnable {
             reactor.bind(3001).sync();
         } catch (InterruptedException ignore) {
         }
+
+        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+            @Override
+            public void run() {
+                eventLoop.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+                    @Override
+                    public void onComplete(FutureGroup<Void> future) {
+                        System.out.println("SHUTDOWN");
+                    }
+                });
+            }
+        }, 5, TimeUnit.SECONDS);
     }
 }

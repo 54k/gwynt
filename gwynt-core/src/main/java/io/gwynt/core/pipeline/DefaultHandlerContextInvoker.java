@@ -3,16 +3,7 @@ package io.gwynt.core.pipeline;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.concurrent.EventExecutor;
 
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnCloseNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnClosingNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnDisconnectNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnExceptionCaughtNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageReceivedNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageSentNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnOpenNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnReadNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnRegisteredNow;
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnUnregisteredNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.*;
 
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 

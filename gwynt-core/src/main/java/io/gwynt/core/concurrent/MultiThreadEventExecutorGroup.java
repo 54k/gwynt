@@ -15,7 +15,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     private final EventExecutor[] children;
     private final ExecutorChooser chooser;
     private final Set<EventExecutor> readonlyChildren;
-    private final FutureGroup shutdownFutureGroup;
+    private final FutureGroup<Void> shutdownFutureGroup;
 
     protected MultiThreadEventExecutorGroup(int nThreads, ThreadFactory threadFactory, Object... args) {
         this(nThreads, threadFactory == null ? null : new ThreadPerTaskExecutor(threadFactory), args);
@@ -45,11 +45,11 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
         Collections.addAll(readonlyChildren, children);
         this.readonlyChildren = Collections.unmodifiableSet(readonlyChildren);
 
-        Set<Future> shutdownFutures = new HashSet<>();
+        Set<Future<Void>> shutdownFutures = new HashSet<>();
         for (EventExecutor e : readonlyChildren) {
             shutdownFutures.add(e.terminationFuture());
         }
-        shutdownFutureGroup = new DefaultFutureGroup(shutdownFutures);
+        shutdownFutureGroup = new DefaultFutureGroup<>(shutdownFutures);
     }
 
     private static boolean isPowerOfTwo(int val) {
@@ -66,7 +66,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     }
 
     @Override
-    public FutureGroup<?> shutdownGracefully() {
+    public FutureGroup<Void> shutdownGracefully() {
         for (EventExecutor c : children) {
             c.shutdownGracefully();
         }
@@ -74,7 +74,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     }
 
     @Override
-    public FutureGroup<?> terminationFuture() {
+    public FutureGroup<Void> terminationFuture() {
         return shutdownFutureGroup;
     }
 

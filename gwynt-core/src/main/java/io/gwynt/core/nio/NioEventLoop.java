@@ -175,11 +175,11 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                 }
 
                 if (confirmShutdown()) {
-                    for (SelectionKey selectionKey : selector.keys()) {
-                        unregister((AbstractNioChannel) selectionKey.attachment());
-                        selectionKey.channel().close();
-                    }
-                    runAllTasks();
+//                    for (SelectionKey selectionKey : selector.keys()) {
+//                        unregister((AbstractNioChannel) selectionKey.attachment());
+//                        selectionKey.channel().close();
+//                    }
+//                    runAllTasks();
                     break;
                 }
             }

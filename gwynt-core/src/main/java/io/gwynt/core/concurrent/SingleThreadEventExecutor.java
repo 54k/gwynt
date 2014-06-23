@@ -18,6 +18,8 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final AtomicIntegerFieldUpdater<SingleThreadEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(SingleThreadEventExecutor.class, "state");
 
     private static final int ST_NOT_STARTED = 1;
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile int state = ST_NOT_STARTED;
     private static final int ST_STARTED = 2;
     private static final int ST_SHUTTING_DOWN = 3;
     private static final int ST_SHUTDOWN = 4;
@@ -28,15 +30,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // Do nothing.
         }
     };
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private volatile int state = ST_NOT_STARTED;
-
-    private final Promise<Void> terminationFuture = new DefaultPromise<>();
-    private Thread thread;
-    private Queue<Runnable> taskQueue = newTaskQueue();
+    private final Promise<Void> terminationFuture = new DefaultPromise<>(GlobalEventExecutor.INSTANCE);
     private final boolean wakeUpForTask;
     private final Executor executor;
+    private Thread thread;
+    private Queue<Runnable> taskQueue = newTaskQueue();
     private int executedTasks = 0;
     private boolean shutdownConfirmed;
 
@@ -220,31 +218,60 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     @Deprecated
     @Override
     public void shutdown() {
-        if (isShutdown()) {
-            return;
-        }
-        if (wakeUpForTask) {
-            wakeup(inExecutorThread());
-        }
-
-        STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
-        thread = null;
+        shutdownGracefully();
     }
 
     @Override
-    public Future<?> shutdownGracefully() {
-        if (!isShuttingDown()) {
-            STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
-            if (wakeUpForTask) {
-                wakeup(inExecutorThread());
+    public Future<Void> shutdownGracefully() {
+        if (isShuttingDown()) {
+            return terminationFuture;
+        }
+
+        boolean inExecutorThread = inExecutorThread();
+        int oldState;
+        boolean wakeup;
+        for (; ; ) {
+            if (isShuttingDown()) {
+                return terminationFuture;
             }
+
+            oldState = STATE_UPDATER.get(this);
+            int newState;
+            wakeup = true;
+
+            if (inExecutorThread) {
+                newState = ST_SHUTDOWN;
+            } else {
+                switch (oldState) {
+                    case ST_NOT_STARTED:
+                    case ST_STARTED:
+                    case ST_SHUTTING_DOWN:
+                        newState = ST_SHUTDOWN;
+                        break;
+                    default:
+                        newState = oldState;
+                        wakeup = false;
+
+                }
+            }
+            if (STATE_UPDATER.compareAndSet(this, oldState, newState)) {
+                break;
+            }
+        }
+
+        if (oldState == ST_NOT_STARTED) {
+            doStartThread();
+        }
+
+        if (wakeup) {
+            wakeup(inExecutorThread);
         }
 
         return terminationFuture;
     }
 
     @Override
-    public Future<?> terminationFuture() {
+    public Future<Void> terminationFuture() {
         return terminationFuture;
     }
 

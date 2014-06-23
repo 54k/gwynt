@@ -19,22 +19,19 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
     private static final AtomicIntegerFieldUpdater<GlobalEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(GlobalEventExecutor.class, "state");
 
     private static final int ST_NOT_STARTED = 1;
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile int state = ST_NOT_STARTED;
     private static final int ST_STARTED = 2;
-
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
             // Do nothing.
         }
     };
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private volatile int state = ST_NOT_STARTED;
-
-    private Thread thread;
-    private Queue<Runnable> taskQueue = newTaskQueue();
     private final boolean wakeUpForTask;
     private final Executor executor;
+    private Thread thread;
+    private Queue<Runnable> taskQueue = newTaskQueue();
 
     private GlobalEventExecutor() {
         executor = new ThreadPerTaskExecutor(new DefaultThreadFactory("global-event-executor-"));
@@ -110,12 +107,12 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
     }
 
     @Override
-    public Future<?> shutdownGracefully() {
+    public Future<Void> shutdownGracefully() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public Future<?> terminationFuture() {
+    public Future<Void> terminationFuture() {
         throw new UnsupportedOperationException();
     }
 
