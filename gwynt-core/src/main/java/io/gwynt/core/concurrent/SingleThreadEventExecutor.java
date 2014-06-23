@@ -31,7 +31,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // Do nothing.
         }
     };
-    private final Promise<Void> shutdownPromise = new DefaultPromise<>();
+    private final Promise<Void> terminationFuture = new DefaultPromise<>();
     private final boolean wakeUpForTask;
     private final Executor executor;
     private int executedTasks = 0;
@@ -109,7 +109,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             // check every 32 tasks
             if ((executedTasks & 0x20) != 0) {
                 executedTasks = 0;
-                if (deadlineNanos >= lastExecutionTimeNanos()) {
+                if (deadlineNanos >= System.nanoTime()) {
                     return true;
                 }
             }
@@ -132,13 +132,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     protected Runnable takeTask() {
-        if (this.taskQueue instanceof BlockingQueue) {
-            return takeTask((BlockingQueue<Runnable>) this.taskQueue);
+        if (!(this.taskQueue instanceof BlockingQueue)) {
+            throw new IllegalArgumentException("taskQueue is not instanceof BlockingQueue");
         }
-        return pollTask();
-    }
 
-    private Runnable takeTask(BlockingQueue<Runnable> taskQueue) {
+        BlockingQueue<Runnable> taskQueue = (BlockingQueue<Runnable>) this.taskQueue;
         for (; ; ) {
             ScheduledFutureTask<?> delayedTask = peekDelayedTask();
 
@@ -241,18 +239,19 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 wakeup(inExecutorThread());
             }
         }
-        return shutdownPromise;
+        return terminationFuture;
     }
 
     @Override
-    public Future<?> shutdownFuture() {
-        return shutdownPromise;
+    public Future<?> terminationFuture() {
+        return terminationFuture;
     }
 
     protected boolean confirmShutdown() {
+        assert inExecutorThread();
+
         if (isShutdown()) {
             cancelDelayedTasks();
-            shutdownPromise.setSuccess(null);
             STATE_UPDATER.set(this, ST_SHUTDOWN);
             return true;
         }
@@ -260,13 +259,18 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     }
 
     @Override
+    public boolean isShuttingDown() {
+        return STATE_UPDATER.get(this) >= ST_SHUTTING_DOWN;
+    }
+
+    @Override
     public boolean isShutdown() {
-        return state >= ST_SHUTTING_DOWN;
+        return STATE_UPDATER.get(this) >= ST_SHUTDOWN;
     }
 
     @Override
     public boolean isTerminated() {
-        return isShutdown() && !hasTasks();
+        return STATE_UPDATER.get(this) >= ST_TERMINATED;
     }
 
     @Deprecated
@@ -287,11 +291,6 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
     }
 
-    @Override
-    public boolean inExecutorThread(Thread thread) {
-        return this.thread == thread;
-    }
-
     protected boolean wakeUpForTask(Runnable task) {
         return true;
     }
@@ -300,6 +299,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (!inExecutorThread) {
             taskQueue.add(WAKEUP_TASK);
         }
+    }
+
+    @Override
+    public boolean inExecutorThread(Thread thread) {
+        return this.thread == thread;
     }
 
     private void startThread() {

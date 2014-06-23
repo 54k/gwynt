@@ -47,7 +47,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
 
         Set<Future> shutdownFutures = new HashSet<>();
         for (EventExecutor e : readonlyChildren) {
-            shutdownFutures.add(e.shutdownFuture());
+            shutdownFutures.add(e.terminationFuture());
         }
         shutdownFutureGroup = new DefaultFutureGroup(shutdownFutures);
     }
@@ -74,7 +74,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     }
 
     @Override
-    public FutureGroup<?> shutdownFuture() {
+    public FutureGroup<?> terminationFuture() {
         return shutdownFutureGroup;
     }
 

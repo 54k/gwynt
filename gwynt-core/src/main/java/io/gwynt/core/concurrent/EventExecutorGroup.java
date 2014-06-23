@@ -22,7 +22,7 @@ public interface EventExecutorGroup extends ScheduledExecutorService {
 
     Future<?> shutdownGracefully();
 
-    Future<?> shutdownFuture();
+    Future<?> terminationFuture();
 
     @Override
     <T> Future<T> submit(Callable<T> task);

@@ -16,4 +16,5 @@ public interface EventExecutor extends EventExecutorGroup {
 
     long lastExecutionTime(TimeUnit timeUnit);
 
+    boolean isShuttingDown();
 }
