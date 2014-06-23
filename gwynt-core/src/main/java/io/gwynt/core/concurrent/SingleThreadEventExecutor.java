@@ -270,7 +270,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     @Override
     public boolean isTerminated() {
-        return STATE_UPDATER.get(this) >= ST_TERMINATED;
+        return STATE_UPDATER.get(this) == ST_TERMINATED;
     }
 
     @Deprecated
