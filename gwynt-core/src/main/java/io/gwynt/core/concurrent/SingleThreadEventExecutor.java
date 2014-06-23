@@ -13,32 +13,32 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class SingleThreadEventExecutor extends AbstractScheduledEventExecutor {
 
-    private static final long PURGE_TASK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
-
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadEventExecutor.class);
 
+    private static final AtomicIntegerFieldUpdater<SingleThreadEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(SingleThreadEventExecutor.class, "state");
+
     private static final int ST_NOT_STARTED = 1;
-    private volatile int state = ST_NOT_STARTED;
     private static final int ST_STARTED = 2;
     private static final int ST_SHUTTING_DOWN = 3;
     private static final int ST_SHUTDOWN = 4;
     private static final int ST_TERMINATED = 5;
-    private static final AtomicIntegerFieldUpdater<SingleThreadEventExecutor> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(SingleThreadEventExecutor.class, "state");
-
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
             // Do nothing.
         }
     };
+
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile int state = ST_NOT_STARTED;
+
     private final Promise<Void> terminationFuture = new DefaultPromise<>();
+    private Thread thread;
+    private Queue<Runnable> taskQueue = newTaskQueue();
     private final boolean wakeUpForTask;
     private final Executor executor;
     private int executedTasks = 0;
-
-    private Thread thread;
-    private Queue<Runnable> taskQueue = newTaskQueue();
-    private long lastExecutionTimeNanos;
+    private boolean shutdownConfirmed;
 
     protected SingleThreadEventExecutor(EventExecutorGroup parent, boolean wakeUpForTask) {
         this(parent, wakeUpForTask, new ThreadPerTaskExecutor());
@@ -233,29 +233,19 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     @Override
     public Future<?> shutdownGracefully() {
-        if (!isShutdown()) {
+        if (!isShuttingDown()) {
             STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
             if (wakeUpForTask) {
                 wakeup(inExecutorThread());
             }
         }
+
         return terminationFuture;
     }
 
     @Override
     public Future<?> terminationFuture() {
         return terminationFuture;
-    }
-
-    protected boolean confirmShutdown() {
-        assert inExecutorThread();
-
-        if (isShutdown()) {
-            cancelDelayedTasks();
-            STATE_UPDATER.set(this, ST_SHUTDOWN);
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -282,7 +272,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     @Override
     public void execute(Runnable command) {
         addTask(command);
-        if (state == ST_NOT_STARTED) {
+        if (STATE_UPDATER.get(this) == ST_NOT_STARTED) {
             startThread();
         }
 
@@ -315,31 +305,67 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
     private void doStartThread() {
         assert thread == null;
+
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 SingleThreadEventExecutor.this.thread = Thread.currentThread();
 
+                boolean success = false;
                 try {
                     SingleThreadEventExecutor.this.run();
+                    success = true;
                 } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
+                    logger.warn("Unexpected exception from an event executor: ", e);
                 }
-                STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_NOT_STARTED);
+
+                for (; ; ) {
+                    int oldState = STATE_UPDATER.get(SingleThreadEventExecutor.this);
+                    if (oldState >= ST_SHUTTING_DOWN || STATE_UPDATER.compareAndSet(SingleThreadEventExecutor.this, oldState, ST_SHUTTING_DOWN)) {
+                        break;
+                    }
+                }
+
+                if (success && !shutdownConfirmed) {
+                    logger.error("Buggy " + EventExecutor.class.getSimpleName() + " implementation; " +
+                            SingleThreadEventExecutor.class.getSimpleName() + ".confirmShutdown() must be called " +
+                            "before run() implementation terminates.");
+                }
+
+                try {
+                    for (; ; ) {
+                        if (confirmShutdown()) {
+                            break;
+                        }
+                    }
+                } finally {
+                    STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_TERMINATED);
+                    terminationFuture.setSuccess(null);
+                }
             }
         });
     }
 
+    protected boolean confirmShutdown() {
+        if (!inExecutorThread()) {
+            throw new IllegalStateException("must be invoked from executor thread");
+        }
+
+        if (!isShuttingDown()) {
+            return false;
+        }
+
+        cancelDelayedTasks();
+        shutdownConfirmed = true;
+
+        if (runAllTasks()) {
+            if (isShutdown()) {
+                return true;
+            }
+        }
+
+        return !hasTasks() || isShutdown();
+    }
+
     protected abstract void run();
-
-    @Override
-    public long lastExecutionTimeNanos() {
-        return lastExecutionTimeNanos;
-    }
-
-    @Override
-    public long lastExecutionTime(TimeUnit timeUnit) {
-        return timeUnit.convert(lastExecutionTimeNanos, TimeUnit.NANOSECONDS);
-    }
-
 }
