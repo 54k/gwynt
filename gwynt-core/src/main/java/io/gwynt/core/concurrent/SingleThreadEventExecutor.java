@@ -233,13 +233,18 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         thread = null;
     }
 
-    public Future shutdownGracefully() {
+    public Future<?> shutdownGracefully() {
         if (!isShutdown()) {
             STATE_UPDATER.set(this, ST_SHUTTING_DOWN);
             if (wakeUpForTask) {
                 wakeup(inExecutorThread());
             }
         }
+        return shutdownPromise;
+    }
+
+    @Override
+    public Future<?> shutdownFuture() {
         return shutdownPromise;
     }
 

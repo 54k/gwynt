@@ -1,6 +1,7 @@
 package io.gwynt.core.concurrent;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -14,6 +15,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     private final EventExecutor[] children;
     private final ExecutorChooser chooser;
     private final Set<EventExecutor> readonlyChildren;
+    private final FutureGroup shutdownFutureGroup;
 
     protected MultiThreadEventExecutorGroup(int nThreads, ThreadFactory threadFactory, Object... args) {
         this(nThreads, threadFactory == null ? null : new ThreadPerTaskExecutor(threadFactory), args);
@@ -42,6 +44,12 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
         Set<EventExecutor> readonlyChildren = new LinkedHashSet<>(children.length);
         Collections.addAll(readonlyChildren, children);
         this.readonlyChildren = Collections.unmodifiableSet(readonlyChildren);
+
+        Set<Future> shutdownFutures = new HashSet<>();
+        for (EventExecutor e : readonlyChildren) {
+            shutdownFutures.add(e.shutdownFuture());
+        }
+        shutdownFutureGroup = new DefaultFutureGroup(shutdownFutures);
     }
 
     private static boolean isPowerOfTwo(int val) {
@@ -55,6 +63,19 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
         for (EventExecutor c : children) {
             c.shutdown();
         }
+    }
+
+    @Override
+    public FutureGroup<?> shutdownGracefully() {
+        for (EventExecutor c : children) {
+            c.shutdownGracefully();
+        }
+        return shutdownFutureGroup;
+    }
+
+    @Override
+    public FutureGroup<?> shutdownFutureGroup() {
+        return shutdownFutureGroup;
     }
 
     @Override

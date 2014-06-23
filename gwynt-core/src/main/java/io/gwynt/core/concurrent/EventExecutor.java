@@ -16,5 +16,7 @@ public interface EventExecutor extends EventExecutorGroup {
 
     long lastExecutionTime(TimeUnit timeUnit);
 
-    Future shutdownGracefully();
+    Future<?> shutdownGracefully();
+
+    Future<?> shutdownFuture();
 }
