@@ -55,12 +55,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
             ScheduledFutureTask<?> delayedTask = peekDelayedTask();
 
             if (delayedTask == null) {
-                Runnable task = null;
-                try {
-                    task = taskQueue.take();
-                } catch (InterruptedException ignore) {
-                }
-                return task;
+                return taskQueue.poll();
             } else {
                 long delayNanos = delayedTask.getDelayNanos();
                 Runnable task;
