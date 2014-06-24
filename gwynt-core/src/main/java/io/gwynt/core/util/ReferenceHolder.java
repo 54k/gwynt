@@ -56,7 +56,9 @@ public abstract class ReferenceHolder<T> {
                 try {
                     cleanupObject(ref);
                 } finally {
-                    ref = null;
+                    if (releaseReference()) {
+                        ref = null;
+                    }
                 }
             }
         }
@@ -80,6 +82,8 @@ public abstract class ReferenceHolder<T> {
     public int refCount() {
         return refs;
     }
+
+    protected abstract boolean releaseReference();
 
     protected abstract T newObject();
 
