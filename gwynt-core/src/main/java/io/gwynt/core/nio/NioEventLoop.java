@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -138,40 +137,40 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         try {
             Selector sel = selector;
             for (; ; ) {
-                int keyCount = 0;
-
-                long nanos = System.nanoTime();
-                long deadline = closestDeadlineNanos(nanos);
-                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
-
-                try {
-                    selectorAwakened.set(false);
-                    if (hasTasks() || timeout == 0) {
-                        keyCount = selector.selectNow();
-                    } else if (timeout == -1) {
-                        keyCount = selector.select();
-                    } else {
-                        keyCount = selector.select(timeout);
-                    }
-                    selectorAwakened.set(true);
-                } catch (ClosedSelectorException e) {
-                    logger.error(e.getMessage(), e);
-                    break;
-                } catch (Throwable e) {
-                    logger.error(e.getMessage(), e);
-                }
-                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
-
-                if (ioRatio == 100) {
-                    processSelectedKeys(keys);
-                    runAllTasks();
-                } else {
-                    long s = System.nanoTime();
-                    processSelectedKeys(keys);
-                    long ioTime = System.nanoTime() - s;
-                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
-                }
-
+//                int keyCount = 0;
+//
+//                long nanos = System.nanoTime();
+//                long deadline = closestDeadlineNanos(nanos);
+//                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
+//
+//                try {
+//                    selectorAwakened.set(false);
+//                    if (hasTasks() || timeout == 0) {
+//                        keyCount = selector.selectNow();
+//                    } else if (timeout == -1) {
+//                        keyCount = selector.select();
+//                    } else {
+//                        keyCount = selector.select(timeout);
+//                    }
+//                    selectorAwakened.set(true);
+//                } catch (ClosedSelectorException e) {
+//                    logger.error(e.getMessage(), e);
+//                    break;
+//                } catch (Throwable e) {
+//                    logger.error(e.getMessage(), e);
+//                }
+//                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
+//
+//                if (ioRatio == 100) {
+//                    processSelectedKeys(keys);
+//                    runAllTasks();
+//                } else {
+//                    long s = System.nanoTime();
+//                    processSelectedKeys(keys);
+//                    long ioTime = System.nanoTime() - s;
+//                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+//                }
+                select();
                 if (isShuttingDown()) {
                     closeAll();
                     confirmShutdown();
@@ -180,6 +179,34 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
             }
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception", e);
+        }
+    }
+
+    private void select() throws IOException {
+        if (hasTasks()) {
+            selector.selectNow();
+        } else {
+            long nanos = System.nanoTime();
+            long deadline = closestDeadlineNanos(nanos);
+            long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
+            selectorAwakened.set(false);
+            if (timeout > -1) {
+                selector.select(timeout);
+            } else {
+                selector.selectNow();
+            }
+            selectorAwakened.set(true);
+        }
+
+        Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+        if (ioRatio == 100) {
+            processSelectedKeys(keys);
+            runAllTasks();
+        } else {
+            long s = System.nanoTime();
+            processSelectedKeys(keys);
+            long ioTime = System.nanoTime() - s;
+            runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
         }
     }
 
@@ -194,6 +221,11 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
         for (AbstractNioChannel ch : channels) {
             ch.unsafe().close(ch.unsafe().voidPromise());
+        }
+
+        try {
+            select();
+        } catch (IOException ignore) {
         }
     }
 }
