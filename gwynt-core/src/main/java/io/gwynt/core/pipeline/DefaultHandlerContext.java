@@ -155,7 +155,7 @@ public final class DefaultHandlerContext implements HandlerContext {
     @Override
     public ChannelFuture disconnect(ChannelPromise channelPromise) {
         DefaultHandlerContext prev = findContextOutbound();
-        prev.invoker().invokeOnClosing(prev, channelPromise);
+        prev.invoker().invokeOnDisconnect(prev, channelPromise);
         return channelPromise;
     }
 
