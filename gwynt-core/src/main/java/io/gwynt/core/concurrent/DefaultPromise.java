@@ -186,7 +186,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         if (executor().inExecutorThread()) {
             futureListener.onComplete(DefaultPromise.this);
         } else {
-            execute(new Runnable() {
+            invokeLater(new Runnable() {
                 @Override
                 public void run() {
                     futureListener.onComplete(DefaultPromise.this);
@@ -203,7 +203,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     private void notifyAllListeners() {
         if (inNotify.getAndSet(true)) {
-            execute(new Runnable() {
+            invokeLater(new Runnable() {
                 @Override
                 public void run() {
                     notifyAllListeners();
@@ -222,63 +222,63 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         }
 
         final Object res = result != CANCELLED_RESULT ? result : null;
+        final Promise<V> promise = chainedPromise;
 
         if (isFailed()) {
             if (executor().inExecutorThread()) {
-                failChainedPromise(getCause());
+                failChainedPromise(getCause(), promise);
             } else {
-                execute(new Runnable() {
+                invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        failChainedPromise(getCause());
+                        failChainedPromise(getCause(), promise);
                     }
                 });
             }
         } else if (isCancelled()) {
             if (executor().inExecutorThread()) {
-                cancelChainedPromise();
+                cancelChainedPromise(promise);
             } else {
-                execute(new Runnable() {
+                invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        cancelChainedPromise();
+                        cancelChainedPromise(promise);
                     }
                 });
             }
         } else {
             if (executor().inExecutorThread()) {
-                successChainedPromise((V) res);
+                successChainedPromise((V) res, promise);
             } else {
-                execute(new Runnable() {
+                invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        successChainedPromise((V) res);
+                        successChainedPromise((V) res, promise);
                     }
                 });
             }
         }
+
+        chainedPromise = null;
     }
 
-    private void successChainedPromise(V result) {
+    private static <V> void successChainedPromise(V result, Promise<V> chainedPromise) {
         chainedPromise.trySuccess(result);
-        chainedPromise = null;
     }
 
-    private void failChainedPromise(Throwable error) {
+    private static void failChainedPromise(Throwable error, Promise<?> chainedPromise) {
         chainedPromise.tryFailure(error);
-        chainedPromise = null;
     }
 
-    private void cancelChainedPromise() {
+    private static void cancelChainedPromise(Promise<?> chainedPromise) {
         chainedPromise.cancel();
-        chainedPromise = null;
     }
 
     protected EventExecutor executor() {
         return eventExecutor;
     }
 
-    private void execute(Runnable task) {
+    private void invokeLater(Runnable task) {
         executor().execute(task);
     }
 
