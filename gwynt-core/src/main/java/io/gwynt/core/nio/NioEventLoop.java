@@ -128,14 +128,9 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         }
     }
 
-    void cancel(final SelectionKey key) {
-        execute(new Runnable() {
-            @Override
-            public void run() {
-                key.cancel();
-                key.attach(null);
-            }
-        });
+    void cancel(SelectionKey key) {
+        key.cancel();
+        key.attach(null);
     }
 
     @Override
