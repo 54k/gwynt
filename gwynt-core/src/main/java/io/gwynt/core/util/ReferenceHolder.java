@@ -1,5 +1,7 @@
 package io.gwynt.core.util;
 
+import java.util.concurrent.TimeUnit;
+
 public abstract class ReferenceHolder<T> {
 
     private final Object lock = new Object();
@@ -25,6 +27,28 @@ public abstract class ReferenceHolder<T> {
                 incWaiters();
                 try {
                     lock.wait();
+                } catch (InterruptedException ignore) {
+                } finally {
+                    decWaiters();
+                }
+            }
+
+            if (ref == null) {
+                ref = newObject();
+            }
+
+            refs++;
+        }
+
+        return ref;
+    }
+
+    public T acquire(long timeout, TimeUnit timeUnit) {
+        synchronized (lock) {
+            while (refs == maxRefs) {
+                incWaiters();
+                try {
+                    lock.wait(timeUnit.toMillis(timeout));
                 } catch (InterruptedException ignore) {
                 } finally {
                     decWaiters();
