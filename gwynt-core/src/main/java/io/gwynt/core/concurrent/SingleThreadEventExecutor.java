@@ -218,7 +218,49 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     @Deprecated
     @Override
     public void shutdown() {
-        shutdownGracefully();
+        if (isShuttingDown()) {
+            return;
+        }
+
+        boolean inExecutorThread = inExecutorThread();
+        int oldState;
+        boolean wakeup;
+        for (; ; ) {
+            if (isShuttingDown()) {
+                return;
+            }
+
+            oldState = STATE_UPDATER.get(this);
+            int newState;
+            wakeup = true;
+
+            if (inExecutorThread) {
+                newState = ST_SHUTDOWN;
+            } else {
+                switch (oldState) {
+                    case ST_NOT_STARTED:
+                    case ST_STARTED:
+                    case ST_SHUTTING_DOWN:
+                        newState = ST_SHUTDOWN;
+                        break;
+                    default:
+                        newState = oldState;
+                        wakeup = false;
+
+                }
+            }
+            if (STATE_UPDATER.compareAndSet(this, oldState, newState)) {
+                break;
+            }
+        }
+
+        if (oldState == ST_NOT_STARTED) {
+            doStartThread();
+        }
+
+        if (wakeup) {
+            wakeup(inExecutorThread);
+        }
     }
 
     @Override
@@ -240,13 +282,12 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             wakeup = true;
 
             if (inExecutorThread) {
-                newState = ST_SHUTDOWN;
+                newState = ST_SHUTTING_DOWN;
             } else {
                 switch (oldState) {
                     case ST_NOT_STARTED:
                     case ST_STARTED:
-                    case ST_SHUTTING_DOWN:
-                        newState = ST_SHUTDOWN;
+                        newState = ST_SHUTTING_DOWN;
                         break;
                     default:
                         newState = oldState;

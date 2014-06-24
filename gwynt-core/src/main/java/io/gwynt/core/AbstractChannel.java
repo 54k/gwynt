@@ -312,11 +312,7 @@ public abstract class AbstractChannel implements Channel {
         public void close(ChannelPromise channelPromise) {
             if (!pendingClose) {
                 pendingClose = true;
-                if (eventLoop().isShuttingDown()) {
-                    doClose();
-                } else {
-                    closeRequested();
-                }
+                closeRequested();
             }
             closePromise.chainPromise(channelPromise);
         }
