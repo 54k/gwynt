@@ -42,7 +42,7 @@ public abstract class ReferenceHolder<T> {
     }
 
     public void release() {
-        if (refs > 0) {
+        if (refs == 0) {
             throw new IllegalStateException("release() called before acquire()");
         }
 
@@ -83,7 +83,9 @@ public abstract class ReferenceHolder<T> {
         return refs;
     }
 
-    protected abstract boolean releaseReference();
+    protected boolean releaseReference() {
+        return true;
+    }
 
     protected abstract T newObject();
 
