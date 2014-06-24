@@ -1,5 +1,6 @@
 package io.gwynt.core.pipeline;
 
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 import io.gwynt.core.concurrent.EventExecutor;
 
@@ -84,4 +85,22 @@ public interface Pipeline {
     void clear();
 
     void copy(Pipeline pipeline);
+
+    void fireRegistered();
+
+    void fireUnregistered();
+
+    void fireOpen();
+
+    void fireMessageReceived(Object message);
+
+    void fireExceptionCaught(Throwable e);
+
+    void fireRead(ChannelPromise channelPromise);
+
+    void fireMessageSent(Object message, ChannelPromise channelPromise);
+
+    void fireClosing(ChannelPromise channelPromise);
+
+    void fireClose();
 }

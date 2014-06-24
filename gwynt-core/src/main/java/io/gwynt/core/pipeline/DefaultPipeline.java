@@ -44,38 +44,47 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
     }
 
+    @Override
     public void fireRegistered() {
         head.fireRegistered();
     }
 
+    @Override
     public void fireUnregistered() {
         head.fireUnregistered();
     }
 
+    @Override
     public void fireOpen() {
         head.fireOpen();
     }
 
+    @Override
     public void fireMessageReceived(Object message) {
         head.fireMessageReceived(message);
     }
 
+    @Override
     public void fireRead(ChannelPromise channelPromise) {
         tail.read(channelPromise);
     }
 
+    @Override
     public void fireMessageSent(Object message, ChannelPromise channelPromise) {
         tail.write(message, channelPromise);
     }
 
+    @Override
     public void fireClosing(ChannelPromise channelPromise) {
         tail.close(channelPromise);
     }
 
+    @Override
     public void fireClose() {
         head.fireClose();
     }
 
+    @Override
     public void fireExceptionCaught(Throwable e) {
         head.fireExceptionCaught(e);
     }

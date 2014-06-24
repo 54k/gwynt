@@ -198,7 +198,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         }
 
         for (AbstractNioChannel ch : channels) {
-            ch.unsafe().close(ch.newChannelPromise());
+            ch.unsafe().close(ch.unsafe().voidPromise());
         }
     }
 }

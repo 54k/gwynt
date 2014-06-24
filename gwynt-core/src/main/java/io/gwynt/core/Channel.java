@@ -83,5 +83,7 @@ public interface Channel {
         SocketAddress getLocalAddress() throws Exception;
 
         SocketAddress getRemoteAddress() throws Exception;
+
+        ChannelPromise voidPromise();
     }
 }
