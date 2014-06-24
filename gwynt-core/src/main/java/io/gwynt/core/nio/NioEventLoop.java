@@ -11,7 +11,10 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -174,17 +177,28 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
                     runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
                 }
 
-                if (confirmShutdown()) {
-//                    for (SelectionKey selectionKey : selector.keys()) {
-//                        unregister((AbstractNioChannel) selectionKey.attachment());
-//                        selectionKey.channel().close();
-//                    }
-//                    runAllTasks();
+                if (isShuttingDown()) {
+                    closeAll();
+                    confirmShutdown();
                     break;
                 }
             }
         } catch (Throwable e) {
             throw new RuntimeException("Unexpected exception", e);
+        }
+    }
+
+    private void closeAll() {
+        Set<SelectionKey> keys = selector.keys();
+        Collection<AbstractNioChannel> channels = new ArrayList<>(keys.size());
+
+        for (SelectionKey k : keys) {
+            AbstractNioChannel a = (AbstractNioChannel) k.attachment();
+            channels.add(a);
+        }
+
+        for (AbstractNioChannel ch : channels) {
+            ch.unsafe().close(ch.newChannelPromise());
         }
     }
 }
