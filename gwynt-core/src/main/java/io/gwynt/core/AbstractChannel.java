@@ -8,10 +8,12 @@ import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 
 public abstract class AbstractChannel implements Channel {
 
     protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
+    protected final ChannelPromise VOID_PROMISE = new VoidChannelPromise(this);
 
     private final DefaultPipeline pipeline;
 
@@ -222,7 +224,6 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
-        private final ChannelPromise VOID_PROMISE = new VoidChannelPromise(AbstractChannel.this);
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
 
@@ -442,7 +443,10 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void invokeLater(Runnable task) {
-            eventLoop().execute(task);
+            try {
+                eventLoop().execute(task);
+            } catch (RejectedExecutionException ignore) {
+            }
         }
 
         @Override
