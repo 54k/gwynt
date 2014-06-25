@@ -420,15 +420,17 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            if (!closePromise.isDone() && isActive()) {
+            if (!closePromise.isDone() && isRegistered()) {
                 pendingClose = true;
                 closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.setClosed();
+                final boolean wasActive = isActive();
+
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        if (!isActive()) {
+                        if (wasActive && !isActive()) {
                             pipeline.fireClose();
                         }
 
