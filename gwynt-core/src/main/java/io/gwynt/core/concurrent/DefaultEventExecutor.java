@@ -30,7 +30,8 @@ public final class DefaultEventExecutor extends SingleThreadEventExecutor {
                 }
             }
 
-            if (isShutdown()) {
+            if (isShuttingDown()) {
+                confirmShutdown();
                 break;
             }
         }
