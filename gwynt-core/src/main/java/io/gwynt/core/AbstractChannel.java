@@ -1,5 +1,6 @@
 package io.gwynt.core;
 
+import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
 import java.io.IOException;
@@ -196,10 +197,15 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract Unsafe newUnsafe();
 
-    static final class ClosePromise extends DefaultChannelPromise {
+    final class ClosePromise extends DefaultChannelPromise {
 
         ClosePromise(AbstractChannel ch) {
             super(ch);
+        }
+
+        @Override
+        protected EventExecutor executor() {
+            return isRegistered() ? eventLoop() : super.executor();
         }
 
         @Override
