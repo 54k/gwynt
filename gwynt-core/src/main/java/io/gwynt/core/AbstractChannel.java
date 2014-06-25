@@ -420,12 +420,12 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            if (!closePromise.isDone() && isRegistered()) {
+            if (!closePromise.isDone()) {
+                final boolean wasActive = isActive();
                 pendingClose = true;
                 closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.setClosed();
-                final boolean wasActive = isActive();
 
                 invokeLater(new Runnable() {
                     @Override
