@@ -105,9 +105,9 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected void afterRegister() {
             super.afterRegister();
-            if (isActive()) {
-                pipeline().fireOpen();
-            }
+            //            if (isActive()) {
+            //                pipeline().fireOpen();
+            //            }
         }
 
         @Override

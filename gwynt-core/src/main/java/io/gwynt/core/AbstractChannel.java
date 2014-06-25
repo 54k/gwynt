@@ -325,8 +325,20 @@ public abstract class AbstractChannel implements Channel {
 
             registered = true;
             AbstractChannel.this.eventLoop = eventScheduler;
-            pipeline.fireRegistered();
-            afterRegister();
+            boolean registered = false;
+            try {
+                pipeline.fireRegistered();
+                afterRegister();
+                registered = true;
+                if (isActive()) {
+                    pipeline.fireOpen();
+                }
+            } finally {
+                if (!registered) {
+                    unregister();
+                    closeForcibly();
+                }
+            }
         }
 
         protected abstract void afterRegister();

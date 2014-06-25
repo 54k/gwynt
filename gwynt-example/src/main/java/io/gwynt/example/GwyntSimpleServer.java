@@ -19,15 +19,15 @@ public class GwyntSimpleServer implements Runnable {
     public void run() {
         EventLoopGroup eventLoop = new NioEventLoopGroup();
         final IOReactor reactor =
-                new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop).addServerHandler(new LoggingHandler()).addChildHandler(new UtfStringConverter())
-                        .addChildHandler(new AbstractHandler() {
-                            @Override
-                            public void onMessageReceived(HandlerContext context, Object message) {
-                                context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
-                                context.write(new Date().toString() + "\r\n");
-                                context.close();
-                            }
-                        });
+                new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop).addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())
+                        .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler() {
+                    @Override
+                    public void onMessageReceived(HandlerContext context, Object message) {
+                        context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
+                        context.write(new Date().toString() + "\r\n");
+                        context.close();
+                    }
+                });
 
         try {
             reactor.bind(3001).sync();

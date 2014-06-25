@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
+public final class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     private static final Logger logger = LoggerFactory.getLogger(io.gwynt.core.nio.NioEventLoop.class);
 
@@ -98,7 +98,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
     public void setIoRatio(int ioRatio) {
         if (ioRatio < 1 || ioRatio > 100) {
-            throw new IllegalArgumentException("Must be in range[1...100]");
+            throw new IllegalArgumentException("ioRatio must be in range [1...100]");
         }
         this.ioRatio = ioRatio;
     }
@@ -121,6 +121,16 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         wakeUpSelector();
     }
 
+    void selectNow() throws IOException {
+        try {
+            selector.selectNow();
+        } finally {
+            if (!selectorAwakened.get()) {
+                selector.wakeup();
+            }
+        }
+    }
+
     void wakeUpSelector() {
         if (!inExecutorThread() && !selectorAwakened.getAndSet(true)) {
             selector.wakeup();
@@ -135,7 +145,7 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
     @Override
     protected void run() {
         try {
-            Selector sel = selector;
+            //            Selector sel = selector;
             for (; ; ) {
                 //                int keyCount = 0;
                 //
@@ -211,7 +221,10 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
     }
 
     private void closeAll() {
-        selectNow();
+        try {
+            selectNow();
+        } catch (IOException ignore) {
+        }
 
         Set<SelectionKey> keys = selector.keys();
         Collection<AbstractNioChannel> channels = new ArrayList<>(keys.size());
@@ -231,10 +244,4 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         }
     }
 
-    private void selectNow() {
-        try {
-            selector.selectNow();
-        } catch (IOException ignore) {
-        }
-    }
 }
