@@ -200,7 +200,9 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
             long deadline = closestDeadlineNanos(nanos);
             long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
             selectorAwakened.set(false);
-            if (timeout > -1) {
+            if (pendingTasks() > 0 && timeout == 0) {
+                selector.selectNow();
+            } else if (pendingTasks() > 0 && timeout > 0) {
                 selector.select(timeout);
             } else {
                 selector.selectNow();
