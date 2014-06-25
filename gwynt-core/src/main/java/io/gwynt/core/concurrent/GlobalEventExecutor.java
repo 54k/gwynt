@@ -183,6 +183,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
                 } catch (Throwable e) {
                     logger.warn("Unexpected exception from an event executor: ", e);
                 }
+                cancelDelayedTasks();
                 STATE_UPDATER.set(GlobalEventExecutor.this, ST_NOT_STARTED);
             }
         });
