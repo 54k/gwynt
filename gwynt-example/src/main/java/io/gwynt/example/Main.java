@@ -31,7 +31,7 @@ public class Main {
         new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 
-//        new GwyntSimpleChatServer().run();
+        new GwyntSimpleChatServer().run();
 
         //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
         //            @Override
@@ -45,13 +45,13 @@ public class Main {
 
         NioEventLoop dispatcher = new NioEventLoop();
         //
-        //                        Endpoint tcpEndpoint = new EndpointBootstrap().group(dispatcher).channelClass(NioServerSocketChannel.class).addHandler(sc).addHandler(lh).addHandler(eh);
+        //                        Endpoint tcpEndpoint = new EndpointBootstrap().group(dispatcher).channelClass(NioServerSocketChannel.class).addChildHandler(sc).addChildHandler(lh).addChildHandler(eh);
         //                        tcpEndpoint.bind(3002).await();
         //
         //                        NioEventLoop dispatcher2 = new NioEventLoop();
         //
         //                        final Endpoint tcpClient = new EndpointBootstrap();
-        //                        tcpClient.group(dispatcher2).channelClass(NioSocketChannel.class).addHandler(new ChannelInitializer() {
+        //                        tcpClient.group(dispatcher2).channelClass(NioSocketChannel.class).addChildHandler(new ChannelInitializer() {
         //
         //                            @Override
         //                            protected void initialize(Channel session) {
@@ -85,14 +85,14 @@ public class Main {
         //                            tcpEndpoint.bind(3002).await(10, TimeUnit.MILLISECONDS);
         //                        }
 
-        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
+        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addChildHandler(lh).addChildHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 context.write(message);
             }
         }).bind(3002).await();
 
-        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(lh).addHandler(new AbstractHandler() {
+        new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addChildHandler(lh).addChildHandler(new AbstractHandler() {
             @Override
             public void onOpen(HandlerContext context) {
                 context.write(new Datagram(ByteBuffer.wrap("datagram".getBytes()), context.channel().getRemoteAddress()));
@@ -105,7 +105,7 @@ public class Main {
             }
         }).connect("localhost", 3002).await();
 
-        Channel channel = new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addHandler(sc).addHandler(new AbstractHandler() {
+        Channel channel = new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addChildHandler(sc).addChildHandler(new AbstractHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, Object message) {
                 System.out.println(message);

@@ -16,30 +16,53 @@ public final class IOReactor {
     private EventLoopGroup primaryGroup;
     private EventLoopGroup secondaryGroup;
 
-    private List<Handler> handlers = new ArrayList<>();
+    private List<Handler> serverHandlers = new ArrayList<>();
+    private List<Handler> childHandlers = new ArrayList<>();
     private ChannelFactory channelFactory = new DefaultChannelFactory();
     private Class<? extends Channel> channelClazz;
 
-    public IOReactor addHandler(Handler handler) {
+    public IOReactor addServerHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
 
-        handlers.add(handler);
+        serverHandlers.add(handler);
         return this;
     }
 
-    public IOReactor removeHandler(Handler handler) {
+    public IOReactor removeServerHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
 
-        handlers.remove(handler);
+        serverHandlers.remove(handler);
         return this;
     }
 
-    public Iterable<Handler> handlers() {
-        return Collections.unmodifiableList(handlers);
+    public IOReactor addChildHandler(Handler handler) {
+        if (handler == null) {
+            throw new IllegalArgumentException("handler");
+        }
+
+        childHandlers.add(handler);
+        return this;
+    }
+
+    public IOReactor removeChildHandler(Handler handler) {
+        if (handler == null) {
+            throw new IllegalArgumentException("handler");
+        }
+
+        childHandlers.remove(handler);
+        return this;
+    }
+
+    public Iterable<Handler> serverHandlers() {
+        return Collections.unmodifiableList(serverHandlers);
+    }
+
+    public Iterable<Handler> childHandlers() {
+        return Collections.unmodifiableList(childHandlers);
     }
 
     public ChannelFactory channelFactory() {
@@ -116,13 +139,23 @@ public final class IOReactor {
     private ChannelFuture initAndRegisterChannel() {
         Channel channel = channelFactory.createChannel(channelClazz);
         if (channel instanceof ServerChannel) {
-            channel.pipeline().addFirst(new DefaultChannelAcceptor());
+            DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor();
+            channel.pipeline().addFirst(acceptor);
+            for (Handler handler : serverHandlers()) {
+                channel.pipeline().addBefore(handler, acceptor);
+            }
         } else {
-            for (Handler handler : handlers()) {
+            for (Handler handler : childHandlers()) {
                 channel.pipeline().addLast(handler);
             }
         }
         return primaryGroup.register(channel);
+    }
+
+    @Deprecated
+    public void shutdown() {
+        primaryGroup.shutdown();
+        secondaryGroup.shutdown();
     }
 
     public Future<Void> shutdownGracefully() {
@@ -139,7 +172,7 @@ public final class IOReactor {
 
         @Override
         public void onMessageReceived(final HandlerContext context, Channel channel) {
-            for (Handler handler : handlers()) {
+            for (Handler handler : childHandlers()) {
                 channel.pipeline().addLast(handler);
             }
 

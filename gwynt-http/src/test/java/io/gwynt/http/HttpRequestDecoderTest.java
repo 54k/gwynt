@@ -13,7 +13,7 @@ public class HttpRequestDecoderTest {
     @Test
     public void testHttpRequestDecoder() throws Exception {
         EventLoopGroup group = new NioEventLoopGroup(1);
-        IOReactor reactor = new IOReactor().channelClass(NioServerSocketChannel.class).group(group).addHandler(new ChannelInitializer() {
+        IOReactor reactor = new IOReactor().channelClass(NioServerSocketChannel.class).group(group).addChildHandler(new ChannelInitializer() {
             @Override
             protected void initialize(Channel channel) {
                 channel.pipeline().addLast(new HttpRequestDecoder());

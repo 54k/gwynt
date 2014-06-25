@@ -8,11 +8,11 @@ import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
 import io.gwynt.core.codec.ByteToMessageCodec;
+import io.gwynt.core.concurrent.FutureGroup;
+import io.gwynt.core.concurrent.FutureGroupListener;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
-import io.gwynt.core.group.ChannelGroupFuture;
-import io.gwynt.core.group.ChannelGroupFutureListener;
 import io.gwynt.core.group.DefaultChannelGroup;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
@@ -48,8 +48,8 @@ public class GwyntSimpleChatServer implements Runnable {
         final ChatHandler chatHandler = new ChatHandler();
         channels = new DefaultChannelGroup();
 
-        IOReactor endpoint =
-                new IOReactor().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addHandler(new UtfStringConverter())*/.addHandler(new ChannelInitializer() {
+        final IOReactor endpoint =
+                new IOReactor().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addFirst(new MessageDecoder());
@@ -72,29 +72,54 @@ public class GwyntSimpleChatServer implements Runnable {
                 logger.info("tick");
             }
         }, 5, TimeUnit.SECONDS);
-    }
 
-    private void createBots(int port) {
-        IOReactor client = new IOReactor().group(eventLoop).channelClass(NioSocketChannel.class).addHandler(new UtfStringConverter()).addHandler(new AbstractHandler() {
+        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
             @Override
-            public void onOpen(final HandlerContext context) {
-                context.write("hello\r\n").addListener(new ChannelFutureListener() {
+            public void run() {
+                endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
                     @Override
-                    public void onComplete(final ChannelFuture future) {
-                        future.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
-                            @Override
-                            public void run() {
-                                future.channel().write(new Date().toString() + "\r\n");
-                            }
-                        }, new Random().nextInt(120) + 15, new Random().nextInt(300) + 15, TimeUnit.SECONDS);
+                    public void onComplete(FutureGroup<Void> future) {
+                        System.out.println("SHUTDOWN SERVER");
                     }
                 });
             }
-        });
+        }, 30, TimeUnit.SECONDS);
+    }
+
+    private void createBots(int port) {
+        final IOReactor client = new IOReactor().group(new NioEventLoopGroup()).channelClass(NioSocketChannel.class).addChildHandler(new UtfStringConverter())
+                .addChildHandler(new AbstractHandler() {
+                    @Override
+                    public void onOpen(final HandlerContext context) {
+                        context.write("hello\r\n").addListener(new ChannelFutureListener() {
+                            @Override
+                            public void onComplete(final ChannelFuture future) {
+                                future.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        future.channel().write(new Date().toString() + "\r\n");
+                                    }
+                                }, new Random().nextInt(120) + 15, new Random().nextInt(300) + 15, TimeUnit.SECONDS);
+                            }
+                        });
+                    }
+                });
 
         for (int i = 0; i < 1000; i++) {
             client.connect("localhost", port);
         }
+
+        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+            @Override
+            public void run() {
+                client.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+                    @Override
+                    public void onComplete(FutureGroup<Void> future) {
+                        System.out.println("SHUTDOWN BOTS");
+                    }
+                });
+            }
+        }, 15, TimeUnit.SECONDS);
     }
 
     //    private ChannelFuture runDiscoveryServer(final int port) {
@@ -131,7 +156,7 @@ public class GwyntSimpleChatServer implements Runnable {
     //        } catch (Throwable t) {
     //            throw new RuntimeException(t);
     //        }
-    //        endpoint.addHandler(new AbstractHandler<Datagram, Object>() {
+    //        endpoint.addChildHandler(new AbstractHandler<Datagram, Object>() {
     //            @Override
     //            public void onMessageReceived(HandlerContext context, Datagram message) {
     //                int port = message.content().getInt();
@@ -229,12 +254,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     channels.add(context.channel());
                 }
             } else {
-                channels.write(context.channel() + " wrote: " + message).addListener(new ChannelGroupFutureListener() {
-                    @Override
-                    public void onComplete(ChannelGroupFuture future) {
-                        System.out.println(future);
-                    }
-                });
+                channels.write(context.channel() + " wrote: " + message);
             }
         }
 
