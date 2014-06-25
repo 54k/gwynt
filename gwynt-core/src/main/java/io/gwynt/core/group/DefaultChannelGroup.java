@@ -5,7 +5,6 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.concurrent.EventExecutor;
-import io.gwynt.core.util.Arrays;
 import io.gwynt.core.util.CombinedIterator;
 
 import java.lang.reflect.Array;
@@ -19,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultChannelGroup extends AbstractSet<Channel> implements ChannelGroup {
+    private static final Object[] EMPTY_ARRAY = {};
 
     private static final AtomicLong sequence = new AtomicLong(0);
     private final ChannelFutureListener remover = new ChannelFutureListener() {
@@ -210,7 +210,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
     @Override
     public Object[] toArray() {
         if (isEmpty()) {
-            return Arrays.emptyArray();
+            return EMPTY_ARRAY;
         }
 
         Object[] o = new Object[size()];
@@ -223,7 +223,7 @@ public class DefaultChannelGroup extends AbstractSet<Channel> implements Channel
     @Override
     public <T> T[] toArray(T[] a) {
         if (isEmpty()) {
-            return Arrays.emptyArray();
+            return (T[]) EMPTY_ARRAY;
         }
 
         T[] o = (T[]) Array.newInstance(a.getClass().getComponentType(), size());

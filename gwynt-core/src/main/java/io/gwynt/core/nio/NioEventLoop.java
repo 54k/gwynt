@@ -92,6 +92,10 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         }
     }
 
+    private void processSelectedKeys() {
+        processSelectedKeys(selector.selectedKeys().iterator());
+    }
+
     public int getIoRatio() {
         return ioRatio;
     }
@@ -121,15 +125,6 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         wakeUpSelector();
     }
 
-    void selectNow() throws IOException {
-        try {
-            selector.selectNow();
-        } finally {
-            if (!selectorAwakened.get()) {
-                selector.wakeup();
-            }
-        }
-    }
 
     void wakeUpSelector() {
         if (!inExecutorThread() && !selectorAwakened.getAndSet(true)) {
@@ -144,81 +139,70 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
 
     @Override
     protected void run() {
-        try {
-            //            Selector sel = selector;
-            for (; ; ) {
-                //                int keyCount = 0;
-                //
-                //                long nanos = System.nanoTime();
-                //                long deadline = closestDeadlineNanos(nanos);
-                //                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
-                //
-                //                try {
-                //                    selectorAwakened.set(false);
-                //                    if (hasTasks() || timeout == 0) {
-                //                        keyCount = selector.selectNow();
-                //                    } else if (timeout == -1) {
-                //                        keyCount = selector.select();
-                //                    } else {
-                //                        keyCount = selector.select(timeout);
-                //                    }
-                //                    selectorAwakened.set(true);
-                //                } catch (ClosedSelectorException e) {
-                //                    logger.error(e.getMessage(), e);
-                //                    break;
-                //                } catch (Throwable e) {
-                //                    logger.error(e.getMessage(), e);
-                //                }
-                //                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
-                //
-                //                if (ioRatio == 100) {
-                //                    processSelectedKeys(keys);
-                //                    runAllTasks();
-                //                } else {
-                //                    long s = System.nanoTime();
-                //                    processSelectedKeys(keys);
-                //                    long ioTime = System.nanoTime() - s;
-                //                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
-                //                }
-                select();
+        for (; ; ) {
+            try {
+                selectorAwakened.set(false);
+                if (hasTasks()) {
+                    selectNow();
+                } else {
+                    select();
+                }
+                selectorAwakened.set(true);
+
+                if (ioRatio == 100) {
+                    processSelectedKeys();
+                    runAllTasks();
+                } else {
+                    long s = System.nanoTime();
+                    processSelectedKeys();
+                    long ioTime = System.nanoTime() - s;
+                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+                }
+
                 if (isShuttingDown()) {
                     closeAll();
-                    confirmShutdown();
-                    break;
+                    if (confirmShutdown()) {
+                        break;
+                    }
                 }
+            } catch (Throwable e) {
+                throw new RuntimeException("Unexpected exception", e);
             }
-        } catch (Throwable e) {
-            throw new RuntimeException("Unexpected exception", e);
+        }
+    }
+
+    private void selectNow() throws IOException {
+        try {
+            selector.selectNow();
+        } finally {
+            if (!selectorAwakened.get()) {
+                selector.wakeup();
+            }
         }
     }
 
     private void select() throws IOException {
-        if (hasTasks()) {
-            selector.selectNow();
-        } else {
+        for (; ; ) {
             long nanos = System.nanoTime();
             long deadline = closestDeadlineNanos(nanos);
             long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
-            selectorAwakened.set(false);
-            if (pendingTasks() > 0 && timeout == 0) {
-                selector.selectNow();
-            } else if (pendingTasks() > 0 && timeout > 0) {
-                selector.select(timeout);
-            } else {
-                selector.selectNow();
-            }
-            selectorAwakened.set(true);
-        }
 
-        Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
-        if (ioRatio == 100) {
-            processSelectedKeys(keys);
-            runAllTasks();
-        } else {
-            long s = System.nanoTime();
-            processSelectedKeys(keys);
-            long ioTime = System.nanoTime() - s;
-            runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+            if (timeout <= 0) {
+                selector.selectNow();
+                break;
+            }
+
+            int keyCount = selector.select(timeout);
+
+            if (keyCount > 0 || selectorAwakened.get() || hasTasks()) {
+                break;
+            }
+
+            if (Thread.interrupted()) {
+                logger.warn("Thread.currentThread().interrupt() was called. " +
+                        "Use NioEventLoop.shutdownGracefully() to shutdown NioEventLoop.");
+                break;
+            }
         }
     }
 
@@ -237,7 +221,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         }
 
         for (AbstractNioChannel ch : channels) {
-            ch.unsafe().close(ch.unsafe().voidPromise());
+            ch.unsafe().close(ch.voidPromise());
         }
 
         try {
@@ -246,4 +230,11 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         }
     }
 
+    @Override
+    protected void cleanup() {
+        try {
+            selector.close();
+        } catch (IOException ignore) {
+        }
+    }
 }

@@ -27,7 +27,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final Runnable WAKEUP_TASK = new Runnable() {
         @Override
         public void run() {
-            // Do nothing.
+            // NO OP
         }
     };
     private final Promise<Void> terminationFuture = new DefaultPromise<>(GlobalEventExecutor.INSTANCE);
@@ -205,14 +205,6 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
 
         taskQueue.add(task);
-    }
-
-    protected void removeTask(Runnable task) {
-        if (task == null) {
-            throw new IllegalArgumentException("task");
-        }
-
-        taskQueue.remove(task);
     }
 
     @Deprecated
@@ -395,9 +387,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 }
 
                 if (success && !shutdownConfirmed) {
-                    logger.error("Buggy " + EventExecutor.class.getSimpleName() + " implementation; " +
-                            SingleThreadEventExecutor.class.getSimpleName() + ".confirmShutdown() must be called " +
-                            "before run() implementation terminates.");
+                    logger.warn(getClass().getSimpleName() + ".confirmShutdown() must be called");
                 }
 
                 try {
@@ -407,11 +397,19 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                         }
                     }
                 } finally {
-                    STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_TERMINATED);
-                    terminationFuture.setSuccess(null);
+                    try {
+                        cleanup();
+                    } finally {
+                        STATE_UPDATER.set(SingleThreadEventExecutor.this, ST_TERMINATED);
+                        terminationFuture.setSuccess(null);
+                    }
                 }
             }
         });
+    }
+
+    protected void cleanup() {
+        // NO OP
     }
 
     protected boolean confirmShutdown() {

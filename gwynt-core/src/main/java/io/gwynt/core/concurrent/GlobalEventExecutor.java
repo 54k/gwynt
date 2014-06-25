@@ -143,20 +143,6 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
         if (STATE_UPDATER.get(this) == ST_NOT_STARTED) {
             startThread();
         }
-
-        if (wakeUpForTask && wakeUpForTask(command)) {
-            wakeup(inExecutorThread());
-        }
-    }
-
-    protected boolean wakeUpForTask(Runnable task) {
-        return true;
-    }
-
-    protected void wakeup(boolean inExecutorThread) {
-        if (!inExecutorThread) {
-            taskQueue.add(WAKEUP_TASK);
-        }
     }
 
     @Override

@@ -76,7 +76,12 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelPromise newChannelPromise() {
-        return new DefaultChannelPromise(this);
+        return new DefaultChannelPromise(this, eventLoop());
+    }
+
+    @Override
+    public ChannelPromise voidPromise() {
+        return VOID_PROMISE;
     }
 
     @Override
@@ -166,7 +171,7 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelFuture unregister() {
-        return eventLoop.unregister(this, newChannelPromise());
+        return eventLoop.unregister(this);
     }
 
     @Override
@@ -175,7 +180,7 @@ public abstract class AbstractChannel implements Channel {
             throw new RegistrationException("eventLoop is not compatible");
         }
 
-        return eventLoop.register(this, newChannelPromise());
+        return eventLoop.register(this);
     }
 
     protected Object javaChannel() {
@@ -456,11 +461,6 @@ public abstract class AbstractChannel implements Channel {
                 eventLoop().execute(task);
             } catch (RejectedExecutionException ignore) {
             }
-        }
-
-        @Override
-        public ChannelPromise voidPromise() {
-            return VOID_PROMISE;
         }
     }
 }

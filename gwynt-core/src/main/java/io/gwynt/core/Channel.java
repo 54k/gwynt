@@ -50,6 +50,8 @@ public interface Channel {
 
     ChannelFuture unregister();
 
+    ChannelPromise voidPromise();
+
     interface Unsafe<T> {
 
         T javaChannel();
@@ -83,7 +85,5 @@ public interface Channel {
         SocketAddress getLocalAddress() throws Exception;
 
         SocketAddress getRemoteAddress() throws Exception;
-
-        ChannelPromise voidPromise();
     }
 }

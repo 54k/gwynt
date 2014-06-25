@@ -1,19 +1,12 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.IOReactor;
-import io.gwynt.core.concurrent.ScheduledFuture;
-import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.util.concurrent.TimeUnit;
 
 //import io.netty.channel.nio.NioEventLoopGroup;
 
@@ -25,41 +18,41 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        final IOReactor reactor = new IOReactor().channelClass(NioSocketChannel.class).group(new NioEventLoopGroup(16)).addChildHandler(new ChannelInitializer() {
-            @Override
-            protected void initialize(Channel channel) {
-                channel.pipeline().addLast(new AbstractHandler() {
-                    ScheduledFuture<?> task;
+//        final IOReactor reactor = new IOReactor().channelClass(NioSocketChannel.class).group(new NioEventLoopGroup(16)).addChildHandler(new ChannelInitializer() {
+//            @Override
+//            protected void initialize(Channel channel) {
+//                channel.pipeline().addLast(new AbstractHandler() {
+//                    ScheduledFuture<?> task;
+//
+//                    @Override
+//                    public void onOpen(final HandlerContext context) {
+//                        task = context.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                context.write(new byte[]{127, 0, 0, 1});
+//                            }
+//                        }, 0, 5, TimeUnit.MILLISECONDS);
+//                    }
+//
+//                    @Override
+//                    public void onMessageReceived(HandlerContext context, Object message) {
+//
+//                    }
+//
+//                    @Override
+//                    public void onClose(HandlerContext context) {
+//                        task.cancel();
+//                    }
+//                });
+//            }
+//        });
+//
+//        for (int i = 0; i < 20000; i++) {
+//            reactor.connect("localhost", 5000);
+//        }
 
-                    @Override
-                    public void onOpen(final HandlerContext context) {
-                        task = context.channel().eventLoop().scheduleAtFixedRate(new Runnable() {
-                            @Override
-                            public void run() {
-                                context.write(new byte[]{127, 0, 0, 1});
-                            }
-                        }, 0, 5, TimeUnit.MILLISECONDS);
-                    }
-
-                    @Override
-                    public void onMessageReceived(HandlerContext context, Object message) {
-
-                    }
-
-                    @Override
-                    public void onClose(HandlerContext context) {
-                        task.cancel();
-                    }
-                });
-            }
-        });
-
-        for (int i = 0; i < 20000; i++) {
-            reactor.connect("localhost", 5000);
-        }
-
-        //        new NettySimpleServer().run();
-        //        new GwyntSimpleServer().run();
+        new NettySimpleServer().run();
+        new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 
         //        new GwyntSimpleChatServer().run();
