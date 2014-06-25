@@ -433,10 +433,7 @@ public abstract class AbstractChannel implements Channel {
                         if (wasActive && !isActive()) {
                             pipeline.fireClose();
                         }
-
-                        if (isRegistered()) {
-                            unregister();
-                        }
+                        unregister();
                     }
                 });
             }
