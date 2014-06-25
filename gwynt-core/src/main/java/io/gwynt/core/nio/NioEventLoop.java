@@ -137,39 +137,39 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
         try {
             Selector sel = selector;
             for (; ; ) {
-//                int keyCount = 0;
-//
-//                long nanos = System.nanoTime();
-//                long deadline = closestDeadlineNanos(nanos);
-//                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
-//
-//                try {
-//                    selectorAwakened.set(false);
-//                    if (hasTasks() || timeout == 0) {
-//                        keyCount = selector.selectNow();
-//                    } else if (timeout == -1) {
-//                        keyCount = selector.select();
-//                    } else {
-//                        keyCount = selector.select(timeout);
-//                    }
-//                    selectorAwakened.set(true);
-//                } catch (ClosedSelectorException e) {
-//                    logger.error(e.getMessage(), e);
-//                    break;
-//                } catch (Throwable e) {
-//                    logger.error(e.getMessage(), e);
-//                }
-//                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
-//
-//                if (ioRatio == 100) {
-//                    processSelectedKeys(keys);
-//                    runAllTasks();
-//                } else {
-//                    long s = System.nanoTime();
-//                    processSelectedKeys(keys);
-//                    long ioTime = System.nanoTime() - s;
-//                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
-//                }
+                //                int keyCount = 0;
+                //
+                //                long nanos = System.nanoTime();
+                //                long deadline = closestDeadlineNanos(nanos);
+                //                long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
+                //
+                //                try {
+                //                    selectorAwakened.set(false);
+                //                    if (hasTasks() || timeout == 0) {
+                //                        keyCount = selector.selectNow();
+                //                    } else if (timeout == -1) {
+                //                        keyCount = selector.select();
+                //                    } else {
+                //                        keyCount = selector.select(timeout);
+                //                    }
+                //                    selectorAwakened.set(true);
+                //                } catch (ClosedSelectorException e) {
+                //                    logger.error(e.getMessage(), e);
+                //                    break;
+                //                } catch (Throwable e) {
+                //                    logger.error(e.getMessage(), e);
+                //                }
+                //                Iterator<SelectionKey> keys = keyCount > 0 ? sel.selectedKeys().iterator() : null;
+                //
+                //                if (ioRatio == 100) {
+                //                    processSelectedKeys(keys);
+                //                    runAllTasks();
+                //                } else {
+                //                    long s = System.nanoTime();
+                //                    processSelectedKeys(keys);
+                //                    long ioTime = System.nanoTime() - s;
+                //                    runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+                //                }
                 select();
                 if (isShuttingDown()) {
                     closeAll();
@@ -211,6 +211,8 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
     }
 
     private void closeAll() {
+        selectNow();
+
         Set<SelectionKey> keys = selector.keys();
         Collection<AbstractNioChannel> channels = new ArrayList<>(keys.size());
 
@@ -225,6 +227,13 @@ public class NioEventLoop extends SingleThreadEventLoop implements EventLoop {
 
         try {
             select();
+        } catch (IOException ignore) {
+        }
+    }
+
+    private void selectNow() {
+        try {
+            selector.selectNow();
         } catch (IOException ignore) {
         }
     }

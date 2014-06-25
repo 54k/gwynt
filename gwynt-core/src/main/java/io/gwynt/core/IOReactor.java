@@ -1,10 +1,14 @@
 package io.gwynt.core;
 
+import io.gwynt.core.concurrent.DefaultFutureGroup;
+import io.gwynt.core.concurrent.Future;
+import io.gwynt.core.concurrent.FutureGroup;
 import io.gwynt.core.nio.AbstractNioChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -122,10 +126,14 @@ public final class IOReactor {
         return primaryGroup.register(channel);
     }
 
-    public IOReactor shutdown() {
-        primaryGroup.shutdown();
-        secondaryGroup.shutdown();
-        return this;
+    public FutureGroup<Void> shutdownGracefully() {
+        Collection<Future<Void>> futures = new ArrayList<>();
+        futures.add(primaryGroup.shutdownGracefully());
+        if (primaryGroup != secondaryGroup) {
+            futures.add(secondaryGroup.shutdownGracefully());
+        }
+
+        return new DefaultFutureGroup<>(futures);
     }
 
     private final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
