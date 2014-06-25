@@ -2,7 +2,6 @@ package io.gwynt.core;
 
 import io.gwynt.core.concurrent.DefaultFutureGroup;
 import io.gwynt.core.concurrent.Future;
-import io.gwynt.core.concurrent.FutureGroup;
 import io.gwynt.core.nio.AbstractNioChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
@@ -126,7 +125,7 @@ public final class IOReactor {
         return primaryGroup.register(channel);
     }
 
-    public FutureGroup<Void> shutdownGracefully() {
+    public Future<Void> shutdownGracefully() {
         Collection<Future<Void>> futures = new ArrayList<>();
         futures.add(primaryGroup.shutdownGracefully());
         if (primaryGroup != secondaryGroup) {
