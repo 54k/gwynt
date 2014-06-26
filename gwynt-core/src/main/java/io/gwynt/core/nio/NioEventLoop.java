@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -78,19 +79,23 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
     }
 
     private static void processSelectedKey(AbstractNioChannel channel, SelectionKey key) {
-        if (key.isReadable()) {
-            channel.unsafe().doRead();
-        }
-        if (key.isWritable()) {
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-            channel.unsafe().doWrite();
-        }
-        if (key.isAcceptable()) {
-            channel.unsafe().doRead();
-        }
-        if (key.isConnectable()) {
-            key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
-            channel.unsafe().doConnect();
+        try {
+            if (key.isReadable()) {
+                channel.unsafe().doRead();
+            }
+            if (key.isWritable()) {
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+                channel.unsafe().doWrite();
+            }
+            if (key.isAcceptable()) {
+                channel.unsafe().doRead();
+            }
+            if (key.isConnectable()) {
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
+                channel.unsafe().doConnect();
+            }
+        } catch (CancelledKeyException e) {
+            channel.unsafe().close(channel.voidPromise());
         }
     }
 
