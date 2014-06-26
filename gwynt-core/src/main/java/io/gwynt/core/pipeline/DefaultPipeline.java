@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext> {
@@ -35,7 +36,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     }
 
     private static String generateName(Handler handler) {
-        return handler.getClass() + "@" + handler.hashCode();
+        return handler.getClass().getName() + "@" + handler.hashCode();
     }
 
     private void checkMultiplicity(String name) {
@@ -581,6 +582,21 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             });
         }
         context.handler().onHandlerRemoved(context);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getName()).append("(contexts: ");
+        for (Iterator<Entry<String, DefaultHandlerContext>> iterator = name2context.entrySet().iterator(); iterator.hasNext(); ) {
+            Entry<String, DefaultHandlerContext> entry = iterator.next();
+            sb.append(entry.getValue());
+            if (iterator.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+        return sb.toString();
     }
 
     private static class HeadHandler extends AbstractHandler {

@@ -171,4 +171,9 @@ public final class DefaultHandlerContext implements HandlerContext {
     private DefaultHandlerContext findContextOutbound() {
         return prev;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + "(name: " + name() + ", handler: " + handler().getClass().getName() + ')';
+    }
 }

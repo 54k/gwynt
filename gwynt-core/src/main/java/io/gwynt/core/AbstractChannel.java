@@ -198,6 +198,11 @@ public abstract class AbstractChannel implements Channel {
 
     protected abstract Unsafe newUnsafe();
 
+    @Override
+    public String toString() {
+        return getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress() + ", pipeline: " + pipeline() + ')';
+    }
+
     final class ClosePromise extends DefaultChannelPromise {
 
         ClosePromise(AbstractChannel ch) {
