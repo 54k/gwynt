@@ -195,7 +195,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
             }
 
             if (Thread.interrupted()) {
-                logger.warn("Thread.currentThread().interrupt() was called. " + "Use NioEventLoop.shutdownGracefully() to shutdown NioEventLoop.");
+                logger.warn("Thread.currentThread().interrupt() was called. Use NioEventLoop.shutdownGracefully() to shutdown NioEventLoop.");
                 break;
             }
         }

@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractScheduledEventExecutor extends AbstractEventExecutor {
 
-    private static final long PURGE_TASK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
+    public static final long PURGE_TASK_INTERVAL = TimeUnit.SECONDS.toNanos(5);
 
     private Queue<ScheduledFutureTask<?>> delayedTaskQueue = new PriorityQueue<>();
 
