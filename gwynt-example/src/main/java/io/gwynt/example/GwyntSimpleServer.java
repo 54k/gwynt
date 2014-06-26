@@ -14,9 +14,8 @@ public class GwyntSimpleServer implements Runnable {
     @Override
     public void run() {
         EventLoopGroup eventLoop = new NioEventLoopGroup();
-        final IOReactor reactor =
-                new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
-                        .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler() {
+        final IOReactor reactor = new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
+                .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler() {
                     @Override
                     public void onMessageReceived(HandlerContext context, Object message) {
                         context.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n");
@@ -34,17 +33,5 @@ public class GwyntSimpleServer implements Runnable {
             reactor.bind(3001).sync();
         } catch (InterruptedException ignore) {
         }
-
-//        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-//            @Override
-//            public void run() {
-//                reactor.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
-//                    @Override
-//                    public void onComplete(FutureGroup<Void> future) {
-//                        System.out.println("SHUTDOWN");
-//                    }
-//                });
-//            }
-//        }, 5, TimeUnit.SECONDS);
     }
 }

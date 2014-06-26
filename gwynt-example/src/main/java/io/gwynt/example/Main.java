@@ -51,11 +51,11 @@ public class Main {
 //            reactor.connect("localhost", 5000);
 //        }
 
-        new NettySimpleServer().run();
-        new GwyntSimpleServer().run();
+        //        new NettySimpleServer().run();
+        //        new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 
-        //        new GwyntSimpleChatServer().run();
+        new GwyntSimpleChatServer().run();
 
         //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
         //            @Override

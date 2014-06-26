@@ -69,13 +69,6 @@ public class GwyntSimpleChatServer implements Runnable {
         GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
             @Override
             public void run() {
-                logger.info("tick");
-            }
-        }, 5, TimeUnit.SECONDS);
-
-        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-            @Override
-            public void run() {
                 endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
                     @Override
                     public void onComplete(FutureGroup<Void> future) {
