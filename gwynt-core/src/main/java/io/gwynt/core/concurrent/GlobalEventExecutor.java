@@ -22,20 +22,12 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
     @SuppressWarnings("FieldCanBeLocal")
     private volatile int state = ST_NOT_STARTED;
     private static final int ST_STARTED = 2;
-    private static final Runnable WAKEUP_TASK = new Runnable() {
-        @Override
-        public void run() {
-            // Do nothing.
-        }
-    };
-    private final boolean wakeUpForTask;
     private final Executor executor;
     private Thread thread;
     private Queue<Runnable> taskQueue = newTaskQueue();
 
     private GlobalEventExecutor() {
         executor = new ThreadPerTaskExecutor(new DefaultThreadFactory("global-event-executor-"));
-        wakeUpForTask = true;
     }
 
     protected Queue<Runnable> newTaskQueue() {
