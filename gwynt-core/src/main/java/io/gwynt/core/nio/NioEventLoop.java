@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -23,9 +24,9 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
 
     private static final Logger logger = LoggerFactory.getLogger(io.gwynt.core.nio.NioEventLoop.class);
 
-    private final AtomicBoolean selectorAwakened = new AtomicBoolean(true);
+    private final AtomicBoolean awakened = new AtomicBoolean(true);
     Selector selector;
-    private int ioRatio = 100;
+    private int ioRatio = 50;
     private SelectorProvider selectorProvider;
 
     public NioEventLoop() {
@@ -67,9 +68,12 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         while (keys != null && keys.hasNext()) {
             SelectionKey key = keys.next();
             keys.remove();
+            AbstractNioChannel channel = (AbstractNioChannel) key.attachment();
 
             if (key.isValid()) {
-                processSelectedKey((AbstractNioChannel) key.attachment(), key);
+                processSelectedKey(channel, key);
+            } else {
+                channel.unsafe().close(channel.voidPromise());
             }
         }
     }
@@ -87,8 +91,8 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
                 channel.unsafe().doConnect();
             }
-        } catch (Throwable e) {
-            channel.unsafe().exceptionCaught(e);
+        } catch (CancelledKeyException e) {
+            channel.unsafe().close(channel.voidPromise());
         }
     }
 
@@ -125,9 +129,8 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         wakeUpSelector();
     }
 
-
     void wakeUpSelector() {
-        if (!inExecutorThread() && !selectorAwakened.getAndSet(true)) {
+        if (!inExecutorThread() && awakened.compareAndSet(false, true)) {
             selector.wakeup();
         }
     }
@@ -141,13 +144,11 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
     protected void run() {
         for (; ; ) {
             try {
-                selectorAwakened.set(false);
                 if (hasTasks()) {
                     selectNow();
                 } else {
                     select();
                 }
-                selectorAwakened.set(true);
 
                 if (ioRatio == 100) {
                     processSelectedKeys();
@@ -166,41 +167,35 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
                     }
                 }
             } catch (Throwable e) {
-                throw new RuntimeException("Unexpected exception", e);
+                throw new RuntimeException(getClass().getSimpleName() + " throws unexpected exception", e);
             }
         }
     }
 
     private void selectNow() throws IOException {
-        try {
-            selector.selectNow();
-        } finally {
-            if (!selectorAwakened.get()) {
-                selector.wakeup();
-            }
-        }
+        selector.selectNow();
     }
 
     private void select() throws IOException {
         for (; ; ) {
             long nanos = System.nanoTime();
             long deadline = closestDeadlineNanos(nanos);
-            long timeout = deadline > -1 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
+            long timeout = deadline >= 0 ? TimeUnit.NANOSECONDS.toMillis(deadline) : deadline;
 
             if (timeout <= 0) {
-                selector.selectNow();
+                selectNow();
                 break;
             }
 
+            awakened.set(false);
             int keyCount = selector.select(timeout);
 
-            if (keyCount > 0 || selectorAwakened.get() || hasTasks()) {
+            if (keyCount > 0 || awakened.get() || hasTasks()) {
                 break;
             }
 
             if (Thread.interrupted()) {
-                logger.warn("Thread.currentThread().interrupt() was called. " +
-                        "Use NioEventLoop.shutdownGracefully() to shutdown NioEventLoop.");
+                logger.warn("Thread.currentThread().interrupt() was called. " + "Use NioEventLoop.shutdownGracefully() to shutdown NioEventLoop.");
                 break;
             }
         }
@@ -224,10 +219,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
             ch.unsafe().close(ch.voidPromise());
         }
 
-        try {
-            select();
-        } catch (IOException ignore) {
-        }
+        processSelectedKeys();
     }
 
     @Override

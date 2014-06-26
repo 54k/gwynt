@@ -131,10 +131,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             if ((interestOps & ~javaChannel().validOps()) != 0) {
                 throw new IllegalArgumentException("interestOps are not valid");
             }
-            if (selectionKey.isValid()) {
-                selectionKey.interestOps(interestOps);
-                eventLoop().wakeUpSelector();
-            }
+
+            selectionKey.interestOps(interestOps);
+            eventLoop().wakeUpSelector();
         }
 
         private void checkRegistered() {
