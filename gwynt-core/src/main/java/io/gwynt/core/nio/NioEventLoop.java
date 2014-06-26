@@ -152,6 +152,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
                 } else {
                     select();
                 }
+                awakened.set(true);
 
                 if (ioRatio == 100) {
                     processSelectedKeys();
