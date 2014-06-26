@@ -2,7 +2,6 @@ package io.gwynt.core;
 
 import io.gwynt.core.pipeline.Pipeline;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
@@ -72,11 +71,11 @@ public interface Channel {
 
         void unregister();
 
-        void doRead() throws IOException;
+        void doRead();
 
-        void doWrite() throws IOException;
+        void doWrite();
 
-        void doConnect() throws IOException;
+        void doConnect();
 
         void exceptionCaught(Throwable e);
 

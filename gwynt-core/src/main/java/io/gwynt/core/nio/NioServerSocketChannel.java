@@ -100,6 +100,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
+        protected boolean isActive() {
+            return javaChannel().isOpen() && javaChannel().socket().isBound();
+        }
+
+        @Override
         public SocketAddress getLocalAddress() throws Exception {
             return javaChannel().getLocalAddress();
         }

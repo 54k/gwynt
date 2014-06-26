@@ -3,10 +3,10 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NotYetConnectedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -14,6 +14,7 @@ import java.util.concurrent.RejectedExecutionException;
 public abstract class AbstractChannel implements Channel {
 
     protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
+    protected static final NotYetConnectedException NOT_YET_CONNECTED_EXCEPTION = new NotYetConnectedException();
     protected final ChannelPromise VOID_PROMISE = new VoidChannelPromise(this);
 
     private final DefaultPipeline pipeline;
@@ -319,6 +320,8 @@ public abstract class AbstractChannel implements Channel {
 
         protected abstract boolean isActive();
 
+        protected abstract boolean isOpen();
+
         @Override
         public void close(ChannelPromise channelPromise) {
             if (!pendingClose) {
@@ -366,7 +369,7 @@ public abstract class AbstractChannel implements Channel {
         protected abstract void afterUnregister();
 
         @Override
-        public void doRead() throws IOException {
+        public void doRead() {
             assert eventLoop().inExecutorThread();
 
             int messagesRead = 0;
@@ -390,16 +393,24 @@ public abstract class AbstractChannel implements Channel {
         protected abstract int doReadMessages(List<Object> messages);
 
         @Override
-        public void doWrite() throws IOException {
+        public void doWrite() {
             assert eventLoop().inExecutorThread();
 
             if (!isActive()) {
-                channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
+                if (isOpen()) {
+                    channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
+                } else {
+                    channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
+                }
                 return;
             }
 
             if (!channelOutboundBuffer.isEmpty()) {
-                doWriteMessages(channelOutboundBuffer);
+                try {
+                    doWriteMessages(channelOutboundBuffer);
+                } catch (Throwable e) {
+                    channelOutboundBuffer.clear(e);
+                }
             }
 
             if (channelOutboundBuffer.isEmpty() && pendingClose) {
@@ -410,7 +421,7 @@ public abstract class AbstractChannel implements Channel {
         protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer);
 
         @Override
-        public void doConnect() throws IOException {
+        public void doConnect() {
             throw new UnsupportedOperationException();
         }
 

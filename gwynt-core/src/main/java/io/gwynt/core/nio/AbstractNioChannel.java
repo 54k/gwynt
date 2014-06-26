@@ -106,6 +106,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
+        protected boolean isOpen() {
+            return javaChannel().isOpen();
+        }
+
+        @Override
         protected void closeForcibly() {
             try {
                 javaChannel().close();

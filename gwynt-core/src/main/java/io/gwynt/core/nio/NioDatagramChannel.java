@@ -303,7 +303,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
         @Override
         protected boolean isActive() {
-            return javaChannel().isOpen() && javaChannel().socket().isBound();
+            return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
         }
 
         @Override

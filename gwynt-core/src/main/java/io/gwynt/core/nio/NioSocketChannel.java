@@ -103,14 +103,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void afterRegister() {
-            super.afterRegister();
-            //            if (isActive()) {
-            //                pipeline().fireOpen();
-            //            }
-        }
-
-        @Override
         protected int doReadMessages(List<Object> messages) {
             if (allocHandle == null) {
                 allocHandle = config().getRecvByteBufferAllocator().newHandle();
