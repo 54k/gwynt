@@ -33,4 +33,8 @@ public class DefaultEnvelope<V, A extends SocketAddress> implements Envelope<V, 
         return sender;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getName() + "(recipient: " + recipient() + ", sender: " + sender() + ", content: " + content() + ')';
+    }
 }
