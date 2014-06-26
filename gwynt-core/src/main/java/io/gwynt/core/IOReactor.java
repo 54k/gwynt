@@ -19,7 +19,7 @@ public final class IOReactor {
     private List<Handler> serverHandlers = new ArrayList<>();
     private List<Handler> childHandlers = new ArrayList<>();
     private ChannelFactory channelFactory = new DefaultChannelFactory();
-    private Class<? extends Channel> channelClazz;
+    private Class<? extends Channel> channelClass;
 
     public IOReactor addServerHandler(Handler handler) {
         if (handler == null) {
@@ -104,14 +104,14 @@ public final class IOReactor {
     }
 
     public Class<? extends Channel> channelClass() {
-        return channelClazz;
+        return channelClass;
     }
 
-    public IOReactor channelClass(Class<? extends Channel> channel) {
-        if (channel == null) {
-            throw new IllegalArgumentException("channel");
+    public IOReactor channelClass(Class<? extends Channel> channelClass) {
+        if (channelClass == null) {
+            throw new IllegalArgumentException("channelClass");
         }
-        channelClazz = channel;
+        this.channelClass = channelClass;
         return this;
     }
 
@@ -137,7 +137,7 @@ public final class IOReactor {
 
     @SuppressWarnings("unchecked")
     private ChannelFuture initAndRegisterChannel() {
-        Channel channel = channelFactory.createChannel(channelClazz);
+        Channel channel = channelFactory.createChannel(channelClass);
         if (channel instanceof ServerChannel) {
             DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor();
             channel.pipeline().addFirst(acceptor);
