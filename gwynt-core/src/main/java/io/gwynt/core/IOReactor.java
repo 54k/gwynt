@@ -123,7 +123,7 @@ public final class IOReactor {
         }
     }
 
-    public ChannelFuture bind(final int port) {
+    public ChannelFuture bind(int port) {
         return newChannel().bind(new InetSocketAddress(port));
     }
 
