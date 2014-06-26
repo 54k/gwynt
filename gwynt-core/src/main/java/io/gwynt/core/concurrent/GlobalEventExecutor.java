@@ -156,11 +156,8 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
             @Override
             public void run() {
                 GlobalEventExecutor.this.thread = Thread.currentThread();
-                try {
-                    GlobalEventExecutor.this.run();
-                } catch (Throwable e) {
-                    logger.warn("Unexpected exception from an event executor: ", e);
-                }
+                GlobalEventExecutor.this.run();
+
                 cancelDelayedTasks();
                 STATE_UPDATER.set(GlobalEventExecutor.this, ST_NOT_STARTED);
             }
@@ -174,7 +171,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
                 try {
                     task.run();
                 } catch (Throwable e) {
-                    logger.warn("Unexpected exception from an event executor: ", e);
+                    logger.warn(getClass().getSimpleName() + " throws unexpected exception:", e);
                 }
             }
 
