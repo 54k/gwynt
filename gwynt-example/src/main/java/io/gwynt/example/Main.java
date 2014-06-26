@@ -51,7 +51,7 @@ public class Main {
         //            reactor.connect("localhost", 5000);
         //        }
 
-        //        new NettySimpleServer().run();
+        new NettySimpleServer().run();
         new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 

@@ -10,6 +10,7 @@ import java.nio.channels.NotYetConnectedException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractChannel implements Channel {
 
@@ -244,7 +245,9 @@ public abstract class AbstractChannel implements Channel {
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
 
-        private volatile boolean pendingClose;
+        private final AtomicBoolean pendingClose = new AtomicBoolean();
+        private final AtomicBoolean inFlush = new AtomicBoolean();
+
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
 
         protected ChannelOutboundBuffer newChannelOutboundBuffer() {
@@ -301,7 +304,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void read(ChannelPromise channelPromise) {
-            if (!pendingClose && isActive()) {
+            if (!pendingClose.get() && isActive()) {
                 readRequested();
                 safeSetSuccess(channelPromise);
             } else {
@@ -313,7 +316,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
-            if (!pendingClose && isActive()) {
+            if (!pendingClose.get() && isActive()) {
                 channelOutboundBuffer.addMessage(message, channelPromise);
                 writeRequested();
             } else {
@@ -329,9 +332,9 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void close(ChannelPromise channelPromise) {
-            if (!pendingClose) {
-                pendingClose = true;
+            if (pendingClose.compareAndSet(false, true)) {
                 closeRequested();
+                doClose();
             }
             closePromise.chainPromise(channelPromise);
         }
@@ -412,14 +415,13 @@ public abstract class AbstractChannel implements Channel {
 
             if (!channelOutboundBuffer.isEmpty()) {
                 try {
+                    inFlush.set(true);
                     doWriteMessages(channelOutboundBuffer);
                 } catch (Throwable e) {
                     channelOutboundBuffer.clear(e);
+                } finally {
+                    inFlush.set(false);
                 }
-            }
-
-            if (channelOutboundBuffer.isEmpty() && pendingClose) {
-                doClose();
             }
         }
 
@@ -447,9 +449,19 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
+            if (inFlush.get()) {
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        doClose();
+                    }
+                });
+                return;
+            }
+
             if (!closePromise.isDone()) {
                 final boolean wasActive = isActive();
-                pendingClose = true;
+                pendingClose.set(true);
                 closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.setClosed();
