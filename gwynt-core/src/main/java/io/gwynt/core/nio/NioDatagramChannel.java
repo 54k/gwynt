@@ -381,8 +381,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
         }
 
         @Override
-        protected boolean doWriteMessage(Object message) {
-            Throwable error = null;
+        protected boolean doWriteMessage(Object message) throws Exception {
             int bytesWritten = 0;
 
             ByteBuffer src;
@@ -399,18 +398,10 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
-            try {
-                if (remoteAddress != null) {
-                    bytesWritten = javaChannel().send(src, remoteAddress);
-                } else {
-                    javaChannel().write(src);
-                }
-            } catch (IOException e) {
-                error = e;
-            }
-
-            if (error != null) {
-                exceptionCaught(error);
+            if (remoteAddress != null) {
+                bytesWritten = javaChannel().send(src, remoteAddress);
+            } else {
+                javaChannel().write(src);
             }
 
             if (bytesWritten == -1) {

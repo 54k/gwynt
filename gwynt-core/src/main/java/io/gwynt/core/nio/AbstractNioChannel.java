@@ -60,7 +60,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) {
+        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             for (; ; ) {
                 boolean done = false;
                 Object message = channelOutboundBuffer.current();
@@ -82,7 +82,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
-        protected boolean doWriteMessage(Object message) {
+        protected boolean doWriteMessage(Object message) throws Exception {
             throw new UnsupportedOperationException();
         }
 
@@ -111,7 +111,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void closeForcibly() {
+        protected void closeJavaChannel() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {

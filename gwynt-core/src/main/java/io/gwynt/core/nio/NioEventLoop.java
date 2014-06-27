@@ -222,12 +222,6 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
         for (AbstractNioChannel ch : channels) {
             ch.unsafe().close(ch.voidPromise());
         }
-
-        try {
-            selectNow();
-        } catch (IOException ignore) {
-        }
-        processSelectedKeys();
     }
 
     @Override

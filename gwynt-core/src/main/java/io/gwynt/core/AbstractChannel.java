@@ -358,7 +358,7 @@ public abstract class AbstractChannel implements Channel {
             } finally {
                 if (!registered) {
                     unregister();
-                    closeForcibly();
+                    closeJavaChannel();
                 }
             }
         }
@@ -425,7 +425,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer);
+        protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
 
         @Override
         public void doConnect() {
@@ -462,7 +462,7 @@ public abstract class AbstractChannel implements Channel {
             if (!closePromise.isDone()) {
                 final boolean wasActive = isActive();
                 pendingClose.set(true);
-                closeForcibly();
+                closeJavaChannel();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.setClosed();
 
@@ -478,7 +478,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void closeForcibly();
+        protected abstract void closeJavaChannel();
 
         @Override
         public SocketAddress getLocalAddress() throws Exception {

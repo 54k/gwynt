@@ -150,32 +150,23 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) {
+        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             NioSocketChannelOutboundBuffer outboundBuffer = (NioSocketChannelOutboundBuffer) channelOutboundBuffer;
             long remainingBytes = outboundBuffer.remaining();
             ByteBuffer[] buffers = outboundBuffer.byteBuffers();
-            Throwable error = null;
 
-            try {
-                for (int i = 0; i < config().getWriteSpinCount(); i++) {
-                    long bytesWritten = javaChannel().write(buffers);
+            for (int i = 0; i < config().getWriteSpinCount(); i++) {
+                long bytesWritten = javaChannel().write(buffers);
 
-                    if (bytesWritten == -1) {
-                        doClose();
-                        return;
-                    }
-
-                    remainingBytes -= bytesWritten;
-                    if (remainingBytes == 0) {
-                        break;
-                    }
+                if (bytesWritten == -1) {
+                    doClose();
+                    return;
                 }
-            } catch (IOException e) {
-                error = e;
-            }
 
-            if (error != null) {
-                exceptionCaught(error);
+                remainingBytes -= bytesWritten;
+                if (remainingBytes == 0) {
+                    break;
+                }
             }
 
             for (ByteBuffer buffer : buffers) {
@@ -208,7 +199,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                         doClose();
                     }
                 } else {
-                    closeForcibly();
+                    closeJavaChannel();
                     connectPromise.tryFailure(new ChannelException("Connection failed"));
                 }
             } catch (IOException e) {
