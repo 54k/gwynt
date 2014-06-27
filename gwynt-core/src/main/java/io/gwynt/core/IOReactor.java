@@ -171,7 +171,7 @@ public final class IOReactor {
     private final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
 
         @Override
-        public void onMessageReceived(final HandlerContext context, Channel channel) {
+        public void onMessageReceived(HandlerContext context, Channel channel) {
             for (Handler handler : childHandlers()) {
                 channel.pipeline().addLast(handler);
             }
@@ -179,8 +179,9 @@ public final class IOReactor {
             channel.register(secondaryGroup.next()).addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
-                    if (channelFuture.channel().config().isAutoRead()) {
-                        channelFuture.channel().read();
+                    Channel ch = channelFuture.channel();
+                    if (ch.config().isAutoRead()) {
+                        ch.read();
                     }
                 }
             });
