@@ -190,9 +190,9 @@ public final class IOReactor {
     private final class DefaultChannelFactory implements ChannelFactory<AbstractNioChannel> {
 
         @Override
-        public AbstractNioChannel createChannel(Class<? extends AbstractNioChannel> channelClazz) {
+        public AbstractNioChannel createChannel(Class<? extends AbstractNioChannel> channelClass) {
             try {
-                return channelClazz.newInstance();
+                return channelClass.newInstance();
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
