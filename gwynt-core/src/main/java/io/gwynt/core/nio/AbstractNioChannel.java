@@ -60,6 +60,14 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
+        public void doRead() {
+            if (!config().isAutoRead()) {
+                interestOps(interestOps() & ~SelectionKey.OP_READ);
+            }
+            super.doRead();
+        }
+
+        @Override
         protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             for (; ; ) {
                 boolean done = false;
