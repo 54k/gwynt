@@ -9,10 +9,7 @@
 
     <modules>
         <module>gwynt-core</module>
-        <!--<module>gwynt-websocket</module>-->
         <module>gwynt-example</module>
-        <module>gwynt-http</module>
-        <module>gwynt-redis</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -30,21 +27,6 @@
                 <artifactId>gwynt-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.gwynt</groupId>
-                <artifactId>gwynt-http</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.gwynt</groupId>
-                <artifactId>gwynt-redis</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <!--<dependency>-->
-            <!--<groupId>io.gwynt</groupId>-->
-            <!--<artifactId>gwynt-websocket</artifactId>-->
-            <!--<version>${project.version}</version>-->
-            <!--</dependency>-->
         </dependencies>
     </dependencyManagement>
 
