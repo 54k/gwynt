@@ -2,7 +2,6 @@ package io.gwynt.core;
 
 import io.gwynt.core.concurrent.DefaultFutureGroup;
 import io.gwynt.core.concurrent.Future;
-import io.gwynt.core.nio.AbstractNioChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.net.InetSocketAddress;
@@ -188,10 +187,10 @@ public final class IOReactor {
         }
     }
 
-    private final class DefaultChannelFactory implements ChannelFactory<AbstractNioChannel> {
+    private final class DefaultChannelFactory implements ChannelFactory<AbstractChannel> {
 
         @Override
-        public AbstractNioChannel createChannel(Class<? extends AbstractNioChannel> channelClass) {
+        public AbstractChannel createChannel(Class<? extends AbstractChannel> channelClass) {
             try {
                 return channelClass.newInstance();
             } catch (ReflectiveOperationException e) {

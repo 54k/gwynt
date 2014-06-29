@@ -49,7 +49,6 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         private ScheduledFuture<?> connectTimeout;
         private ChannelPromise connectPromise;
-        private RecvByteBufferAllocator.Handle allocHandle;
 
         @Override
         protected void closeRequested() {
@@ -104,9 +103,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected int doReadMessages(List<Object> messages) {
-            if (allocHandle == null) {
-                allocHandle = config().getRecvByteBufferAllocator().newHandle();
-            }
+            RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             Throwable error = null;
             int bytesRead = 0;

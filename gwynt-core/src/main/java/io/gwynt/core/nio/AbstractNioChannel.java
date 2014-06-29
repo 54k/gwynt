@@ -69,24 +69,21 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
-            for (; ; ) {
-                boolean done = false;
-                Object message = channelOutboundBuffer.current();
-                if (message != null) {
-                    for (int i = 0; i < config().getWriteSpinCount(); i++) {
-                        if (doWriteMessage(message)) {
-                            done = true;
-                            break;
-                        }
+            boolean done = false;
+            Object message = channelOutboundBuffer.current();
+            if (message != null) {
+                for (int i = 0; i < config().getWriteSpinCount(); i++) {
+                    if (doWriteMessage(message)) {
+                        done = true;
+                        break;
                     }
                 }
+            }
 
-                if (done) {
-                    channelOutboundBuffer.remove();
-                } else {
-                    interestOps(interestOps() | SelectionKey.OP_WRITE);
-                    break;
-                }
+            if (done) {
+                channelOutboundBuffer.remove();
+            } else {
+                interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         }
 

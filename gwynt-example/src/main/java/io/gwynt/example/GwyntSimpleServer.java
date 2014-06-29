@@ -5,8 +5,8 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
-import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioServerSocketChannel;
+import io.gwynt.core.oio.OioEventLoopGroup;
+import io.gwynt.core.oio.OioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.util.Date;
@@ -15,8 +15,8 @@ public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        EventLoopGroup eventLoop = new NioEventLoopGroup();
-        final IOReactor reactor = new IOReactor().channelClass(NioServerSocketChannel.class).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
+        EventLoopGroup eventLoop = new OioEventLoopGroup(200);
+        final IOReactor reactor = new IOReactor().channelClass(OioServerSocketChannel.class).group(eventLoop).addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())
                 .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler() {
                     @Override
                     public void onMessageReceived(HandlerContext context, Object message) {

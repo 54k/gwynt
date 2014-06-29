@@ -249,6 +249,7 @@ public abstract class AbstractChannel implements Channel {
         private final AtomicBoolean inFlush = new AtomicBoolean();
 
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
+        private RecvByteBufferAllocator.Handle allocHandle;
 
         protected ChannelOutboundBuffer newChannelOutboundBuffer() {
             return new ChannelOutboundBuffer(AbstractChannel.this);
@@ -495,6 +496,13 @@ public abstract class AbstractChannel implements Channel {
                 eventLoop().execute(task);
             } catch (RejectedExecutionException ignore) {
             }
+        }
+
+        protected RecvByteBufferAllocator.Handle allocHandle() {
+            if (allocHandle == null) {
+                allocHandle = config().getRecvByteBufferAllocator().newHandle();
+            }
+            return allocHandle;
         }
     }
 }

@@ -56,21 +56,24 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
                 javaChannel().bind(address);
-                interestOps(SelectionKey.OP_ACCEPT);
                 safeSetSuccess(channelPromise);
+                pipeline().fireOpen();
+                if (config().isAutoRead()) {
+                    interestOps(SelectionKey.OP_ACCEPT);
+                }
             } catch (IOException e) {
                 safeSetFailure(channelPromise, e);
             }
         }
 
         @Override
-        public void read(ChannelPromise channelPromise) {
-            throw new UnsupportedOperationException();
+        protected void readRequested() {
+            interestOps(SelectionKey.OP_ACCEPT);
         }
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
-            throw new UnsupportedOperationException();
+            safeSetFailure(channelPromise, new UnsupportedOperationException());
         }
 
         @Override
@@ -101,7 +104,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
         @Override
         protected boolean isActive() {
-            return javaChannel().isOpen() && javaChannel().socket().isBound();
+            return isOpen() && javaChannel().socket().isBound();
         }
 
         @Override

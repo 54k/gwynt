@@ -294,8 +294,6 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
-        private RecvByteBufferAllocator.Handle allocHandle;
-
         @Override
         protected void closeRequested() {
             interestOps(SelectionKey.OP_WRITE);
@@ -347,9 +345,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
         @Override
         protected int doReadMessages(List<Object> messages) {
-            if (allocHandle == null) {
-                allocHandle = config().getRecvByteBufferAllocator().newHandle();
-            }
+            RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             Throwable error = null;
             SocketAddress address;
