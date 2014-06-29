@@ -7,7 +7,6 @@ import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
 
-// TODO refactor buffer allocation
 public abstract class MessageToByteEncoder<O> extends AbstractHandler<Object, O> {
 
     @Override
