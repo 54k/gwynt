@@ -47,8 +47,8 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        public void disconnect(ChannelPromise channelPromise) {
-            super.disconnect(channelPromise);
+        protected void doDisconnect() {
+            doClose();
         }
 
         @Override
