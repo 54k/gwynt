@@ -3,7 +3,7 @@ package io.gwynt.core.oio;
 import io.gwynt.core.ThreadPerChannelEventLoopGroup;
 import io.gwynt.core.concurrent.DefaultThreadFactory;
 
-public class OioEventLoopGroup extends ThreadPerChannelEventLoopGroup {
+public final class OioEventLoopGroup extends ThreadPerChannelEventLoopGroup {
 
     public OioEventLoopGroup() {
         this(0);
