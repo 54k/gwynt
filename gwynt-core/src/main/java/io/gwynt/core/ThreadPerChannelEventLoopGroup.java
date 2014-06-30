@@ -3,6 +3,7 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.AbstractEventExecutorGroup;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
+import io.gwynt.core.concurrent.ThreadPerTaskExecutor;
 
 import java.util.Collections;
 import java.util.Queue;
@@ -10,26 +11,51 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
-    private static final ChannelException tooManyChannels = new ChannelException("Too many channels");
+    final Set<EventLoop> activeChildren = Collections.newSetFromMap(new ConcurrentHashMap<EventLoop, Boolean>());
+    final Queue<EventLoop> idleChildren = new ConcurrentLinkedQueue<>();
+    final Executor executor;
 
-    static {
-        tooManyChannels.setStackTrace(new StackTraceElement[0]);
-    }
-
+    private final ChannelException tooManyChannels;
     private final int maxChannels;
-
-    Set<EventLoop> activeChildren = Collections.newSetFromMap(new ConcurrentHashMap<EventLoop, Boolean>());
-    Queue<EventLoop> idleChildren = new ConcurrentLinkedQueue<>();
-    Executor executor;
-
     private Object[] childArgs;
 
+    protected ThreadPerChannelEventLoopGroup() {
+        this(0);
+    }
+
     protected ThreadPerChannelEventLoopGroup(int maxChannels) {
+        this(maxChannels, Executors.defaultThreadFactory());
+    }
+
+    protected ThreadPerChannelEventLoopGroup(int maxChannels, ThreadFactory threadFactory, Object... args) {
+        this(maxChannels, new ThreadPerTaskExecutor(threadFactory), args);
+    }
+
+    protected ThreadPerChannelEventLoopGroup(int maxChannels, Executor executor, Object... args) {
+        if (maxChannels < 0) {
+            throw new IllegalArgumentException(String.format("maxChannels: %d (expected: >= 0)", maxChannels));
+        }
+        if (executor == null) {
+            throw new NullPointerException("executor");
+        }
+
+        if (args == null) {
+            childArgs = new Object[0];
+        } else {
+            childArgs = args.clone();
+        }
+
         this.maxChannels = maxChannels;
+        this.executor = executor;
+
+        tooManyChannels = new ChannelException("too many channels (max: " + maxChannels + ')');
+        tooManyChannels.setStackTrace(new StackTraceElement[0]);
     }
 
     @Deprecated
@@ -82,8 +108,8 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
         return false;
     }
 
-    protected EventLoop newChild(@SuppressWarnings("UnusedParameters") Object... args) throws Exception {
-        return new ThreadPerChannelEventLoop();
+    protected EventLoop newChild(Object... args) throws Exception {
+        return new ThreadPerChannelEventLoop(this);
     }
 
     private EventLoop nextChild() throws Exception {
