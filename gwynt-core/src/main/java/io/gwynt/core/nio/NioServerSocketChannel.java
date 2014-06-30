@@ -41,24 +41,6 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
-        private final Runnable READ_TASK = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | SelectionKey.OP_ACCEPT);
-            }
-        };
-        private final Runnable CLOSE_TASK = new Runnable() {
-            @Override
-            public void run() {
-                doClose();
-            }
-        };
-
-        @Override
-        protected void beforeClose() {
-            invokeLater(CLOSE_TASK);
-        }
-
         @Override
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
             try {
@@ -66,19 +48,10 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
                 safeSetSuccess(channelPromise);
                 pipeline().fireOpen();
                 if (config().isAutoRead()) {
-                    interestOps(SelectionKey.OP_ACCEPT);
+                    readRequested();
                 }
             } catch (IOException e) {
                 safeSetFailure(channelPromise, e);
-            }
-        }
-
-        @Override
-        protected void readRequested() {
-            if (eventLoop().inExecutorThread()) {
-                interestOps(SelectionKey.OP_ACCEPT);
-            } else {
-                invokeLater(READ_TASK);
             }
         }
 
@@ -99,6 +72,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
                 }
             } catch (IOException e) {
                 exceptionCaught(e);
+                ch.close();
             }
             return 0;
         }
@@ -111,6 +85,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         @Override
         public SocketAddress getLocalAddress() throws Exception {
             return javaChannel().getLocalAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() {
+            return null;
         }
     }
 }

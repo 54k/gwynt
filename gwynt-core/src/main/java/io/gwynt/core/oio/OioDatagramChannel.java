@@ -257,5 +257,15 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         protected void closeJavaChannel() {
             javaChannel().close();
         }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalSocketAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return javaChannel().getRemoteSocketAddress();
+        }
     }
 }

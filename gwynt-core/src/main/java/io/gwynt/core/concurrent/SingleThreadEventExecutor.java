@@ -147,7 +147,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 return task;
             } else {
                 long delayNanos = delayedTask.getDelayNanos();
-                Runnable task;
+                Runnable task = null;
                 if (delayNanos > 0) {
                     try {
                         task = taskQueue.poll(delayNanos, TimeUnit.NANOSECONDS);
@@ -155,8 +155,6 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                         // Waken up.
                         return null;
                     }
-                } else {
-                    task = taskQueue.poll();
                 }
 
                 if (task == null) {

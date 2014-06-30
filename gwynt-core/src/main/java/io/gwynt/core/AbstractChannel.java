@@ -1,6 +1,7 @@
 package io.gwynt.core;
 
 import io.gwynt.core.concurrent.EventExecutor;
+import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
 import java.io.IOException;
@@ -17,20 +18,21 @@ public abstract class AbstractChannel implements Channel {
 
     protected static final ClosedChannelException CLOSED_CHANNEL_EXCEPTION = new ClosedChannelException();
     protected static final NotYetConnectedException NOT_YET_CONNECTED_EXCEPTION = new NotYetConnectedException();
-    protected final ChannelPromise VOID_PROMISE = new VoidChannelPromise(this);
 
+    private final ChannelPromise VOID_PROMISE = new VoidChannelPromise(this);
     private final DefaultPipeline pipeline;
+    private final Channel parent;
+    private final Object ch;
+    private final Unsafe unsafe;
+    private final ChannelConfig config;
 
-    private volatile Channel parent;
     private volatile Object attachment;
     private volatile EventLoop eventLoop;
     private volatile boolean registered;
-
-    private Object ch;
-    private Unsafe unsafe;
     private SocketAddress localAddress;
     private SocketAddress remoteAddress;
-    private ChannelConfig config;
+
+    private String strCache;
 
     protected AbstractChannel(Channel parent, Object ch) {
         this.parent = parent;
@@ -98,6 +100,11 @@ public abstract class AbstractChannel implements Channel {
         return config;
     }
 
+    /**
+     * Subclasses may override
+     *
+     * @return {@link io.gwynt.core.ChannelConfig}
+     */
     protected ChannelConfig newConfig() {
         return new DefaultChannelConfig(this);
     }
@@ -146,13 +153,13 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public ChannelFuture read() {
         ChannelPromise channelPromise = newChannelPromise();
-        pipeline.fireRead(channelPromise);
+        pipeline().fireRead(channelPromise);
         return channelPromise;
     }
 
     @Override
     public ChannelFuture write(Object message, ChannelPromise channelPromise) {
-        pipeline.fireMessageSent(message, channelPromise);
+        pipeline().fireMessageSent(message, channelPromise);
         return channelPromise;
     }
 
@@ -164,7 +171,7 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public ChannelFuture close() {
         ChannelPromise channelPromise = newChannelPromise();
-        pipeline.fireClosing(channelPromise);
+        pipeline().fireClosing(channelPromise);
         return channelPromise;
     }
 
@@ -175,15 +182,14 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public ChannelFuture unregister() {
-        return eventLoop.unregister(this);
+        return eventLoop().unregister(this);
     }
 
     @Override
     public ChannelFuture register(EventLoop eventLoop) {
         if (!isEventLoopCompatible(eventLoop)) {
-            throw new RegistrationException("eventLoop is not compatible");
+            throw new RegistrationException("event loop is not compatible.");
         }
-
         return eventLoop.register(this);
     }
 
@@ -202,7 +208,10 @@ public abstract class AbstractChannel implements Channel {
 
     @Override
     public String toString() {
-        return getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress() + ", pipeline: " + pipeline() + ')';
+        if (strCache == null) {
+            strCache = getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress() + ", registered: " + registered + ", attachment: " + attachment + ')';
+        }
+        return strCache;
     }
 
     final class ClosePromise extends DefaultChannelPromise {
@@ -213,7 +222,7 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         protected EventExecutor executor() {
-            return isRegistered() ? eventLoop() : super.executor();
+            return isRegistered() ? eventLoop() : GlobalEventExecutor.INSTANCE;
         }
 
         @Override
@@ -244,10 +253,10 @@ public abstract class AbstractChannel implements Channel {
     protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
 
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
-        private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
-
         private final AtomicBoolean pendingClose = new AtomicBoolean();
-        private final AtomicBoolean inFlush = new AtomicBoolean();
+
+        private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
+        private final AtomicBoolean flushing = new AtomicBoolean();
 
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
         private RecvByteBufferAllocator.Handle allocHandle;
@@ -264,12 +273,12 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            throw new UnsupportedOperationException();
+            safeSetFailure(channelPromise, new UnsupportedOperationException());
         }
 
         @Override
         public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            throw new UnsupportedOperationException();
+            safeSetFailure(channelPromise, new UnsupportedOperationException());
         }
 
         @Override
@@ -278,26 +287,13 @@ public abstract class AbstractChannel implements Channel {
                 return;
             }
 
-            boolean wasActive = isActive();
             try {
                 doDisconnect();
+                safeSetSuccess(channelPromise);
             } catch (Throwable t) {
                 safeSetFailure(channelPromise, t);
                 close(voidPromise());
-                return;
             }
-
-            if (wasActive && !isActive()) {
-                invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        pipeline.fireClose();
-                    }
-                });
-            }
-
-            safeSetSuccess(channelPromise);
-            close(voidPromise());
         }
 
         protected void doDisconnect() {
@@ -333,32 +329,26 @@ public abstract class AbstractChannel implements Channel {
         protected abstract boolean isOpen();
 
         @Override
-        public void close(ChannelPromise channelPromise) {
-            if (pendingClose.compareAndSet(false, true)) {
-                beforeClose();
-                doClose();
-            }
-            closePromise.chainPromise(channelPromise);
-        }
-
-        protected abstract void beforeClose();
-
-        @Override
         public void register(EventLoop eventScheduler) {
-            assert eventScheduler.inExecutorThread();
+            if (registered) {
+                throw new RegistrationException(getClass().getName() + " already registered.");
+            }
 
             registered = true;
             AbstractChannel.this.eventLoop = eventScheduler;
-            boolean registered = false;
+            boolean success = false;
             try {
                 pipeline.fireRegistered();
                 afterRegister();
-                registered = true;
+                success = true;
                 if (isActive()) {
                     pipeline.fireOpen();
+                    if (config().isAutoRead()) {
+                        read(voidPromise());
+                    }
                 }
             } finally {
-                if (!registered) {
+                if (!success) {
                     unregister();
                     closeJavaChannel();
                 }
@@ -369,8 +359,9 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void unregister() {
-            assert eventLoop.inExecutorThread();
-
+            if (!registered) {
+                throw new RegistrationException(getClass().getName() + " not registered.");
+            }
             registered = false;
             pipeline.fireUnregistered();
             afterUnregister();
@@ -380,8 +371,6 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void doRead() {
-            assert eventLoop().inExecutorThread();
-
             Throwable error = null;
             boolean closed = false;
             try {
@@ -414,12 +403,9 @@ public abstract class AbstractChannel implements Channel {
                 }
 
                 if (closed && isOpen()) {
-                    doClose();
+                    close(voidPromise());
                 }
-
-                if (messagesRead > 0) {
-                    messages.clear();
-                }
+                messages.clear();
             } finally {
                 if (isActive() && config().isAutoRead()) {
                     readRequested();
@@ -427,29 +413,29 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
+        /**
+         * @return number of messages read or -1 if end of stream occurred
+         */
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
 
         @Override
         public void doWrite() {
-            assert eventLoop().inExecutorThread();
-
             if (!isActive()) {
                 if (isOpen()) {
                     channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
                 } else {
                     channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 }
-                return;
             }
 
             if (!channelOutboundBuffer.isEmpty()) {
                 try {
-                    inFlush.set(true);
+                    flushing.set(true);
                     doWriteMessages(channelOutboundBuffer);
                 } catch (Throwable e) {
                     channelOutboundBuffer.clear(e);
                 } finally {
-                    inFlush.set(false);
+                    flushing.set(false);
                 }
             }
         }
@@ -476,8 +462,18 @@ public abstract class AbstractChannel implements Channel {
             return closePromise;
         }
 
+        @Override
+        public void close(ChannelPromise channelPromise) {
+            if (pendingClose.compareAndSet(false, true)) {
+                doClose();
+            }
+            closePromise.chainPromise(channelPromise);
+        }
+
         protected void doClose() {
-            if (inFlush.get()) {
+            assert !pendingClose.get();
+
+            if (flushing.get()) {
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -493,7 +489,6 @@ public abstract class AbstractChannel implements Channel {
                 closeJavaChannel();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 closePromise.setClosed();
-
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
@@ -507,16 +502,6 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected abstract void closeJavaChannel();
-
-        @Override
-        public SocketAddress getLocalAddress() throws Exception {
-            return null;
-        }
-
-        @Override
-        public SocketAddress getRemoteAddress() throws Exception {
-            return null;
-        }
 
         protected void invokeLater(Runnable task) {
             try {

@@ -51,11 +51,6 @@ public class NioSocketChannel extends AbstractNioChannel {
         private ChannelPromise connectPromise;
 
         @Override
-        protected void beforeClose() {
-            interestOps(SelectionKey.OP_WRITE);
-        }
-
-        @Override
         public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
             connectPromise = channelPromise;
             try {
@@ -98,7 +93,8 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doDisconnect() {
-            doClose();
+            connectPromise = null;
+            close(voidPromise());
         }
 
         @Override
@@ -138,7 +134,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 long bytesWritten = javaChannel().write(buffers);
 
                 if (bytesWritten == -1) {
-                    doClose();
+                    close(voidPromise());
                     return;
                 }
 
@@ -160,8 +156,6 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         public void doConnect() {
-            assert eventLoop().inExecutorThread();
-
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {
@@ -175,7 +169,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     }
 
                     if (!connectSuccess) {
-                        doClose();
+                        close(voidPromise());
                     }
                 } else {
                     closeJavaChannel();

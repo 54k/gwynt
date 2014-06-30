@@ -8,6 +8,7 @@ import io.gwynt.core.RecvByteBufferAllocator;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
@@ -24,6 +25,8 @@ public class OioSocketChannel extends AbstractOioChannel {
 
     private class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
 
+        private ChannelPromise connectPromise;
+
         @Override
         protected boolean isActive() {
             return isOpen() && javaChannel().isConnected();
@@ -36,18 +39,23 @@ public class OioSocketChannel extends AbstractOioChannel {
 
         @Override
         public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            if (!channelPromise.setUncancellable()) {
+                return;
+            }
+            connectPromise = channelPromise;
             try {
                 javaChannel().connect(address);
-                safeSetSuccess(channelPromise);
+                safeSetSuccess(connectPromise);
                 pipeline().fireOpen();
             } catch (IOException e) {
-                safeSetFailure(channelPromise, e);
+                safeSetFailure(connectPromise, e);
             }
         }
 
         @Override
         protected void doDisconnect() {
-            doClose();
+            connectPromise = null;
+            close(voidPromise());
         }
 
         @Override
@@ -99,6 +107,16 @@ public class OioSocketChannel extends AbstractOioChannel {
                 javaChannel().close();
             } catch (IOException ignore) {
             }
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalSocketAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return javaChannel().getRemoteSocketAddress();
         }
     }
 }

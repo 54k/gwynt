@@ -114,6 +114,7 @@ public abstract class ByteToMessageDecoder extends AbstractHandler<byte[], Objec
     @Override
     public void onClose(HandlerContext context) {
         if (internalBuffer == null) {
+            context.fireClose();
             return;
         }
 

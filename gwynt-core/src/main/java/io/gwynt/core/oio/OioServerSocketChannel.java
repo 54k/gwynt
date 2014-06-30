@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.List;
 
@@ -69,10 +70,8 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
                     messages.add(channel);
                     return 1;
                 } catch (IOException e) {
-                    try {
-                        ch.close();
-                    } catch (IOException ignore) {
-                    }
+                    exceptionCaught(e);
+                    ch.close();
                 }
             } catch (SocketTimeoutException ignore) {
             }
@@ -90,6 +89,16 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
                 javaChannel().close();
             } catch (IOException ignore) {
             }
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return javaChannel().getLocalSocketAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return null;
         }
     }
 }

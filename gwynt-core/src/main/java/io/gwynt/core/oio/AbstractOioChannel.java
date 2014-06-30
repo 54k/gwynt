@@ -55,21 +55,17 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void beforeClose() {
-        }
-
-        @Override
         protected void afterRegister() {
+            // NO OP
         }
 
         @Override
         protected void afterUnregister() {
+            // NO OP
         }
 
         @Override
         public void doRead() {
-            assert eventLoop().inExecutorThread();
-
             Throwable error = null;
             boolean closed = false;
             try {
@@ -97,10 +93,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
                 if (closed && isOpen()) {
                     doClose();
                 }
-
-                if (messagesRead > 0) {
-                    messages.clear();
-                }
+                messages.clear();
             } finally {
                 if (isActive() && config().isAutoRead()) {
                     readRequested();

@@ -4,6 +4,7 @@ import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.RegistrationException;
 import io.gwynt.core.ServerChannel;
 
 import java.io.IOException;
@@ -44,13 +45,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> {
 
         private final List<Object> messages = new ArrayList<>(config().getReadSpinCount());
-
-        private final Runnable READ_TASK = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | SelectionKey.OP_READ);
-            }
-        };
         private final Runnable WRITE_TASK = new Runnable() {
             @Override
             public void run() {
@@ -59,23 +53,25 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         };
 
         @Override
-        protected void beforeClose() {
-            // NO OP
-        }
-
-        @Override
         protected void writeRequested() {
             if (eventLoop().inExecutorThread()) {
-                interestOps(interestOps() | SelectionKey.OP_WRITE);
+                WRITE_TASK.run();
             } else {
                 invokeLater(WRITE_TASK);
             }
         }
 
+        private final Runnable READ_TASK = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
+
         @Override
         protected void readRequested() {
             if (eventLoop().inExecutorThread()) {
-                interestOps(interestOps() | SelectionKey.OP_READ);
+                READ_TASK.run();
             } else {
                 invokeLater(READ_TASK);
             }
@@ -83,8 +79,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         public void doRead() {
-            assert eventLoop().inExecutorThread();
-
             Throwable error = null;
             boolean closed = false;
             try {
@@ -117,12 +111,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 }
 
                 if (closed && isOpen()) {
-                    doClose();
+                    close(voidPromise());
                 }
-
-                if (messagesRead > 0) {
-                    messages.clear();
-                }
+                messages.clear();
             } finally {
                 if (isActive() && !config().isAutoRead()) {
                     removeReadOp();
@@ -201,21 +192,23 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         protected void interestOps(int interestOps) {
             checkRegistered();
             if ((interestOps & ~javaChannel().validOps()) != 0) {
-                throw new IllegalArgumentException("interestOps are not valid");
+                throw new IllegalArgumentException("interestOps are not valid.");
             }
 
             if (selectionKey.isValid()) {
                 selectionKey.interestOps(interestOps);
                 eventLoop().wakeUpSelector();
             } else {
-                doClose();
+                close(voidPromise());
             }
         }
 
         private void checkRegistered() {
             if (!isRegistered()) {
-                throw new IllegalStateException("Not registered to dispatcher");
+                throw new RegistrationException("Not registered to dispatcher.");
             }
         }
+
+
     }
 }
