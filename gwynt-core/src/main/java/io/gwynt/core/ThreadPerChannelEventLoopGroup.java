@@ -3,6 +3,7 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.AbstractEventExecutorGroup;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
+import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ThreadPerTaskExecutor;
 
 import java.util.Collections;
@@ -78,7 +79,16 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return register(channel, channel.newChannelPromise());
+        if (channel == null) {
+            throw new NullPointerException("channel");
+        }
+        try {
+            return nextChild().register(channel);
+        } catch (Throwable t) {
+            ChannelPromise promise = new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE);
+            promise.setFailure(t);
+            return promise;
+        }
     }
 
     @Override

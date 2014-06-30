@@ -38,7 +38,7 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
 
     @Override
     public ChannelFuture unregister(Channel channel) {
-        return unregister(channel, channel.newChannelPromise());
+        return unregister(channel, new DefaultChannelPromise(channel, this));
     }
 
     @Override
