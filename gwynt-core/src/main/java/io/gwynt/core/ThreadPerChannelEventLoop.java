@@ -1,15 +1,16 @@
 package io.gwynt.core;
 
 import java.util.Queue;
-import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
 
     private Channel ch;
+    private ThreadPerChannelEventLoopGroup parent;
 
-    public ThreadPerChannelEventLoop(MultiThreadEventLoopGroup parent, Executor executor) {
-        super(parent, true, executor);
+    public ThreadPerChannelEventLoop(ThreadPerChannelEventLoopGroup parent) {
+        super(parent, true, parent.executor);
+        this.parent = parent;
     }
 
     @Override
@@ -63,6 +64,8 @@ public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
     }
 
     private void unregister() {
-        this.ch = null;
+        ch = null;
+        parent.activeChildren.remove(this);
+        parent.idleChildren.add(this);
     }
 }
