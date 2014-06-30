@@ -10,7 +10,7 @@ import java.util.List;
 
 public abstract class AbstractOioChannel extends AbstractChannel {
 
-    protected static final int SO_TIMEOUT = 100;
+    protected static final int SO_TIMEOUT = 1;
 
     protected AbstractOioChannel(Object ch) {
         this(null, ch);
