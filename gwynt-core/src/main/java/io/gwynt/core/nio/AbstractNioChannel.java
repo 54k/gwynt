@@ -40,23 +40,36 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> {
 
         @Override
+        protected void beforeClose() {
+            // NO OP
+        }
+
+        @Override
         protected void writeRequested() {
-            invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    interestOps(interestOps() | SelectionKey.OP_WRITE);
-                }
-            });
+            if (eventLoop().inExecutorThread()) {
+                interestOps(interestOps() | SelectionKey.OP_WRITE);
+            } else {
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        interestOps(interestOps() | SelectionKey.OP_WRITE);
+                    }
+                });
+            }
         }
 
         @Override
         protected void readRequested() {
-            invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    interestOps(interestOps() | SelectionKey.OP_READ);
-                }
-            });
+            if (eventLoop().inExecutorThread()) {
+                interestOps(interestOps() | SelectionKey.OP_READ);
+            } else {
+                invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        interestOps(interestOps() | SelectionKey.OP_READ);
+                    }
+                });
+            }
         }
 
         @Override
@@ -83,7 +96,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             if (done) {
                 channelOutboundBuffer.remove();
             } else {
-                interestOps(interestOps() | SelectionKey.OP_WRITE);
+                writeRequested();
             }
         }
 

@@ -48,7 +48,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         };
 
         @Override
-        protected void closeRequested() {
+        protected void beforeClose() {
             invokeLater(CLOSE_TASK);
         }
 

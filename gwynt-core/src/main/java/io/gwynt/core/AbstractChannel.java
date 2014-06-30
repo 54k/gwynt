@@ -334,13 +334,13 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void close(ChannelPromise channelPromise) {
             if (pendingClose.compareAndSet(false, true)) {
-                closeRequested();
+                beforeClose();
                 doClose();
             }
             closePromise.chainPromise(channelPromise);
         }
 
-        protected abstract void closeRequested();
+        protected abstract void beforeClose();
 
         @Override
         public void register(EventLoop eventScheduler) {

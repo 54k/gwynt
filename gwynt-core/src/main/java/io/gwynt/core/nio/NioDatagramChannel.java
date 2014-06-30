@@ -295,11 +295,6 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
         @Override
-        protected void closeRequested() {
-            interestOps(SelectionKey.OP_WRITE);
-        }
-
-        @Override
         protected boolean isActive() {
             return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
         }

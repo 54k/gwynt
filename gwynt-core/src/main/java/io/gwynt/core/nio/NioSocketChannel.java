@@ -51,7 +51,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         private ChannelPromise connectPromise;
 
         @Override
-        protected void closeRequested() {
+        protected void beforeClose() {
             interestOps(SelectionKey.OP_WRITE);
         }
 
