@@ -40,6 +40,12 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
+        private final Runnable READ_TASK = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(SelectionKey.OP_ACCEPT);
+            }
+        };
         private final Runnable CLOSE_TASK = new Runnable() {
             @Override
             public void run() {
@@ -68,7 +74,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
         @Override
         protected void readRequested() {
-            interestOps(SelectionKey.OP_ACCEPT);
+            if (eventLoop().inExecutorThread()) {
+                interestOps(SelectionKey.OP_ACCEPT);
+            } else {
+                invokeLater(READ_TASK);
+            }
         }
 
         @Override

@@ -187,7 +187,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
                     if (!wasActive && isActive()) {
                         if (config().isAutoRead()) {
-                            interestOps(SelectionKey.OP_READ);
+                            readRequested();
                         }
                         pipeline().fireOpen();
                     }
