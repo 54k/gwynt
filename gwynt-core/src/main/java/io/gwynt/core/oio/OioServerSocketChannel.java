@@ -57,6 +57,10 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
 
         @Override
         protected int doReadMessages(List<Object> messages) {
+            if (!isActive()) {
+                return 0;
+            }
+
             Socket ch;
             int accepted = 0;
             try {

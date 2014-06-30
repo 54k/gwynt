@@ -15,8 +15,8 @@ public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        EventLoopGroup eventLoop = new OioEventLoopGroup(200);
-        final IOReactor reactor = new IOReactor().channelClass(OioServerSocketChannel.class).group(eventLoop).addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())
+        EventLoopGroup eventLoop = new OioEventLoopGroup();
+        final IOReactor reactor = new IOReactor().channelClass(OioServerSocketChannel.class).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
                 .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler() {
                     @Override
                     public void onMessageReceived(HandlerContext context, Object message) {

@@ -5,9 +5,12 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.ThreadPerChannelEventLoop;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class AbstractOioChannel extends AbstractChannel {
 
-    protected static final int SO_TIMEOUT = 1000;
+    protected static final int SO_TIMEOUT = 100;
 
     protected AbstractOioChannel(Object ch) {
         this(null, ch);
@@ -30,13 +33,13 @@ public abstract class AbstractOioChannel extends AbstractChannel {
                 doRead();
             }
         };
-
         private final Runnable WRITE_TASK = new Runnable() {
             @Override
             public void run() {
                 doWrite();
             }
         };
+        private final List<Object> messages = new ArrayList<>(1);
 
         @Override
         protected void readRequested() {
@@ -58,6 +61,20 @@ public abstract class AbstractOioChannel extends AbstractChannel {
 
         @Override
         protected void afterUnregister() {
+        }
+
+        @Override
+        public void doRead() {
+            assert eventLoop().inExecutorThread();
+
+            int messagesRead = doReadMessages(messages);
+            for (int i = 0; i < messagesRead; i++) {
+                pipeline().fireMessageReceived(messages.get(i));
+            }
+
+            if (messagesRead > 0) {
+                messages.clear();
+            }
         }
     }
 }

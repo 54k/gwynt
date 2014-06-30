@@ -101,16 +101,10 @@ public class OioSocketChannel extends AbstractOioChannel {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {
-                for (int i = 0; i < config().getWriteSpinCount(); i++) {
-                    try {
-                        javaChannel().getOutputStream().write((byte[]) message);
-                        done = true;
-                    } catch (SocketTimeoutException ignore) {
-                    }
-
-                    if (done) {
-                        break;
-                    }
+                try {
+                    javaChannel().getOutputStream().write((byte[]) message);
+                    done = true;
+                } catch (SocketTimeoutException ignore) {
                 }
             }
 
