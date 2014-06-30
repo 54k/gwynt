@@ -62,6 +62,13 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     @Deprecated
     @Override
     public void shutdown() {
+        for (EventLoop l : activeChildren) {
+            l.shutdown();
+        }
+
+        for (EventLoop l : idleChildren) {
+            l.shutdown();
+        }
     }
 
     @Override
@@ -87,9 +94,10 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <E extends EventExecutor> Set<E> children() {
-        return null;
+        return (Set<E>) readOnlyActiveChildren;
     }
 
     @Override
@@ -104,12 +112,32 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     @Override
     public boolean isShutdown() {
-        return false;
+        for (EventLoop l : activeChildren) {
+            if (!l.isShutdown()) {
+                return false;
+            }
+        }
+        for (EventLoop l : idleChildren) {
+            if (!l.isShutdown()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        for (EventLoop l : activeChildren) {
+            if (!l.isTerminated()) {
+                return false;
+            }
+        }
+        for (EventLoop l : idleChildren) {
+            if (!l.isTerminated()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
