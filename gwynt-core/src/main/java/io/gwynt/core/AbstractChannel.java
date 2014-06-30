@@ -283,7 +283,7 @@ public abstract class AbstractChannel implements Channel {
                 doDisconnect();
             } catch (Throwable t) {
                 safeSetFailure(channelPromise, t);
-                close(newChannelPromise());
+                close(voidPromise());
                 return;
             }
 
@@ -297,7 +297,7 @@ public abstract class AbstractChannel implements Channel {
             }
 
             safeSetSuccess(channelPromise);
-            close(newChannelPromise());
+            close(voidPromise());
         }
 
         protected void doDisconnect() {
