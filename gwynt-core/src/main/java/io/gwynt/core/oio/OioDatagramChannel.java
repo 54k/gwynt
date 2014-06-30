@@ -198,16 +198,14 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) throws Exception {
             if (!isActive()) {
-                return 0;
+                return -1;
             }
 
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = config().getByteBufferPool().acquire(allocHandle.guess(), false);
-            Throwable error = null;
             SocketAddress address;
-            int messagesRead = 0;
 
             try {
                 byte[] array = buffer.array();
@@ -220,24 +218,14 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
                     messages.add(new Datagram(ByteBuffer.wrap(message), address));
-                    messagesRead++;
+                    return 1;
                 }
             } catch (SocketTimeoutException ignore) {
-            } catch (IOException e) {
-                error = e;
+            } finally {
+                config().getByteBufferPool().release(buffer);
             }
 
-            if (error != null) {
-                exceptionCaught(error);
-            }
-
-            config().getByteBufferPool().release(buffer);
-
-            if (config().isAutoRead()) {
-                readRequested();
-            }
-
-            return messagesRead;
+            return 0;
         }
 
         @Override

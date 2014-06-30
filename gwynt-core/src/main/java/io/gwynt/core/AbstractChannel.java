@@ -467,7 +467,6 @@ public abstract class AbstractChannel implements Channel {
                 @Override
                 public void run() {
                     pipeline().fireExceptionCaught(e);
-                    doClose();
                 }
             });
         }

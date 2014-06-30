@@ -96,7 +96,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 50; i++) {
             client.connect("localhost", port);
         }
 
