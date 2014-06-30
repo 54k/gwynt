@@ -18,12 +18,13 @@ import java.util.concurrent.TimeUnit;
 public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecutorGroup implements EventLoopGroup {
 
     final Set<EventLoop> activeChildren = Collections.newSetFromMap(new ConcurrentHashMap<EventLoop, Boolean>());
+    private final Set<EventLoop> readOnlyActiveChildren = Collections.unmodifiableSet(activeChildren);
     final Queue<EventLoop> idleChildren = new ConcurrentLinkedQueue<>();
     final Executor executor;
 
     private final ChannelException tooManyChannels;
     private final int maxChannels;
-    private Object[] childArgs;
+    private final Object[] childArgs;
 
     protected ThreadPerChannelEventLoopGroup() {
         this(0);
