@@ -27,7 +27,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
 
         @Override
         protected boolean isActive() {
-            return javaChannel().isBound();
+            return isOpen() && javaChannel().isBound();
         }
 
         @Override
