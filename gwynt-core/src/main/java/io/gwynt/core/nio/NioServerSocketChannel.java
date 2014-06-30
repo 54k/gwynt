@@ -16,6 +16,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
 
     public NioServerSocketChannel() throws IOException {
         super(ServerSocketChannel.open());
+        readOp = SelectionKey.OP_ACCEPT;
     }
 
     @Override
@@ -43,7 +44,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         private final Runnable READ_TASK = new Runnable() {
             @Override
             public void run() {
-                interestOps(SelectionKey.OP_ACCEPT);
+                interestOps(interestOps() | SelectionKey.OP_ACCEPT);
             }
         };
         private final Runnable CLOSE_TASK = new Runnable() {
@@ -87,29 +88,19 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
-            SocketChannel ch;
-            int accepted = 0;
+        protected int doReadMessages(List<Object> messages) throws Exception {
+            SocketChannel ch = javaChannel().accept();
             try {
-                ch = javaChannel().accept();
-                if (ch == null) {
-                    return 0;
+                if (ch != null) {
+                    ch.configureBlocking(false);
+                    NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, ch);
+                    messages.add(channel);
+                    return 1;
                 }
-                ch.configureBlocking(false);
-                accepted++;
             } catch (IOException e) {
                 exceptionCaught(e);
-                return 0;
             }
-
-            NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, ch);
-            messages.add(channel);
-
-            if (!config().isAutoRead()) {
-                interestOps(interestOps() & ~SelectionKey.OP_ACCEPT);
-            }
-
-            return accepted;
+            return 0;
         }
 
         @Override

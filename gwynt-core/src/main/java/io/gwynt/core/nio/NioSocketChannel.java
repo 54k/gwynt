@@ -102,13 +102,11 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) throws Exception {
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
-            Throwable error = null;
-            int bytesRead = 0;
-            int messagesRead = 0;
 
+            int bytesRead = 0;
             try {
                 bytesRead = javaChannel().read(buffer);
                 if (bytesRead > 0) {
@@ -116,29 +114,13 @@ public class NioSocketChannel extends AbstractNioChannel {
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
                     messages.add(message);
-                    messagesRead++;
+                    allocHandle.record(bytesRead);
+                    return 1;
                 }
-            } catch (IOException e) {
-                error = e;
+            } finally {
+                config().getByteBufferPool().release(buffer);
             }
-
-            if (error != null) {
-                exceptionCaught(error);
-            }
-
-            if (bytesRead == -1) {
-                doClose();
-            }
-
-            if (bytesRead > 0) {
-                allocHandle.record(bytesRead);
-            }
-
-            config().getByteBufferPool().release(buffer);
-            if (!config().isAutoRead()) {
-                interestOps(interestOps() & ~SelectionKey.OP_READ);
-            }
-            return messagesRead;
+            return bytesRead;
         }
 
         @Override
@@ -168,7 +150,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
             for (ByteBuffer buffer : buffers) {
                 if (buffer.hasRemaining()) {
-                    interestOps(interestOps() | SelectionKey.OP_WRITE);
+                    writeRequested();
                     break;
                 } else {
                     outboundBuffer.remove();

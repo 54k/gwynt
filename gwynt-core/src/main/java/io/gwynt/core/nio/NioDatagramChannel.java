@@ -339,36 +339,22 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) throws Exception {
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
-            Throwable error = null;
-            SocketAddress address;
-            int messagesRead = 0;
             try {
-                address = javaChannel().receive(buffer);
+                SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
                     buffer.flip();
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
                     messages.add(new Datagram(ByteBuffer.wrap(message), address));
-                    messagesRead++;
+                    return 1;
                 }
-            } catch (IOException e) {
-                error = e;
+            } finally {
+                config().getByteBufferPool().release(buffer);
             }
-
-            if (error != null) {
-                exceptionCaught(error);
-            }
-
-            config().getByteBufferPool().release(buffer);
-
-            if (!config().isAutoRead()) {
-                interestOps(interestOps() & ~SelectionKey.OP_READ);
-            }
-
-            return messagesRead;
+            return 0;
         }
 
         @Override

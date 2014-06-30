@@ -3,6 +3,7 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
@@ -381,25 +382,52 @@ public abstract class AbstractChannel implements Channel {
         public void doRead() {
             assert eventLoop().inExecutorThread();
 
-            int messagesRead = 0;
-            for (int i = 0; i < config().getReadSpinCount(); i++) {
-                int read = doReadMessages(messages);
-                messagesRead += read;
-                if (read == 0) {
-                    break;
+            Throwable error = null;
+            boolean closed = false;
+            try {
+                int messagesRead = 0;
+                try {
+                    for (int i = 0; i < config().getReadSpinCount(); i++) {
+                        int read = doReadMessages(messages);
+                        messagesRead += read;
+                        if (read == 0) {
+                            break;
+                        }
+                        if (read < 0) {
+                            closed = true;
+                            break;
+                        }
+                    }
+                } catch (Throwable e) {
+                    error = e;
                 }
-            }
 
-            for (int i = 0; i < messagesRead; i++) {
-                pipeline().fireMessageReceived(messages.get(i));
-            }
+                for (int i = 0; i < messagesRead; i++) {
+                    pipeline().fireMessageReceived(messages.get(i));
+                }
 
-            if (messagesRead > 0) {
-                messages.clear();
+                if (error != null) {
+                    if (error instanceof IOException) {
+                        closed = !(AbstractChannel.this instanceof ServerChannel);
+                    }
+                    pipeline().fireExceptionCaught(error);
+                }
+
+                if (closed && isOpen()) {
+                    doClose();
+                }
+
+                if (messagesRead > 0) {
+                    messages.clear();
+                }
+            } finally {
+                if (isActive() && config().isAutoRead()) {
+                    readRequested();
+                }
             }
         }
 
-        protected abstract int doReadMessages(List<Object> messages);
+        protected abstract int doReadMessages(List<Object> messages) throws Exception;
 
         @Override
         public void doWrite() {

@@ -4,8 +4,10 @@ import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.ServerChannel;
 import io.gwynt.core.ThreadPerChannelEventLoop;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,13 +70,41 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         public void doRead() {
             assert eventLoop().inExecutorThread();
 
-            int messagesRead = doReadMessages(messages);
-            for (int i = 0; i < messagesRead; i++) {
-                pipeline().fireMessageReceived(messages.get(i));
-            }
+            Throwable error = null;
+            boolean closed = false;
+            try {
+                int messagesRead = 0;
+                try {
+                    messagesRead = doReadMessages(messages);
+                    if (messagesRead < 0) {
+                        closed = true;
+                    }
+                } catch (Throwable e) {
+                    error = e;
+                }
 
-            if (messagesRead > 0) {
-                messages.clear();
+                for (int i = 0; i < messagesRead; i++) {
+                    pipeline().fireMessageReceived(messages.get(i));
+                }
+
+                if (error != null) {
+                    if (error instanceof IOException) {
+                        closed = !(AbstractOioChannel.this instanceof ServerChannel);
+                    }
+                    pipeline().fireExceptionCaught(error);
+                }
+
+                if (closed && isOpen()) {
+                    doClose();
+                }
+
+                if (messagesRead > 0) {
+                    messages.clear();
+                }
+            } finally {
+                if (isActive() && config().isAutoRead()) {
+                    readRequested();
+                }
             }
         }
 

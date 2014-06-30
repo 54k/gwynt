@@ -56,35 +56,27 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) throws Exception {
             if (!isActive()) {
-                return 0;
+                return -1;
             }
 
-            Socket ch;
-            int accepted = 0;
             try {
-                ch = javaChannel().accept();
-                if (ch == null) {
-                    return 0;
+                Socket ch = javaChannel().accept();
+                try {
+                    ch.setSoTimeout(SO_TIMEOUT);
+                    OioSocketChannel channel = new OioSocketChannel(OioServerSocketChannel.this, ch);
+                    messages.add(channel);
+                    return 1;
+                } catch (IOException e) {
+                    try {
+                        ch.close();
+                    } catch (IOException ignore) {
+                    }
                 }
-                ch.setSoTimeout(SO_TIMEOUT);
-                accepted++;
             } catch (SocketTimeoutException ignore) {
-                return 0;
-            } catch (IOException e) {
-                exceptionCaught(e);
-                return 0;
-            } finally {
-                if (config().isAutoRead()) {
-                    readRequested();
-                }
             }
-
-            OioSocketChannel channel = new OioSocketChannel(OioServerSocketChannel.this, ch);
-            messages.add(channel);
-
-            return accepted;
+            return 0;
         }
 
         @Override

@@ -4,14 +4,18 @@ import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.ServerChannel;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractNioChannel extends AbstractChannel {
 
+    protected int readOp = SelectionKey.OP_READ;
     private volatile SelectionKey selectionKey;
 
     protected AbstractNioChannel(SelectableChannel ch) {
@@ -38,6 +42,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     }
 
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> {
+
+        private final List<Object> messages = new ArrayList<>(config().getReadSpinCount());
 
         private final Runnable READ_TASK = new Runnable() {
             @Override
@@ -77,10 +83,51 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         public void doRead() {
-            if (!config().isAutoRead()) {
-                interestOps(interestOps() & ~SelectionKey.OP_READ);
+            assert eventLoop().inExecutorThread();
+
+            Throwable error = null;
+            boolean closed = false;
+            try {
+                int messagesRead = 0;
+                try {
+                    for (int i = 0; i < config().getReadSpinCount(); i++) {
+                        int read = doReadMessages(messages);
+                        messagesRead += read;
+                        if (read == 0) {
+                            break;
+                        }
+                        if (read < 0) {
+                            closed = true;
+                            break;
+                        }
+                    }
+                } catch (Throwable e) {
+                    error = e;
+                }
+
+                for (int i = 0; i < messagesRead; i++) {
+                    pipeline().fireMessageReceived(messages.get(i));
+                }
+
+                if (error != null) {
+                    if (error instanceof IOException) {
+                        closed = !(AbstractNioChannel.this instanceof ServerChannel);
+                    }
+                    pipeline().fireExceptionCaught(error);
+                }
+
+                if (closed && isOpen()) {
+                    doClose();
+                }
+
+                if (messagesRead > 0) {
+                    messages.clear();
+                }
+            } finally {
+                if (isActive() && !config().isAutoRead()) {
+                    removeReadOp();
+                }
             }
-            super.doRead();
         }
 
         @Override
@@ -129,6 +176,10 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected boolean isOpen() {
             return javaChannel().isOpen();
+        }
+
+        private void removeReadOp() {
+            interestOps(interestOps() & ~readOp);
         }
 
         @Override

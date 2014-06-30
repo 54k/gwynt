@@ -8,15 +8,13 @@ import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
 import io.gwynt.core.codec.ByteToMessageCodec;
-import io.gwynt.core.concurrent.FutureGroup;
-import io.gwynt.core.concurrent.FutureGroupListener;
-import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
 import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
+import io.gwynt.core.oio.OioEventLoopGroup;
+import io.gwynt.core.oio.OioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +39,7 @@ public class GwyntSimpleChatServer implements Runnable {
 
     private ChannelGroup channels;
     private int port = 1337;
-    private EventLoopGroup eventLoop = new NioEventLoopGroup(2);
+    private EventLoopGroup eventLoop = new OioEventLoopGroup();
 
     @Override
     public void run() {
@@ -49,7 +47,7 @@ public class GwyntSimpleChatServer implements Runnable {
         channels = new DefaultChannelGroup();
 
         final IOReactor endpoint =
-                new IOReactor().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
+                new IOReactor().group(eventLoop).channelClass(OioServerSocketChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addFirst(new MessageDecoder());
@@ -66,17 +64,17 @@ public class GwyntSimpleChatServer implements Runnable {
         } catch (InterruptedException ignore) {
         }
 
-        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-            @Override
-            public void run() {
-                endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
-                    @Override
-                    public void onComplete(FutureGroup<Void> future) {
-                        System.out.println("SHUTDOWN SERVER");
-                    }
-                });
-            }
-        }, 30, TimeUnit.SECONDS);
+//        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+//            @Override
+//            public void run() {
+//                endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+//                    @Override
+//                    public void onComplete(FutureGroup<Void> future) {
+//                        System.out.println("SHUTDOWN SERVER");
+//                    }
+//                });
+//            }
+//        }, 30, TimeUnit.SECONDS);
     }
 
     private void createBots(int port) {
@@ -98,21 +96,21 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             client.connect("localhost", port);
         }
 
-        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-            @Override
-            public void run() {
-                client.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
-                    @Override
-                    public void onComplete(FutureGroup<Void> future) {
-                        System.out.println("SHUTDOWN BOTS");
-                    }
-                });
-            }
-        }, 15, TimeUnit.SECONDS);
+//        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+//            @Override
+//            public void run() {
+//                client.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+//                    @Override
+//                    public void onComplete(FutureGroup<Void> future) {
+//                        System.out.println("SHUTDOWN BOTS");
+//                    }
+//                });
+//            }
+//        }, 15, TimeUnit.SECONDS);
     }
 
     //    private ChannelFuture runDiscoveryServer(final int port) {

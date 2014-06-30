@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 public class OioSocketChannel extends AbstractOioChannel {
@@ -52,48 +51,27 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        protected int doReadMessages(List<Object> messages) {
+        protected int doReadMessages(List<Object> messages) throws Exception {
             if (!isActive()) {
-                return 0;
+                return -1;
             }
 
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
-            ByteBuffer buffer = config().getByteBufferPool().acquire(allocHandle.guess(), false);
-            Throwable error = null;
-            int bytesRead = 0;
-            int messagesRead = 0;
+            byte[] buffer = new byte[allocHandle.guess()];
 
+            int bytesRead = 0;
             try {
-                bytesRead = javaChannel().getInputStream().read(buffer.array());
+                bytesRead = javaChannel().getInputStream().read(buffer);
                 if (bytesRead > 0) {
-                    buffer.flip();
-                    byte[] message = new byte[buffer.limit()];
-                    buffer.get(message);
+                    byte[] message = new byte[bytesRead];
+                    System.arraycopy(buffer, 0, message, 0, bytesRead);
                     messages.add(message);
-                    messagesRead++;
+                    allocHandle.record(bytesRead);
+                    return 1;
                 }
             } catch (SocketTimeoutException ignore) {
-            } catch (IOException e) {
-                error = e;
             }
-
-            if (error != null) {
-                exceptionCaught(error);
-            }
-
-            if (bytesRead == -1) {
-                doClose();
-            }
-
-            if (bytesRead > 0) {
-                allocHandle.record(bytesRead);
-            }
-
-            config().getByteBufferPool().release(buffer);
-            if (config().isAutoRead()) {
-                readRequested();
-            }
-            return messagesRead;
+            return bytesRead;
         }
 
         @Override
