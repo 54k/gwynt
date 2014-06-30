@@ -175,7 +175,7 @@ public final class IOReactor {
                 channel.pipeline().addLast(handler);
             }
 
-            channel.register(secondaryGroup.next()).addListener(new ChannelFutureListener() {
+            secondaryGroup.register(channel).addListener(new ChannelFutureListener() {
                 @Override
                 public void onComplete(ChannelFuture channelFuture) {
                     Channel ch = channelFuture.channel();

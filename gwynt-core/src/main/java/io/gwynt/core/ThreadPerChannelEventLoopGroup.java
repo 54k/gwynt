@@ -66,17 +66,25 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     @Override
     public EventLoop next() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return null;
+        return register(channel, channel.newChannelPromise());
     }
 
     @Override
     public ChannelFuture register(Channel channel, ChannelPromise channelPromise) {
-        return null;
+        if (channel == null) {
+            throw new NullPointerException("channel");
+        }
+        try {
+            return nextChild().register(channel, channelPromise);
+        } catch (Throwable t) {
+            channelPromise.setFailure(t);
+            return channelPromise;
+        }
     }
 
     @Override

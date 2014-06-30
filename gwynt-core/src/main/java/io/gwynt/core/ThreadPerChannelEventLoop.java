@@ -54,10 +54,6 @@ public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
                         runAllTasks();
                         unregister();
                     }
-                } else {
-                    if (confirmShutdown()) {
-                        break;
-                    }
                 }
             }
         }

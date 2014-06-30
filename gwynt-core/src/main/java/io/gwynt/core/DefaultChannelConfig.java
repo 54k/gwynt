@@ -6,8 +6,8 @@ public class DefaultChannelConfig implements ChannelConfig {
     private boolean autoRead = true;
     private RecvByteBufferAllocator recvByteBufferAllocator = AdaptiveRecvByteBufferAllocator.DEFAULT;
     private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
-    private int writeSpinCount = 8;
-    private int readSpinCount = 8;
+    private int writeSpinCount = 1;
+    private int readSpinCount = 1;
     private long connectTimeoutMillis = 0;
 
     public DefaultChannelConfig(Channel channel) {
