@@ -3,6 +3,7 @@ package io.gwynt.core.oio;
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.ThreadPerChannelEventLoop;
 
 public abstract class AbstractOioChannel extends AbstractChannel {
 
@@ -18,7 +19,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
 
     @Override
     protected boolean isEventLoopCompatible(EventLoop eventLoop) {
-        return eventLoop instanceof OioEventLoop;
+        return eventLoop instanceof ThreadPerChannelEventLoop;
     }
 
     protected abstract class AbstractOioUnsafe<T> extends AbstractUnsafe<T> {

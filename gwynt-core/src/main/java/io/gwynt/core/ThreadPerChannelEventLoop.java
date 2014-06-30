@@ -1,22 +1,14 @@
-package io.gwynt.core.oio;
-
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelFutureListener;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.MultiThreadEventLoopGroup;
-import io.gwynt.core.SingleThreadEventLoop;
+package io.gwynt.core;
 
 import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
-
-public class OioEventLoop extends SingleThreadEventLoop {
+public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
 
     private Channel ch;
 
-    public OioEventLoop(MultiThreadEventLoopGroup parent, Executor executor) {
+    public ThreadPerChannelEventLoop(MultiThreadEventLoopGroup parent, Executor executor) {
         super(parent, true, executor);
     }
 
