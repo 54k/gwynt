@@ -283,16 +283,14 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void disconnect(ChannelPromise channelPromise) {
-            if (!channelPromise.setUncancellable()) {
-                return;
-            }
-
-            try {
-                doDisconnect();
-                safeSetSuccess(channelPromise);
-            } catch (Throwable t) {
-                safeSetFailure(channelPromise, t);
-                close(voidPromise());
+            if (channelPromise.setUncancellable()) {
+                try {
+                    doDisconnect();
+                    safeSetSuccess(channelPromise);
+                } catch (Throwable t) {
+                    safeSetFailure(channelPromise, t);
+                    close(voidPromise());
+                }
             }
         }
 
@@ -303,8 +301,10 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void read(ChannelPromise channelPromise) {
             if (!pendingClose.get() && isActive()) {
-                readRequested();
-                safeSetSuccess(channelPromise);
+                if (channelPromise.setUncancellable()) {
+                    readRequested();
+                    safeSetSuccess(channelPromise);
+                }
             } else {
                 safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
             }
@@ -315,8 +315,10 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
             if (!pendingClose.get() && isActive()) {
-                channelOutboundBuffer.addMessage(message, channelPromise);
-                writeRequested();
+                if (channelPromise.setUncancellable()) {
+                    channelOutboundBuffer.addMessage(message, channelPromise);
+                    writeRequested();
+                }
             } else {
                 safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
             }
@@ -465,7 +467,9 @@ public abstract class AbstractChannel implements Channel {
         @Override
         public void close(ChannelPromise channelPromise) {
             if (pendingClose.compareAndSet(false, true)) {
-                doClose();
+                if (channelPromise.setUncancellable()) {
+                    doClose();
+                }
             }
             closePromise.chainPromise(channelPromise);
         }
@@ -488,11 +492,11 @@ public abstract class AbstractChannel implements Channel {
                 pendingClose.set(true);
                 closeJavaChannel();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
-                closePromise.setClosed();
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         if (wasActive && !isActive()) {
+                            closePromise.setClosed();
                             pipeline.fireClose();
                         }
                         unregister();

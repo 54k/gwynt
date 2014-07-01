@@ -47,7 +47,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
                 return taskQueue.poll();
             } else {
                 long delayNanos = delayedTask.getDelayNanos();
-                Runnable task;
+                Runnable task = null;
                 if (delayNanos > 0) {
                     try {
                         task = taskQueue.poll(delayNanos, TimeUnit.NANOSECONDS);
@@ -55,10 +55,7 @@ public final class GlobalEventExecutor extends AbstractScheduledEventExecutor {
                         // Waken up.
                         return null;
                     }
-                } else {
-                    task = taskQueue.poll();
                 }
-
                 if (task == null) {
                     fetchDelayedTasks();
                     task = taskQueue.poll();
