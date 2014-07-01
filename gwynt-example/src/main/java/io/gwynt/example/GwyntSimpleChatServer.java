@@ -64,17 +64,17 @@ public class GwyntSimpleChatServer implements Runnable {
         } catch (InterruptedException ignore) {
         }
 
-//        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-//            @Override
-//            public void run() {
-//                endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
-//                    @Override
-//                    public void onComplete(FutureGroup<Void> future) {
-//                        System.out.println("SHUTDOWN SERVER");
-//                    }
-//                });
-//            }
-//        }, 30, TimeUnit.SECONDS);
+        //        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+        //            @Override
+        //            public void run() {
+        //                endpoint.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+        //                    @Override
+        //                    public void onComplete(FutureGroup<Void> future) {
+        //                        System.out.println("SHUTDOWN SERVER");
+        //                    }
+        //                });
+        //            }
+        //        }, 30, TimeUnit.SECONDS);
     }
 
     private void createBots(int port) {
@@ -96,21 +96,21 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 0; i++) {
+        for (int i = 0; i < 500; i++) {
             client.connect("localhost", port);
         }
 
-//        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-//            @Override
-//            public void run() {
-//                client.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
-//                    @Override
-//                    public void onComplete(FutureGroup<Void> future) {
-//                        System.out.println("SHUTDOWN BOTS");
-//                    }
-//                });
-//            }
-//        }, 15, TimeUnit.SECONDS);
+        //        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+        //            @Override
+        //            public void run() {
+        //                client.shutdownGracefully().addListener(new FutureGroupListener<Void>() {
+        //                    @Override
+        //                    public void onComplete(FutureGroup<Void> future) {
+        //                        System.out.println("SHUTDOWN BOTS");
+        //                    }
+        //                });
+        //            }
+        //        }, 15, TimeUnit.SECONDS);
     }
 
     //    private ChannelFuture runDiscoveryServer(final int port) {

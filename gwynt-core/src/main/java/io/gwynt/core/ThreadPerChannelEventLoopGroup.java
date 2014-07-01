@@ -1,8 +1,10 @@
 package io.gwynt.core;
 
 import io.gwynt.core.concurrent.AbstractEventExecutorGroup;
+import io.gwynt.core.concurrent.DefaultPromise;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.Future;
+import io.gwynt.core.concurrent.FutureListener;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.concurrent.ThreadPerTaskExecutor;
 
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +29,16 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     private final ChannelException tooManyChannels;
     private final int maxChannels;
     private final Object[] childArgs;
+    private final DefaultPromise<Void> shutdownFuture = new DefaultPromise<>();
+    private final FutureListener<Future<Void>> shutdownListener = new FutureListener<Future<Void>>() {
+        @Override
+        public void onComplete(Future<Void> future) {
+            if (isTerminated()) {
+                shutdownFuture.setSuccess(null);
+            }
+        }
+    };
+    private volatile boolean shuttingDown;
 
     protected ThreadPerChannelEventLoopGroup() {
         this(0);
@@ -63,6 +76,8 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     @Deprecated
     @Override
     public void shutdown() {
+        shuttingDown = true;
+
         for (EventLoop l : activeChildren) {
             l.shutdown();
         }
@@ -112,12 +127,21 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     @Override
     public Future<Void> shutdownGracefully() {
-        return null;
+        shuttingDown = true;
+
+        for (EventLoop l : activeChildren) {
+            l.shutdownGracefully();
+        }
+        for (EventLoop l : idleChildren) {
+            l.shutdownGracefully();
+        }
+
+        return shutdownFuture;
     }
 
     @Override
     public Future<Void> terminationFuture() {
-        return null;
+        return shutdownFuture;
     }
 
     @Override
@@ -160,12 +184,17 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     }
 
     private EventLoop nextChild() throws Exception {
+        if (shuttingDown) {
+            throw new RejectedExecutionException("shutting down");
+        }
+
         EventLoop loop = idleChildren.poll();
         if (loop == null) {
             if (maxChannels > 0 && activeChildren.size() >= maxChannels) {
                 throw tooManyChannels;
             }
             loop = newChild(childArgs);
+            loop.terminationFuture().addListener(shutdownListener);
         }
         activeChildren.add(loop);
         return loop;

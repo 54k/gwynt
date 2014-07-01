@@ -209,9 +209,9 @@ public abstract class AbstractChannel implements Channel {
     @Override
     public String toString() {
         if (strCache == null) {
-            strCache = getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress() + ", registered: " + registered + ", attachment: " + attachment + ')';
+            strCache = getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress();
         }
-        return strCache;
+        return strCache + ", registered: " + registered + ", attachment: " + attachment + ')';
     }
 
     final class ClosePromise extends DefaultChannelPromise {
