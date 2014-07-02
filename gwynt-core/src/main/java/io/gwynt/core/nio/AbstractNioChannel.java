@@ -42,7 +42,22 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         return eventLoop instanceof NioEventLoop;
     }
 
-    protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> {
+    @Override
+    public NioUnsafe unsafe() {
+        return (NioUnsafe) super.unsafe();
+    }
+
+    public static interface NioUnsafe<T> extends Unsafe<T> {
+
+        void doRead();
+
+        void doWrite();
+
+        void doConnect();
+
+    }
+
+    protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> implements NioUnsafe<T> {
 
         private final List<Object> messages = new ArrayList<>(config().getReadSpinCount());
         private final Runnable WRITE_TASK = new Runnable() {
@@ -60,13 +75,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 invokeLater(WRITE_TASK);
             }
         }
-
-        private final Runnable READ_TASK = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
 
         @Override
         protected void readRequested() {
@@ -141,6 +149,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
+        private final Runnable READ_TASK = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
+
         protected boolean doWriteMessage(Object message) throws Exception {
             throw new UnsupportedOperationException();
         }
@@ -208,7 +223,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 throw new RegistrationException("Not registered to dispatcher.");
             }
         }
-
 
     }
 }

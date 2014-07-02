@@ -73,12 +73,6 @@ public interface Channel {
 
         void unregister();
 
-        void doRead();
-
-        void doWrite();
-
-        void doConnect();
-
         ChannelFuture closeFuture();
 
         SocketAddress getLocalAddress() throws Exception;

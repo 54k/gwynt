@@ -376,7 +376,6 @@ public abstract class AbstractChannel implements Channel {
 
         protected abstract void afterUnregister();
 
-        @Override
         public void doRead() {
             Throwable error = null;
             boolean closed = false;
@@ -425,7 +424,6 @@ public abstract class AbstractChannel implements Channel {
          */
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
 
-        @Override
         public void doWrite() {
             if (!isActive()) {
                 if (isOpen()) {
@@ -449,7 +447,6 @@ public abstract class AbstractChannel implements Channel {
 
         protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
 
-        @Override
         public void doConnect() {
             throw new UnsupportedOperationException();
         }
