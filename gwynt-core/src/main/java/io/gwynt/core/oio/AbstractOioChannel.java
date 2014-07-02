@@ -39,7 +39,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         private final Runnable WRITE_TASK = new Runnable() {
             @Override
             public void run() {
-                doWrite();
+                flush();
             }
         };
         private final List<Object> messages = new ArrayList<>(1);
@@ -64,7 +64,6 @@ public abstract class AbstractOioChannel extends AbstractChannel {
             // NO OP
         }
 
-        @Override
         public void doRead() {
             Throwable error = null;
             boolean closed = false;
@@ -101,8 +100,13 @@ public abstract class AbstractOioChannel extends AbstractChannel {
             }
         }
 
+        /**
+         * @return number of messages read or -1 if end of stream occurred
+         */
+        protected abstract int doReadMessages(List<Object> messages) throws Exception;
+
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {

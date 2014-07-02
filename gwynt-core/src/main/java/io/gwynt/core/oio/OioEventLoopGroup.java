@@ -10,6 +10,6 @@ public final class OioEventLoopGroup extends ThreadPerChannelEventLoopGroup {
     }
 
     public OioEventLoopGroup(int maxChannels) {
-        super(maxChannels, new DefaultThreadFactory("gwynt-oio-eventloop-"));
+        super(maxChannels, new DefaultThreadFactory("gwynt-oio-eventloop"));
     }
 }

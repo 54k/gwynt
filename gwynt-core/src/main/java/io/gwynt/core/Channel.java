@@ -67,6 +67,8 @@ public interface Channel {
 
         void write(Object message, ChannelPromise channelPromise);
 
+        void flush();
+
         void close(ChannelPromise channelFuture);
 
         void register(EventLoop eventLoop);

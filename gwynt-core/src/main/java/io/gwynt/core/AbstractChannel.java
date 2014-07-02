@@ -4,13 +4,10 @@ import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetConnectedException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -260,7 +257,6 @@ public abstract class AbstractChannel implements Channel {
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final AtomicBoolean pendingClose = new AtomicBoolean();
 
-        private final List<Object> messages = new ArrayList<>(config.getReadSpinCount());
         private final AtomicBoolean flushing = new AtomicBoolean();
 
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
@@ -376,55 +372,7 @@ public abstract class AbstractChannel implements Channel {
 
         protected abstract void afterUnregister();
 
-        public void doRead() {
-            Throwable error = null;
-            boolean closed = false;
-            try {
-                int messagesRead = 0;
-                try {
-                    for (int i = 0; i < config().getReadSpinCount(); i++) {
-                        int read = doReadMessages(messages);
-                        messagesRead += read;
-                        if (read == 0) {
-                            break;
-                        }
-                        if (read < 0) {
-                            closed = true;
-                            break;
-                        }
-                    }
-                } catch (Throwable e) {
-                    error = e;
-                }
-
-                for (int i = 0; i < messagesRead; i++) {
-                    pipeline().fireMessageReceived(messages.get(i));
-                }
-
-                if (error != null) {
-                    if (error instanceof IOException) {
-                        closed = !(AbstractChannel.this instanceof ServerChannel);
-                    }
-                    pipeline().fireExceptionCaught(error);
-                }
-
-                if (closed && isOpen()) {
-                    close(voidPromise());
-                }
-                messages.clear();
-            } finally {
-                if (isActive() && config().isAutoRead()) {
-                    readRequested();
-                }
-            }
-        }
-
-        /**
-         * @return number of messages read or -1 if end of stream occurred
-         */
-        protected abstract int doReadMessages(List<Object> messages) throws Exception;
-
-        public void doWrite() {
+        public void flush() {
             if (!isActive()) {
                 if (isOpen()) {
                     channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
@@ -436,7 +384,7 @@ public abstract class AbstractChannel implements Channel {
             if (!channelOutboundBuffer.isEmpty()) {
                 try {
                     flushing.set(true);
-                    doWriteMessages(channelOutboundBuffer);
+                    flush0(channelOutboundBuffer);
                 } catch (Throwable e) {
                     channelOutboundBuffer.clear(e);
                 } finally {
@@ -445,9 +393,9 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
+        protected abstract void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
 
-        public void doConnect() {
+        public void connect() {
             throw new UnsupportedOperationException();
         }
 

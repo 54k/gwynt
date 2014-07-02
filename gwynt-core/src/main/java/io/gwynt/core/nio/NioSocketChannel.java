@@ -125,7 +125,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             NioSocketChannelOutboundBuffer outboundBuffer = (NioSocketChannelOutboundBuffer) channelOutboundBuffer;
             long remainingBytes = outboundBuffer.remaining();
             ByteBuffer[] buffers = outboundBuffer.byteBuffers();
@@ -155,7 +155,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void doConnect() {
+        public void connect() {
             boolean wasActive = isActive();
             try {
                 if (javaChannel().finishConnect()) {

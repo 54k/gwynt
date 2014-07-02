@@ -49,12 +49,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
     public static interface NioUnsafe<T> extends Unsafe<T> {
 
-        void doRead();
+        void read();
 
-        void doWrite();
-
-        void doConnect();
-
+        void connect();
     }
 
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> implements NioUnsafe<T> {
@@ -86,7 +83,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        public void doRead() {
+        public void read() {
             Throwable error = null;
             boolean closed = false;
             try {
@@ -129,8 +126,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
+        /**
+         * @return number of messages read or -1 if end of stream occurred
+         */
+        protected abstract int doReadMessages(List<Object> messages) throws Exception;
+
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {
@@ -149,16 +151,16 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
+        protected boolean doWriteMessage(Object message) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
         private final Runnable READ_TASK = new Runnable() {
             @Override
             public void run() {
                 interestOps(interestOps() | readOp);
             }
         };
-
-        protected boolean doWriteMessage(Object message) throws Exception {
-            throw new UnsupportedOperationException();
-        }
 
         @Override
         protected void afterRegister() {

@@ -83,7 +83,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {

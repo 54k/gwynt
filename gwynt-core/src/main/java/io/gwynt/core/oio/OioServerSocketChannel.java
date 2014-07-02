@@ -79,7 +79,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        protected void doWriteMessages(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             throw new UnsupportedOperationException();
         }
 
