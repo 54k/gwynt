@@ -324,7 +324,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     @Deprecated
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
+        return shutdownGracefully().await(timeout, unit);
     }
 
     @Override

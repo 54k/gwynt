@@ -176,7 +176,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
+        return shutdownGracefully().await(timeout, unit);
     }
 
     protected EventLoop newChild(Object... args) throws Exception {
