@@ -1,11 +1,10 @@
 package io.gwynt.core;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
-public class Datagram extends DefaultEnvelope<ByteBuffer, SocketAddress> {
+public class Datagram extends DefaultEnvelope<byte[], SocketAddress> {
 
-    public Datagram(ByteBuffer content, SocketAddress recipient) {
+    public Datagram(byte[] content, SocketAddress recipient) {
         super(content, recipient);
     }
 }

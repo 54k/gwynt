@@ -207,9 +207,14 @@ public abstract class AbstractChannel implements Channel {
     protected abstract Unsafe newUnsafe();
 
     @Override
+    public ByteBufferPool byteBufferPool() {
+        return config.getByteBufferPool();
+    }
+
+    @Override
     public String toString() {
         if (strCache == null) {
-            strCache = getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress();
+            strCache = getClass().getName() + "(localAddress: " + getLocalAddress() + ", remoteAddress: " + getRemoteAddress() + ", pipeline: " + pipeline();
         }
         return strCache + ", registered: " + registered + ", attachment: " + attachment + ')';
     }
@@ -449,8 +454,7 @@ public abstract class AbstractChannel implements Channel {
             throw new UnsupportedOperationException();
         }
 
-        @Override
-        public void exceptionCaught(final Throwable e) {
+        protected void exceptionCaught(final Throwable e) {
             invokeLater(new Runnable() {
                 @Override
                 public void run() {

@@ -348,7 +348,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
                     buffer.flip();
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
-                    messages.add(new Datagram(ByteBuffer.wrap(message), address));
+                    messages.add(new Datagram(message, address));
                     return 1;
                 }
             } finally {
@@ -366,10 +366,17 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
 
             if (message instanceof Datagram) {
                 Datagram datagram = (Datagram) message;
-                src = datagram.content();
+                byte[] bytes = datagram.content();
+                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.flip();
                 remoteAddress = datagram.recipient();
             } else if (message instanceof ByteBuffer) {
                 src = (ByteBuffer) message;
+                remoteAddress = null;
+            } else if (message instanceof byte[]) {
+                byte[] bytes = (byte[]) message;
+                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.flip();
                 remoteAddress = null;
             } else {
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());

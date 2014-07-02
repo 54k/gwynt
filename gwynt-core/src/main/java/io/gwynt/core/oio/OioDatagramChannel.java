@@ -198,6 +198,11 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            super.connect(address, channelPromise);
+        }
+
+        @Override
         protected int doReadMessages(List<Object> messages) throws Exception {
             if (!isActive()) {
                 return -1;
@@ -217,7 +222,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
                     buffer.flip();
                     byte[] message = new byte[buffer.limit()];
                     buffer.get(message);
-                    messages.add(new Datagram(ByteBuffer.wrap(message), address));
+                    messages.add(new Datagram(message, address));
                     return 1;
                 }
             } catch (SocketTimeoutException ignore) {
@@ -230,24 +235,24 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
 
         @Override
         protected boolean doWriteMessage(Object message) throws Exception {
-            ByteBuffer src;
+            byte[] src;
             SocketAddress remoteAddress;
 
             if (message instanceof Datagram) {
                 Datagram datagram = (Datagram) message;
                 src = datagram.content();
                 remoteAddress = datagram.recipient();
-            } else if (message instanceof ByteBuffer) {
-                src = (ByteBuffer) message;
+            } else if (message instanceof byte[]) {
+                src = (byte[]) message;
                 remoteAddress = null;
             } else {
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
             if (remoteAddress != null) {
-                javaChannel().send(new DatagramPacket(new byte[0], 0, remoteAddress));
+                javaChannel().send(new DatagramPacket(src, src.length, remoteAddress));
             } else {
-                javaChannel().send(new DatagramPacket(new byte[0], 0, javaChannel().getRemoteSocketAddress()));
+                javaChannel().send(new DatagramPacket(src, src.length, javaChannel().getRemoteSocketAddress()));
             }
 
             return true;

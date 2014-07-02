@@ -51,6 +51,8 @@ public interface Channel {
 
     ChannelPromise voidPromise();
 
+    ByteBufferPool byteBufferPool();
+
     interface Unsafe<T> {
 
         T javaChannel();
@@ -76,8 +78,6 @@ public interface Channel {
         void doWrite();
 
         void doConnect();
-
-        void exceptionCaught(Throwable e);
 
         ChannelFuture closeFuture();
 
