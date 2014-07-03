@@ -116,7 +116,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 }
 
                 if (closed && isOpen()) {
-                    close(voidPromise());
+                    doClose();
                 }
                 messages.clear();
             } finally {
@@ -216,7 +216,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 selectionKey.interestOps(interestOps);
                 eventLoop().wakeUpSelector();
             } else {
-                close(voidPromise());
+                doClose();
             }
         }
 

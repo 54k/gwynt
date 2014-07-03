@@ -290,7 +290,7 @@ public abstract class AbstractChannel implements Channel {
                     safeSetSuccess(channelPromise);
                 } catch (Throwable t) {
                     safeSetFailure(channelPromise, t);
-                    close(voidPromise());
+                    doClose();
                 }
             }
         }
@@ -424,8 +424,6 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected void doClose() {
-            assert !pendingClose.get();
-
             if (flushing.get()) {
                 invokeLater(new Runnable() {
                     @Override

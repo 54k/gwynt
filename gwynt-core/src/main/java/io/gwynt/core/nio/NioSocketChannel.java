@@ -94,7 +94,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         @Override
         protected void doDisconnect() {
             connectPromise = null;
-            close(voidPromise());
+            doClose();
         }
 
         @Override
@@ -134,7 +134,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                 long bytesWritten = javaChannel().write(buffers);
 
                 if (bytesWritten == -1) {
-                    close(voidPromise());
+                    doClose();
                     return;
                 }
 
@@ -169,7 +169,7 @@ public class NioSocketChannel extends AbstractNioChannel {
                     }
 
                     if (!connectSuccess) {
-                        close(voidPromise());
+                        doClose();
                     }
                 } else {
                     closeJavaChannel();
