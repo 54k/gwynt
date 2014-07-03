@@ -2,9 +2,11 @@ package io.gwynt.core.oio;
 
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.DatagramChannel;
+import io.gwynt.core.DefaultChannelPromise;
 import io.gwynt.core.RecvByteBufferAllocator;
 
 import java.io.IOException;
@@ -15,7 +17,6 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -43,38 +44,14 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
     }
 
     @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface) {
-        return joinGroup(multicastAddress, networkInterface, newChannelPromise());
+    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
     }
 
     @Override
     public ChannelFuture joinGroup(InetAddress multicastAddress, ChannelPromise channelPromise) {
-        try {
-            return joinGroup(multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), null, newChannelPromise());
-        } catch (SocketException e) {
-            safeSetFailure(channelPromise, e);
-        }
-        return channelPromise;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return joinGroup(multicastAddress, networkInterface, null, channelPromise);
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return joinGroup(multicastAddress, networkInterface, source, newChannelPromise());
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
             throw new IllegalArgumentException("multicastAddress");
-        }
-
-        if (networkInterface == null) {
-            throw new IllegalArgumentException("networkInterface");
         }
 
         try {
@@ -88,42 +65,50 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
     }
 
     @Override
+    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
+        if (multicastAddress == null) {
+            throw new IllegalArgumentException("multicastAddress");
+        }
+
+        if (networkInterface == null) {
+            throw new IllegalArgumentException("networkInterface");
+        }
+
+        try {
+            javaChannel().joinGroup(multicastAddress, networkInterface);
+            safeSetSuccess(channelPromise);
+        } catch (Throwable e) {
+            safeSetFailure(channelPromise, e);
+        }
+
+        return channelPromise;
+    }
+
+    @Override
+    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
+    }
+
+    @Override
+    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
+    }
+
+    @Override
     public ChannelFuture leaveGroup(InetAddress multicastAddress) {
         return leaveGroup(multicastAddress, newChannelPromise());
     }
 
     @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface) {
+    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
         return leaveGroup(multicastAddress, networkInterface, newChannelPromise());
     }
 
     @Override
     public ChannelFuture leaveGroup(InetAddress multicastAddress, ChannelPromise channelPromise) {
-        try {
-            return leaveGroup(multicastAddress, NetworkInterface.getByInetAddress(getLocalAddress().getAddress()), null, channelPromise);
-        } catch (SocketException e) {
-            safeSetFailure(channelPromise, e);
-        }
-        return channelPromise;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return leaveGroup(multicastAddress, networkInterface, null, channelPromise);
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return leaveGroup(multicastAddress, networkInterface, source, newChannelPromise());
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
         if (multicastAddress == null) {
             throw new IllegalArgumentException("multicastAddress");
-        }
-        if (networkInterface == null) {
-            throw new IllegalArgumentException("networkInterface");
         }
 
         try {
@@ -136,43 +121,76 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
     }
 
     @Override
+    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
+        if (multicastAddress == null) {
+            throw new IllegalArgumentException("multicastAddress");
+        }
+        if (networkInterface == null) {
+            throw new IllegalArgumentException("networkInterface");
+        }
+
+        try {
+            javaChannel().leaveGroup(multicastAddress, networkInterface);
+            safeSetSuccess(channelPromise);
+        } catch (IOException e) {
+            safeSetFailure(channelPromise, e);
+        }
+        return channelPromise;
+    }
+
+    @Override
+    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
+    }
+
+    @Override
+    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
+    }
+
+    @Override
     public ChannelFuture block(InetAddress multicastAddress, InetAddress source) {
-        throw new UnsupportedOperationException();
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
     }
 
     @Override
     public ChannelFuture block(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
-        throw new UnsupportedOperationException();
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
     }
 
     @Override
     public ChannelFuture block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        throw new UnsupportedOperationException();
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
     }
 
     @Override
     public ChannelFuture block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        throw new UnsupportedOperationException();
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
     }
 
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, InetAddress source) {
-        throw new UnsupportedOperationException();
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
     }
 
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
-        throw new UnsupportedOperationException();
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
     }
 
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        throw new UnsupportedOperationException();
+        return new DefaultChannelPromise(this, eventLoop()).setFailure(new UnsupportedOperationException());
     }
 
     @Override
     public ChannelFuture unblock(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        throw new UnsupportedOperationException();
+        safeSetFailure(channelPromise, new UnsupportedOperationException());
+        return channelPromise;
     }
 
     @Override
@@ -234,6 +252,20 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
+        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+            boolean done = false;
+            Object message = channelOutboundBuffer.current();
+            if (message != null) {
+                done = doWriteMessage(message);
+            }
+
+            if (done) {
+                channelOutboundBuffer.remove();
+            } else {
+                writeRequested();
+            }
+        }
+
         protected boolean doWriteMessage(Object message) throws Exception {
             byte[] src;
             SocketAddress remoteAddress;

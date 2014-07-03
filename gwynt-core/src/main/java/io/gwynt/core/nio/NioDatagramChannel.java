@@ -52,7 +52,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     }
 
     @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface) {
+    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
         return joinGroup(multicastAddress, networkInterface, newChannelPromise());
     }
 
@@ -67,8 +67,8 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     }
 
     @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return joinGroup(multicastAddress, networkInterface, null, channelPromise);
+    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
+        return joinGroup(multicastAddress.getAddress(), networkInterface, null, channelPromise);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     }
 
     @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface) {
+    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
         return leaveGroup(multicastAddress, networkInterface, newChannelPromise());
     }
 
@@ -137,8 +137,8 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
     }
 
     @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return leaveGroup(multicastAddress, networkInterface, null, channelPromise);
+    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
+        return leaveGroup(multicastAddress.getAddress(), networkInterface, null, channelPromise);
     }
 
     @Override

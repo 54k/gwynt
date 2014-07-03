@@ -14,11 +14,11 @@ public interface DatagramChannel extends Channel {
 
     ChannelFuture joinGroup(InetAddress multicastAddress);
 
-    ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface);
+    ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface);
 
     ChannelFuture joinGroup(InetAddress multicastAddress, ChannelPromise channelPromise);
 
-    ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise);
+    ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise);
 
     ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source);
 
@@ -26,11 +26,11 @@ public interface DatagramChannel extends Channel {
 
     ChannelFuture leaveGroup(InetAddress multicastAddress);
 
-    ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface);
+    ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface);
 
     ChannelFuture leaveGroup(InetAddress multicastAddress, ChannelPromise channelPromise);
 
-    ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise);
+    ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise);
 
     ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source);
 

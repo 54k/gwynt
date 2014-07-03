@@ -2,7 +2,6 @@ package io.gwynt.core.oio;
 
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.ThreadPerChannelEventLoop;
@@ -104,24 +103,5 @@ public abstract class AbstractOioChannel extends AbstractChannel {
          * @return number of messages read or -1 if end of stream occurred
          */
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
-
-        @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
-            boolean done = false;
-            Object message = channelOutboundBuffer.current();
-            if (message != null) {
-                done = doWriteMessage(message);
-            }
-
-            if (done) {
-                channelOutboundBuffer.remove();
-            } else {
-                writeRequested();
-            }
-        }
-
-        protected boolean doWriteMessage(Object message) throws Exception {
-            throw new UnsupportedOperationException();
-        }
     }
 }
