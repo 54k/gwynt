@@ -216,8 +216,13 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            super.connect(address, channelPromise);
+        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().connect(address);
+        }
+
+        @Override
+        protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
+            doClose();
         }
 
         @Override

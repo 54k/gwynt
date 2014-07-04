@@ -51,7 +51,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         private ChannelPromise connectPromise;
 
         @Override
-        public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
+        protected void doConnect(final InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             connectPromise = channelPromise;
             try {
                 boolean connected = javaChannel().connect(address);
@@ -92,7 +92,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void doDisconnect() {
+        protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
             connectPromise = null;
             doClose();
         }

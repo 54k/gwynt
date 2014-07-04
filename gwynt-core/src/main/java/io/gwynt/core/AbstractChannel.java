@@ -274,20 +274,17 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            safeSetFailure(channelPromise, new UnsupportedOperationException());
-        }
-
-        @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            safeSetFailure(channelPromise, new UnsupportedOperationException());
-        }
-
-        @Override
-        public void disconnect(ChannelPromise channelPromise) {
             if (channelPromise.setUncancellable()) {
                 try {
-                    doDisconnect();
+                    boolean wasActive = isActive();
+                    doBind(address, channelPromise);
                     safeSetSuccess(channelPromise);
+                    if (!wasActive && isActive()) {
+                        pipeline().fireOpen();
+                        if (config().isAutoRead()) {
+                            readRequested();
+                        }
+                    }
                 } catch (Throwable t) {
                     safeSetFailure(channelPromise, t);
                     doClose();
@@ -295,7 +292,52 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected void doDisconnect() {
+        protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            if (channelPromise.setUncancellable()) {
+                try {
+                    boolean wasActive = isActive();
+                    doConnect(address, channelPromise);
+                    safeSetSuccess(channelPromise);
+                    if (!wasActive && isActive()) {
+                        pipeline().fireOpen();
+                        if (config().isAutoRead()) {
+                            readRequested();
+                        }
+                    }
+                } catch (Throwable t) {
+                    safeSetFailure(channelPromise, t);
+                    doClose();
+                }
+            }
+        }
+
+        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void disconnect(ChannelPromise channelPromise) {
+            if (channelPromise.setUncancellable()) {
+                try {
+                    boolean wasActive = isActive();
+                    doDisconnect(channelPromise);
+                    safeSetSuccess(channelPromise);
+                    if (wasActive && !isActive()) {
+                        pipeline().fireClose();
+                    }
+                } catch (Throwable t) {
+                    safeSetFailure(channelPromise, t);
+                    doClose();
+                }
+            }
+        }
+
+        protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
             throw new UnsupportedOperationException();
         }
 

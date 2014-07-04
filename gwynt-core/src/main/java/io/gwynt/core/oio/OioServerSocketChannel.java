@@ -37,18 +37,8 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            try {
-                javaChannel().bind(address);
-                safeSetSuccess(channelPromise);
-                pipeline().fireOpen();
-                if (config().isAutoRead()) {
-                    readRequested();
-                }
-            } catch (IOException e) {
-                safeSetFailure(channelPromise, e);
-                doClose();
-            }
+        protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().bind(address);
         }
 
         @Override

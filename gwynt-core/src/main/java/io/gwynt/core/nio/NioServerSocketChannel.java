@@ -42,16 +42,10 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
     private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
         @Override
-        public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            try {
-                javaChannel().bind(address);
-                safeSetSuccess(channelPromise);
-                pipeline().fireOpen();
-                if (config().isAutoRead()) {
-                    readRequested();
-                }
-            } catch (IOException e) {
-                safeSetFailure(channelPromise, e);
+        protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().bind(address);
+            if (config().isAutoRead()) {
+                readRequested();
             }
         }
 

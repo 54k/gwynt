@@ -25,8 +25,6 @@ public class OioSocketChannel extends AbstractOioChannel {
 
     private class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
 
-        private ChannelPromise connectPromise;
-
         @Override
         protected boolean isActive() {
             return isOpen() && javaChannel().isConnected();
@@ -38,23 +36,12 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            if (!channelPromise.setUncancellable()) {
-                return;
-            }
-            connectPromise = channelPromise;
-            try {
-                javaChannel().connect(address);
-                safeSetSuccess(connectPromise);
-                pipeline().fireOpen();
-            } catch (IOException e) {
-                safeSetFailure(connectPromise, e);
-            }
+        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().connect(address);
         }
 
         @Override
-        protected void doDisconnect() {
-            connectPromise = null;
+        protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
             doClose();
         }
 

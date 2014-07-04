@@ -300,34 +300,18 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
         }
 
         @Override
-        public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            try {
-                javaChannel().bind(address);
-                safeSetSuccess(channelPromise);
-                pipeline().fireOpen();
-            } catch (IOException e) {
-                safeSetFailure(channelPromise, e);
-            }
+        protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().bind(address);
         }
 
         @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            try {
-                javaChannel().connect(address);
-                safeSetSuccess(channelPromise);
-                pipeline().fireOpen();
-            } catch (IOException e) {
-                safeSetFailure(channelPromise, e);
-            }
+        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().connect(address);
         }
 
         @Override
-        public void doDisconnect() {
-            try {
-                javaChannel().disconnect();
-            } catch (IOException e) {
-                throw new ChannelException(e);
-            }
+        public void doDisconnect(ChannelPromise channelPromise) throws Exception {
+            javaChannel().disconnect();
         }
 
         @Override
