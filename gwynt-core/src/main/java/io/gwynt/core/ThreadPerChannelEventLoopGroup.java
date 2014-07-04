@@ -28,13 +28,12 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
 
     private final ChannelException tooManyChannels;
     private final int maxChannels;
-    private final Object[] childArgs;
     private final DefaultPromise<Void> shutdownFuture = new DefaultPromise<>();
     private final FutureListener<Future<Void>> shutdownListener = new FutureListener<Future<Void>>() {
         @Override
         public void onComplete(Future<Void> future) {
             if (isTerminated()) {
-                shutdownFuture.setSuccess(null);
+                shutdownFuture.trySuccess(null);
             }
         }
     };
@@ -48,22 +47,16 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
         this(maxChannels, Executors.defaultThreadFactory());
     }
 
-    protected ThreadPerChannelEventLoopGroup(int maxChannels, ThreadFactory threadFactory, Object... args) {
-        this(maxChannels, new ThreadPerTaskExecutor(threadFactory), args);
+    protected ThreadPerChannelEventLoopGroup(int maxChannels, ThreadFactory threadFactory) {
+        this(maxChannels, new ThreadPerTaskExecutor(threadFactory));
     }
 
-    protected ThreadPerChannelEventLoopGroup(int maxChannels, Executor executor, Object... args) {
+    protected ThreadPerChannelEventLoopGroup(int maxChannels, Executor executor) {
         if (maxChannels < 0) {
             throw new IllegalArgumentException(String.format("maxChannels: %d (expected: >= 0)", maxChannels));
         }
         if (executor == null) {
             throw new NullPointerException("executor");
-        }
-
-        if (args == null) {
-            childArgs = new Object[0];
-        } else {
-            childArgs = args.clone();
         }
 
         this.maxChannels = maxChannels;
@@ -179,7 +172,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
         return shutdownGracefully().await(timeout, unit);
     }
 
-    protected EventLoop newChild(Object... args) throws Exception {
+    protected EventLoop newChild() throws Exception {
         return new ThreadPerChannelEventLoop(this);
     }
 
@@ -193,7 +186,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
             if (maxChannels > 0 && activeChildren.size() >= maxChannels) {
                 throw tooManyChannels;
             }
-            loop = newChild(childArgs);
+            loop = newChild();
             loop.terminationFuture().addListener(shutdownListener);
         }
         activeChildren.add(loop);

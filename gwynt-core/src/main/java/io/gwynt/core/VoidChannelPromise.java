@@ -17,6 +17,10 @@ final class VoidChannelPromise extends AbstractFuture<Void> implements ChannelPr
         this.channel = channel;
     }
 
+    private static void fail() {
+        throw new IllegalArgumentException("void future");
+    }
+
     @Override
     public boolean trySuccess() {
         return true;
@@ -84,7 +88,7 @@ final class VoidChannelPromise extends AbstractFuture<Void> implements ChannelPr
 
     @Override
     public boolean setUncancellable() {
-        return false;
+        return true;
     }
 
     @Override
@@ -175,10 +179,6 @@ final class VoidChannelPromise extends AbstractFuture<Void> implements ChannelPr
     @Override
     public boolean isDone() {
         return true;
-    }
-
-    private static void fail() {
-        throw new IllegalArgumentException("void future");
     }
 
     private void fireExceptionCaught(Throwable t) {

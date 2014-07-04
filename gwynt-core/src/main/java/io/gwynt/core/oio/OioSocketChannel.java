@@ -38,6 +38,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         @Override
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             javaChannel().connect(address);
+            javaChannel().setSoTimeout(SO_TIMEOUT);
         }
 
         @Override
