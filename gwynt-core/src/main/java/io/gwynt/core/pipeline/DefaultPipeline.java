@@ -1,7 +1,7 @@
 package io.gwynt.core.pipeline;
 
-import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.Channel;
+import io.gwynt.core.Channel.Unsafe;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Handler;
 import io.gwynt.core.concurrent.EventExecutor;
@@ -13,24 +13,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext> {
+public class DefaultPipeline implements Pipeline, Iterable<AbstractHandlerContext> {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultPipeline.class);
 
-    private static final Handler HEAD_HANDLER = new HeadHandler();
-    private static final Handler TAIL_HANDLER = new TailHandler();
-
     private final Object lock = new Object();
-    private final DefaultHandlerContext head;
-    private final DefaultHandlerContext tail;
+    private final AbstractHandlerContext head;
+    private final AbstractHandlerContext tail;
 
     private final Channel channel;
-    private final Map<String, DefaultHandlerContext> name2context = new ConcurrentHashMap<>();
+    private final Map<String, AbstractHandlerContext> name2context = new ConcurrentHashMap<>();
 
     public DefaultPipeline(Channel channel) {
         this.channel = channel;
-        head = new DefaultHandlerContext(channel, HEAD_HANDLER);
-        tail = new DefaultHandlerContext(channel, TAIL_HANDLER);
+        head = new HeadHandler(channel);
+        tail = new TailHandler(channel);
         head.setNext(tail);
         tail.setPrev(head);
     }
@@ -113,10 +110,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+        AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext next = head.getNext();
+            AbstractHandlerContext next = head.getNext();
             next.setPrev(context);
             context.setNext(next);
             context.setPrev(head);
@@ -167,10 +164,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         if (name == null || handler == null) {
             throw new IllegalArgumentException("all arguments are required");
         }
-        DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+        AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext prev = tail.getPrev();
+            AbstractHandlerContext prev = tail.getPrev();
             prev.setNext(context);
             context.setNext(tail);
             context.setPrev(prev);
@@ -233,8 +230,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext beforeContext = getContextOrDie(beforeName);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(name);
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -257,8 +254,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext beforeContext = getContextOrDie(before);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext beforeContext = getContextOrDie(before);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(name);
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -280,8 +277,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContextOrDie(beforeName);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext beforeContext = getContextOrDie(beforeName);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(generateName(handler));
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -303,8 +300,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext beforeContext = getContextOrDie(before);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext beforeContext = getContextOrDie(before);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(generateName(handler));
             if (beforeContext != null) {
                 addBefore(context, beforeContext);
@@ -312,8 +309,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
     }
 
-    private void addBefore(DefaultHandlerContext context, DefaultHandlerContext before) {
-        DefaultHandlerContext prev = before.getPrev();
+    private void addBefore(AbstractHandlerContext context, AbstractHandlerContext before) {
+        AbstractHandlerContext prev = before.getPrev();
         prev.setNext(context);
         context.setNext(before);
         context.setPrev(prev);
@@ -358,8 +355,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext afterContext = getContextOrDie(afterName);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext afterContext = getContextOrDie(afterName);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(name);
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -382,8 +379,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
         synchronized (lock) {
             checkMultiplicity(name);
-            DefaultHandlerContext afterContext = getContextOrDie(after);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext afterContext = getContextOrDie(after);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(name);
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -405,8 +402,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContextOrDie(afterName);
-            DefaultHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
+            AbstractHandlerContext afterContext = getContextOrDie(afterName);
+            AbstractHandlerContext context = new DefaultHandlerContext(invoker, channel, handler);
             context.setName(generateName(handler));
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -428,8 +425,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             throw new IllegalArgumentException("all arguments are required");
         }
         synchronized (lock) {
-            DefaultHandlerContext afterContext = getContextOrDie(after);
-            DefaultHandlerContext context = new DefaultHandlerContext(channel, handler);
+            AbstractHandlerContext afterContext = getContextOrDie(after);
+            AbstractHandlerContext context = new DefaultHandlerContext(channel, handler);
             context.setName(generateName(handler));
             if (afterContext != null) {
                 addAfter(context, afterContext);
@@ -437,8 +434,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
     }
 
-    private void addAfter(DefaultHandlerContext context, DefaultHandlerContext after) {
-        DefaultHandlerContext next = after.getNext();
+    private void addAfter(AbstractHandlerContext context, AbstractHandlerContext after) {
+        AbstractHandlerContext next = after.getNext();
         next.setPrev(context);
         context.setNext(next);
         context.setPrev(after);
@@ -468,10 +465,10 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
     }
 
-    private void remove(DefaultHandlerContext context) {
+    private void remove(AbstractHandlerContext context) {
         if (context != null) {
-            DefaultHandlerContext prev = context.getPrev();
-            DefaultHandlerContext next = context.getNext();
+            AbstractHandlerContext prev = context.getPrev();
+            AbstractHandlerContext next = context.getNext();
             prev.setNext(context.getNext());
             next.setPrev(context.getPrev());
             context.removed = true;
@@ -482,7 +479,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
 
     @Override
     public void clear() {
-        DefaultHandlerContext context = tail.getPrev();
+        AbstractHandlerContext context = tail.getPrev();
         do {
             remove(context);
             context = context.getPrev();
@@ -493,17 +490,17 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     public void copy(Pipeline pipeline) {
         clear();
         DefaultPipeline p = (DefaultPipeline) pipeline;
-        for (DefaultHandlerContext ctx : p) {
+        for (AbstractHandlerContext ctx : p) {
             addFirst(ctx.name(), ctx.handler());
         }
     }
 
-    private DefaultHandlerContext getContext(Handler handler) {
-        DefaultHandlerContext contextByName;
+    private AbstractHandlerContext getContext(Handler handler) {
+        AbstractHandlerContext contextByName;
         if ((contextByName = getContext(generateName(handler))) != null) {
             return contextByName;
         }
-        for (DefaultHandlerContext context : this) {
+        for (AbstractHandlerContext context : this) {
             if (context.handler() == handler) {
                 return context;
             }
@@ -511,12 +508,12 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         return null;
     }
 
-    private DefaultHandlerContext getContextOrDie(Handler handler) {
-        DefaultHandlerContext contextByName;
+    private AbstractHandlerContext getContextOrDie(Handler handler) {
+        AbstractHandlerContext contextByName;
         if ((contextByName = getContext(generateName(handler))) != null) {
             return contextByName;
         }
-        for (DefaultHandlerContext context : this) {
+        for (AbstractHandlerContext context : this) {
             if (context.handler() == handler) {
                 return context;
             }
@@ -524,23 +521,23 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         throw new PipelineException("Context not found: " + handler);
     }
 
-    private DefaultHandlerContext getContextOrDie(String name) {
-        DefaultHandlerContext context = name2context.get(name);
+    private AbstractHandlerContext getContextOrDie(String name) {
+        AbstractHandlerContext context = name2context.get(name);
         if (context == null) {
             throw new PipelineException("Context not found: " + name);
         }
         return context;
     }
 
-    private DefaultHandlerContext getContext(String name) {
+    private AbstractHandlerContext getContext(String name) {
         return name2context.get(name);
     }
 
     @Override
-    public Iterator<DefaultHandlerContext> iterator() {
-        return new Iterator<DefaultHandlerContext>() {
+    public Iterator<AbstractHandlerContext> iterator() {
+        return new Iterator<AbstractHandlerContext>() {
 
-            private DefaultHandlerContext context = head;
+            private AbstractHandlerContext context = head;
 
             @Override
             public boolean hasNext() {
@@ -548,8 +545,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
             }
 
             @Override
-            public DefaultHandlerContext next() {
-                DefaultHandlerContext next = context.getNext();
+            public AbstractHandlerContext next() {
+                AbstractHandlerContext next = context.getNext();
                 return next != tail ? context = next : null;
             }
 
@@ -560,7 +557,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         };
     }
 
-    private void invokeHandlerAdded(final DefaultHandlerContext context) {
+    private void invokeHandlerAdded(final AbstractHandlerContext context) {
         if (context.channel().isRegistered() && !context.channel().eventLoop().inExecutorThread()) {
             context.channel().eventLoop().execute(new Runnable() {
                 @Override
@@ -572,7 +569,7 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         context.handler().onHandlerAdded(context);
     }
 
-    private void invokeHandlerRemoved(final DefaultHandlerContext context) {
+    private void invokeHandlerRemoved(final AbstractHandlerContext context) {
         if (context.channel().isRegistered() && !context.channel().eventLoop().inExecutorThread()) {
             context.channel().eventLoop().execute(new Runnable() {
                 @Override
@@ -588,8 +585,8 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName()).append("(contexts: ");
-        for (Iterator<Entry<String, DefaultHandlerContext>> iterator = name2context.entrySet().iterator(); iterator.hasNext(); ) {
-            Entry<String, DefaultHandlerContext> entry = iterator.next();
+        for (Iterator<Entry<String, AbstractHandlerContext>> iterator = name2context.entrySet().iterator(); iterator.hasNext(); ) {
+            Entry<String, AbstractHandlerContext> entry = iterator.next();
             sb.append(entry.getValue());
             if (iterator.hasNext()) {
                 sb.append(", ");
@@ -599,30 +596,97 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         return sb.toString();
     }
 
-    private static class HeadHandler extends AbstractHandler {
+    private static class HeadHandler extends AbstractHandlerContext implements Handler {
+
+        private Unsafe unsafe;
+
+        private HeadHandler(Channel channel) {
+            super(channel);
+            unsafe = channel.unsafe();
+        }
+
+        @Override
+        public void onHandlerAdded(HandlerContext context) {
+        }
+
+        @Override
+        public void onHandlerRemoved(HandlerContext context) {
+        }
+
+        @Override
+        public void onRegistered(HandlerContext context) {
+            context.fireRegistered();
+        }
+
+        @Override
+        public void onUnregistered(HandlerContext context) {
+            context.fireUnregistered();
+        }
+
+        @Override
+        public void onOpen(HandlerContext context) {
+            context.fireOpen();
+        }
+
+        @Override
+        public void onMessageReceived(HandlerContext context, Object message) {
+            context.fireMessageReceived(message);
+        }
+
+        @Override
+        public void onClose(HandlerContext context) {
+            context.fireClose();
+        }
+
+        @Override
+        public void onExceptionCaught(HandlerContext context, Throwable e) {
+            context.fireExceptionCaught(e);
+        }
+
+        @Override
+        public Handler handler() {
+            return this;
+        }
 
         @Override
         public void onRead(HandlerContext context, ChannelPromise channelPromise) {
-            context.channel().unsafe().read(channelPromise);
+            unsafe.read(channelPromise);
         }
 
         @Override
         public void onMessageSent(HandlerContext context, Object message, ChannelPromise channelPromise) {
-            context.channel().unsafe().write(message, channelPromise);
+            unsafe.write(message, channelPromise);
         }
 
         @Override
         public void onClosing(HandlerContext context, ChannelPromise channelPromise) {
-            context.channel().unsafe().close(channelPromise);
+            unsafe.close(channelPromise);
         }
 
         @Override
         public void onDisconnect(HandlerContext context, ChannelPromise channelPromise) {
-            context.channel().unsafe().disconnect(channelPromise);
+            unsafe.disconnect(channelPromise);
         }
     }
 
-    private static class TailHandler extends AbstractHandler {
+    private static class TailHandler extends AbstractHandlerContext implements Handler {
+
+        private TailHandler(Channel channel) {
+            super(channel);
+        }
+
+        @Override
+        public void onHandlerAdded(HandlerContext context) {
+        }
+
+        @Override
+        public void onHandlerRemoved(HandlerContext context) {
+        }
+
+        @Override
+        public Handler handler() {
+            return this;
+        }
 
         @Override
         public void onRegistered(HandlerContext context) {
@@ -637,7 +701,23 @@ public class DefaultPipeline implements Pipeline, Iterable<DefaultHandlerContext
         }
 
         @Override
+        public void onRead(HandlerContext context, ChannelPromise channelPromise) {
+        }
+
+        @Override
+        public void onMessageSent(HandlerContext context, Object message, ChannelPromise channelPromise) {
+        }
+
+        @Override
         public void onMessageReceived(HandlerContext context, Object message) {
+        }
+
+        @Override
+        public void onClosing(HandlerContext context, ChannelPromise channelPromise) {
+        }
+
+        @Override
+        public void onDisconnect(HandlerContext context, ChannelPromise channelPromise) {
         }
 
         @Override

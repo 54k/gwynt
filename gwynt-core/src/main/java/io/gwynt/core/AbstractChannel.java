@@ -35,9 +35,10 @@ public abstract class AbstractChannel implements Channel {
         this.parent = parent;
         this.ch = ch;
 
-        pipeline = new DefaultPipeline(this);
         config = newConfig();
         unsafe = newUnsafe();
+
+        pipeline = new DefaultPipeline(this);
     }
 
     protected static void safeSetSuccess(ChannelPromise channelPromise) {

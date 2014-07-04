@@ -3,7 +3,16 @@ package io.gwynt.core.pipeline;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.concurrent.EventExecutor;
 
-import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.*;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnCloseNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnClosingNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnDisconnectNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnExceptionCaughtNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageReceivedNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnMessageSentNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnOpenNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnReadNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnRegisteredNow;
+import static io.gwynt.core.pipeline.HandlerContextInvokerUtils.invokeOnUnregisteredNow;
 
 public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
 
@@ -18,7 +27,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnRegisteredNow(context);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.registeredEvent;
             if (event == null) {
                 dctx.registeredEvent = event = new Runnable() {
@@ -37,7 +46,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnUnregisteredNow(context);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.unregisteredEvent;
             if (event == null) {
                 dctx.unregisteredEvent = event = new Runnable() {
@@ -56,7 +65,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnOpenNow(context);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.openEvent;
             if (event == null) {
                 dctx.openEvent = event = new Runnable() {
@@ -75,7 +84,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnReadNow(context, channelPromise);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.readEvent;
             if (event == null) {
                 dctx.readEvent = event = new Runnable() {
@@ -138,7 +147,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnCloseNow(context);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.closeEvent;
             if (event == null) {
                 dctx.closeEvent = event = new Runnable() {
@@ -157,7 +166,7 @@ public class DefaultHandlerContextInvoker implements HandlerContextInvoker {
         if (executor.inExecutorThread()) {
             invokeOnDisconnectNow(context, channelPromise);
         } else {
-            DefaultHandlerContext dctx = (DefaultHandlerContext) context;
+            AbstractHandlerContext dctx = (AbstractHandlerContext) context;
             Runnable event = dctx.disconnectEvent;
             if (event == null) {
                 dctx.disconnectEvent = event = new Runnable() {
