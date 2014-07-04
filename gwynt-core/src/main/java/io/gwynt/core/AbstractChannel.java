@@ -420,7 +420,10 @@ public abstract class AbstractChannel implements Channel {
                     doClose();
                 }
             }
-            closePromise.chainPromise(channelPromise);
+
+            if (!(channelPromise instanceof VoidChannelPromise)) {
+                closePromise.chainPromise(channelPromise);
+            }
         }
 
         protected void doClose() {
