@@ -491,7 +491,9 @@ public abstract class AbstractChannel implements Channel {
                             closePromise.setClosed();
                             pipeline.fireClose();
                         }
-                        unregister();
+                        if (isRegistered()) {
+                            unregister();
+                        }
                     }
                 });
             }

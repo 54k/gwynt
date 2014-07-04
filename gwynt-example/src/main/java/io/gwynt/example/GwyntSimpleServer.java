@@ -6,18 +6,20 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
-import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioServerSocketChannel;
+import io.gwynt.core.concurrent.GlobalEventExecutor;
+import io.gwynt.core.oio.OioEventLoopGroup;
+import io.gwynt.core.oio.OioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        EventLoopGroup eventLoop = new NioEventLoopGroup(2);
-        Class<? extends Channel> clazz = NioServerSocketChannel.class;
+        EventLoopGroup eventLoop = new OioEventLoopGroup();
+        Class<? extends Channel> clazz = OioServerSocketChannel.class;
         final IOReactor reactor = new IOReactor().channelClass(clazz).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
                 .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler<String, Object>() {
                     @Override
@@ -26,7 +28,7 @@ public class GwyntSimpleServer implements Runnable {
                         context.write(new Date().toString() + "\r\n").addListener(new ChannelFutureListener() {
                             @Override
                             public void onComplete(ChannelFuture future) {
-                                future.channel().close();
+                                //                                future.channel().close();
                             }
                         });
                     }
@@ -42,11 +44,11 @@ public class GwyntSimpleServer implements Runnable {
         } catch (InterruptedException ignore) {
         }
 
-        //        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
-        //            @Override
-        //            public void run() {
-        //                reactor.shutdownGracefully();
-        //            }
-        //        }, 15, TimeUnit.SECONDS);
+        GlobalEventExecutor.INSTANCE.schedule(new Runnable() {
+            @Override
+            public void run() {
+                reactor.shutdownGracefully();
+            }
+        }, 15, TimeUnit.SECONDS);
     }
 }
