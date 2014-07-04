@@ -28,7 +28,7 @@ public class GwyntSimpleServer implements Runnable {
                         context.write(new Date().toString() + "\r\n").addListener(new ChannelFutureListener() {
                             @Override
                             public void onComplete(ChannelFuture future) {
-                                //                                future.channel().close();
+                                future.channel().close();
                             }
                         });
                     }
