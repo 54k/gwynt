@@ -5,7 +5,7 @@ import io.gwynt.core.ChannelOutboundBuffer;
 
 import java.nio.ByteBuffer;
 
-public class NioSocketChannelOutboundBuffer extends ChannelOutboundBuffer {
+final class NioSocketChannelOutboundBuffer extends ChannelOutboundBuffer {
 
     public NioSocketChannelOutboundBuffer(Channel channel) {
         super(channel);

@@ -107,9 +107,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                         }
                     }
                 } else {
+                    connectPromise = channelPromise;
                     long connectTimeoutMillis = config().getConnectTimeoutMillis();
                     if (connectTimeoutMillis > 0) {
-                        connectPromise = channelPromise;
                         connectTimeout = eventLoop().schedule(new Runnable() {
                             @Override
                             public void run() {
