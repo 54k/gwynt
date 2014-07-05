@@ -50,6 +50,16 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
+        protected boolean doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected boolean doFinishConnect() throws Exception {
+            throw new Error();
+        }
+
+        @Override
         public void write(Object message, ChannelPromise channelPromise) {
             safeSetFailure(channelPromise, new UnsupportedOperationException());
         }

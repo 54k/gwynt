@@ -48,14 +48,14 @@ public class Main {
         //        });
         //
         //        for (int i = 0; i < 20000; i++) {
-        //            reactor.connect("localhost", 5000);
+        //            reactor.finishConnect("localhost", 5000);
         //        }
 
 //        new NettySimpleServer().run();
         new GwyntSimpleServer().run();
         //                new MinaSimpleServer().run();
 
-        //        new GwyntSimpleChatServer().run();
+        new GwyntSimpleChatServer().run();
 
         //        new NioEventLoopGroup(1).scheduleAtFixedRate(new Runnable() {
         //            @Override
@@ -100,7 +100,7 @@ public class Main {
         //        //                                    }
         //        //                                });
         //        //                            }
-        //        //                        }).connect("localhost", 3002).await();
+        //        //                        }).finishConnect("localhost", 3002).await();
         //        //
         //        //                        for (int i = 0; i < 5; i++) {
         //        //                            Thread.sleep(10);
@@ -127,14 +127,14 @@ public class Main {
         //                context.write(message);
         //                context.close();
         //            }
-        //        }).connect("localhost", 3002).await();
+        //        }).finishConnect("localhost", 3002).await();
         //
         //        Channel channel = new IOReactor().channelClass(NioDatagramChannel.class).group(dispatcher).addChildHandler(sc).addChildHandler(new AbstractHandler() {
         //            @Override
         //            public void onMessageReceived(HandlerContext context, Object message) {
         //                System.out.println(message);
         //            }
-        //        }).connect("localhost", 3002).await().channel();
+        //        }).finishConnect("localhost", 3002).await().channel();
         //
         //        channel.closeFuture().addListener(new ChannelFutureListener() {
         //            @Override

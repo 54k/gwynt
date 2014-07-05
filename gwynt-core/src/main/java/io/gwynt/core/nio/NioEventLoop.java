@@ -92,7 +92,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
             }
             if (key.isConnectable()) {
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_CONNECT);
-                channel.unsafe().connect();
+                channel.unsafe().finishConnect();
             }
         } catch (CancelledKeyException e) {
             channel.unsafe().close(channel.voidPromise());

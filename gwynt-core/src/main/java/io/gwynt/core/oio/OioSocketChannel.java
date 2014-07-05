@@ -1,6 +1,7 @@
 package io.gwynt.core.oio;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.RecvByteBufferAllocator;
@@ -13,6 +14,11 @@ import java.net.SocketTimeoutException;
 import java.util.List;
 
 public class OioSocketChannel extends AbstractOioChannel {
+
+    @SuppressWarnings("unused")
+    public OioSocketChannel() {
+        super(null, new Socket());
+    }
 
     public OioSocketChannel(Channel parent, Object ch) {
         super(parent, ch);
@@ -37,8 +43,13 @@ public class OioSocketChannel extends AbstractOioChannel {
 
         @Override
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
-            javaChannel().connect(address);
-            javaChannel().setSoTimeout(SO_TIMEOUT);
+            try {
+                javaChannel().setSoTimeout(config().getConnectTimeoutMillis());
+                javaChannel().connect(address);
+                javaChannel().setSoTimeout(SO_TIMEOUT);
+            } catch (SocketTimeoutException e) {
+                throw new ChannelException("Connection timeout: " + address);
+            }
         }
 
         @Override
@@ -71,7 +82,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {

@@ -305,8 +305,14 @@ public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.c
         }
 
         @Override
-        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+        protected boolean doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             javaChannel().connect(address);
+            return true;
+        }
+
+        @Override
+        protected boolean doFinishConnect() throws Exception {
+            throw new Error();
         }
 
         @Override

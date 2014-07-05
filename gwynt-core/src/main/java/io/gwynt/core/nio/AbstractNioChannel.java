@@ -2,17 +2,23 @@ package io.gwynt.core.nio;
 
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelException;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelOutboundBuffer;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.RegistrationException;
 import io.gwynt.core.ServerChannel;
+import io.gwynt.core.concurrent.ScheduledFuture;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractNioChannel extends AbstractChannel {
 
@@ -51,7 +57,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         void read();
 
-        void connect();
+        void finishConnect();
     }
 
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> implements NioUnsafe<T> {
@@ -63,6 +69,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         };
+        private ChannelPromise connectPromise;
+        private ScheduledFuture<?> connectTimeout;
 
         @Override
         protected void writeRequested() {
@@ -81,6 +89,87 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 invokeLater(READ_TASK);
             }
         }
+
+        @Override
+        public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
+            if (!channelPromise.setUncancellable()) {
+                return;
+            }
+
+            try {
+                boolean wasActive = isActive();
+                if (doConnect(address, channelPromise)) {
+                    safeSetSuccess(channelPromise);
+                    if (!wasActive && isActive()) {
+                        pipeline().fireOpen();
+                        if (config().isAutoRead()) {
+                            readRequested();
+                        }
+                    }
+                } else {
+                    long connectTimeoutMillis = config().getConnectTimeoutMillis();
+                    if (connectTimeoutMillis > 0) {
+                        connectPromise = channelPromise;
+                        connectTimeout = eventLoop().schedule(new Runnable() {
+                            @Override
+                            public void run() {
+                                ChannelException cause = new ChannelException("Connection timeout: " + address);
+                                if (connectPromise != null && connectPromise.tryFailure(cause)) {
+                                    doClose();
+                                }
+                            }
+                        }, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    }
+
+                    channelPromise.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void onComplete(ChannelFuture future) {
+                            if (future.isCancelled()) {
+                                if (connectTimeout != null) {
+                                    connectTimeout.cancel();
+                                }
+                                connectPromise = null;
+                                doClose();
+                            }
+                        }
+                    });
+                }
+            } catch (Throwable t) {
+                safeSetFailure(channelPromise, t);
+                doClose();
+            }
+        }
+
+        protected abstract boolean doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception;
+
+        @Override
+        public void finishConnect() {
+            boolean wasActive = isActive();
+            try {
+                if (doFinishConnect()) {
+                    boolean connectSuccess = connectPromise.trySuccess();
+
+                    if (!wasActive && isActive()) {
+                        if (config().isAutoRead()) {
+                            readRequested();
+                        }
+                        pipeline().fireOpen();
+                    }
+
+                    if (!connectSuccess) {
+                        doClose();
+                    }
+                } else {
+                    closeJavaChannel();
+                    connectPromise.tryFailure(new ChannelException("Connection failed"));
+                }
+            } catch (Throwable t) {
+                safeSetFailure(connectPromise, t);
+                doClose();
+            }
+        }
+
+        protected abstract boolean doFinishConnect() throws Exception;
 
         @Override
         public void read() {
@@ -132,7 +221,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
 
         @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {
@@ -154,13 +243,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         protected boolean doWriteMessage(Object message) throws Exception {
             throw new UnsupportedOperationException();
         }
-
-        private final Runnable READ_TASK = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
 
         @Override
         protected void afterRegister() {
@@ -225,6 +307,14 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 throw new RegistrationException("Not registered to dispatcher.");
             }
         }
+
+        private final Runnable READ_TASK = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
+
 
     }
 }

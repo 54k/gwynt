@@ -257,7 +257,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             boolean done = false;
             Object message = channelOutboundBuffer.current();
             if (message != null) {

@@ -2,11 +2,13 @@ package io.gwynt.core.oio;
 
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.ThreadPerChannelEventLoop;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +65,27 @@ public abstract class AbstractOioChannel extends AbstractChannel {
             // NO OP
         }
 
-        public void doRead() {
+        @Override
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            try {
+                boolean wasActive = isActive();
+                doConnect(address, channelPromise);
+                safeSetSuccess(channelPromise);
+                if (!wasActive && isActive()) {
+                    pipeline().fireOpen();
+                    if (config().isAutoRead()) {
+                        readRequested();
+                    }
+                }
+            } catch (Throwable t) {
+                safeSetFailure(channelPromise, t);
+                doClose();
+            }
+        }
+
+        protected abstract void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception;
+
+        protected void doRead() {
             Throwable error = null;
             boolean closed = false;
             try {

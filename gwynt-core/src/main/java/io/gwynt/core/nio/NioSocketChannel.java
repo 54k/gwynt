@@ -1,23 +1,17 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelConfig;
-import io.gwynt.core.ChannelException;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.RecvByteBufferAllocator;
-import io.gwynt.core.concurrent.ScheduledFuture;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class NioSocketChannel extends AbstractNioChannel {
 
@@ -47,53 +41,17 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
-        private ScheduledFuture<?> connectTimeout;
-        private ChannelPromise connectPromise;
-
         @Override
-        protected void doConnect(final InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
-            connectPromise = channelPromise;
-            try {
-                boolean connected = javaChannel().connect(address);
-                if (!connected) {
-                    interestOps(SelectionKey.OP_CONNECT);
-
-                    long connectTimeoutMillis = config().getConnectTimeoutMillis();
-                    if (connectTimeoutMillis > 0) {
-                        connectTimeout = eventLoop().schedule(new Runnable() {
-                            @Override
-                            public void run() {
-                                ConnectException cause = new ConnectException("connect timeout: " + address);
-                                if (connectPromise != null && connectPromise.tryFailure(cause)) {
-                                    doClose();
-                                }
-                            }
-                        }, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
-                    }
-
-                    channelPromise.addListener(new ChannelFutureListener() {
-                        @Override
-                        public void onComplete(ChannelFuture future) {
-                            if (future.isCancelled()) {
-                                if (connectTimeout != null) {
-                                    connectTimeout.cancel();
-                                }
-                                connectPromise = null;
-                                doClose();
-                            }
-                        }
-                    });
-                } else {
-                    connectPromise.setSuccess();
-                }
-            } catch (IOException e) {
-                connectPromise.setFailure(e);
+        protected boolean doConnect(final InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            boolean connected = javaChannel().connect(address);
+            if (!connected) {
+                interestOps(SelectionKey.OP_CONNECT);
             }
+            return connected;
         }
 
         @Override
         protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
-            connectPromise = null;
             doClose();
         }
 
@@ -125,7 +83,12 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+            if (channelOutboundBuffer.size() == 1) {
+                super.doWrite(channelOutboundBuffer);
+                return;
+            }
+
             NioSocketChannelOutboundBuffer outboundBuffer = (NioSocketChannelOutboundBuffer) channelOutboundBuffer;
             long remainingBytes = outboundBuffer.remaining();
             ByteBuffer[] buffers = outboundBuffer.byteBuffers();
@@ -155,30 +118,15 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        public void connect() {
-            boolean wasActive = isActive();
-            try {
-                if (javaChannel().finishConnect()) {
-                    boolean connectSuccess = connectPromise.trySuccess();
+        protected boolean doWriteMessage(Object message) throws Exception {
+            ByteBuffer buffer = (ByteBuffer) message;
+            javaChannel().write(buffer);
+            return buffer.hasRemaining();
+        }
 
-                    if (!wasActive && isActive()) {
-                        if (config().isAutoRead()) {
-                            readRequested();
-                        }
-                        pipeline().fireOpen();
-                    }
-
-                    if (!connectSuccess) {
-                        doClose();
-                    }
-                } else {
-                    closeJavaChannel();
-                    connectPromise.tryFailure(new ChannelException("Connection failed"));
-                }
-            } catch (IOException e) {
-                connectPromise.tryFailure(e);
-                doClose();
-            }
+        @Override
+        public boolean doFinishConnect() throws Exception {
+            return javaChannel().finishConnect();
         }
 
         @Override

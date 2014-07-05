@@ -11,10 +11,9 @@ import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
-import io.gwynt.core.nio.NioEventLoopGroup;
-import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.oio.OioEventLoopGroup;
 import io.gwynt.core.oio.OioServerSocketChannel;
+import io.gwynt.core.oio.OioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +77,7 @@ public class GwyntSimpleChatServer implements Runnable {
     }
 
     private void createBots(int port) {
-        final IOReactor client = new IOReactor().group(new NioEventLoopGroup()).channelClass(NioSocketChannel.class).addChildHandler(new UtfStringConverter())
+        final IOReactor client = new IOReactor().group(new OioEventLoopGroup()).channelClass(OioSocketChannel.class).addChildHandler(new UtfStringConverter())
                 .addChildHandler(new AbstractHandler() {
                     @Override
                     public void onOpen(final HandlerContext context) {
@@ -96,7 +95,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 10; i++) {
             client.connect("localhost", port);
         }
 

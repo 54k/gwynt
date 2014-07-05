@@ -98,11 +98,6 @@ public abstract class AbstractChannel implements Channel {
         return config;
     }
 
-    /**
-     * Subclasses may override
-     *
-     * @return {@link io.gwynt.core.ChannelConfig}
-     */
     protected ChannelConfig newConfig() {
         return new DefaultChannelConfig(this);
     }
@@ -298,30 +293,6 @@ public abstract class AbstractChannel implements Channel {
         }
 
         @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            if (channelPromise.setUncancellable()) {
-                try {
-                    boolean wasActive = isActive();
-                    doConnect(address, channelPromise);
-                    safeSetSuccess(channelPromise);
-                    if (!wasActive && isActive()) {
-                        pipeline().fireOpen();
-                        if (config().isAutoRead()) {
-                            readRequested();
-                        }
-                    }
-                } catch (Throwable t) {
-                    safeSetFailure(channelPromise, t);
-                    doClose();
-                }
-            }
-        }
-
-        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void disconnect(ChannelPromise channelPromise) {
             if (channelPromise.setUncancellable()) {
                 try {
@@ -427,7 +398,7 @@ public abstract class AbstractChannel implements Channel {
             if (!channelOutboundBuffer.isEmpty()) {
                 try {
                     flushing.set(true);
-                    flush0(channelOutboundBuffer);
+                    doWrite(channelOutboundBuffer);
                 } catch (Throwable e) {
                     channelOutboundBuffer.clear(e);
                 } finally {
@@ -436,11 +407,7 @@ public abstract class AbstractChannel implements Channel {
             }
         }
 
-        protected abstract void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
-
-        public void connect() {
-            throw new UnsupportedOperationException();
-        }
+        protected abstract void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception;
 
         protected void exceptionCaught(final Throwable e) {
             invokeLater(new Runnable() {

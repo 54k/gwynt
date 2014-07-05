@@ -48,6 +48,11 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
+        protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         protected int doReadMessages(List<Object> messages) throws Exception {
             if (!isActive()) {
                 return -1;
@@ -70,7 +75,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        protected void flush0(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
             throw new UnsupportedOperationException();
         }
 
