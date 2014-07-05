@@ -5,6 +5,7 @@ import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
+import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.RecvByteBufferAllocator;
 
 import java.io.IOException;
@@ -23,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class NioDatagramChannel extends AbstractNioChannel implements io.gwynt.core.DatagramChannel {
+public class NioDatagramChannel extends AbstractNioChannel implements MulticastChannel {
 
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 

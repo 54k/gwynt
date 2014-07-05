@@ -101,7 +101,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        protected void closeJavaChannel() {
+        protected void doClose() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {

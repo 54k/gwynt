@@ -160,7 +160,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                         doClose();
                     }
                 } else {
-                    closeJavaChannel();
+                    doClose();
                     connectPromise.tryFailure(new ChannelException("Connection failed"));
                 }
             } catch (Throwable t) {
@@ -273,7 +273,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void closeJavaChannel() {
+        protected void doClose() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {

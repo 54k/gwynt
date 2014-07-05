@@ -5,9 +5,9 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
-import io.gwynt.core.DatagramChannel;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
+import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
@@ -33,7 +33,7 @@ public class ChatServer implements Runnable {
             @Override
             protected void initialize(Channel channel) {
                 channel.pipeline().addFirst(new UtfStringConverter());
-                if (channel instanceof DatagramChannel) {
+                if (channel instanceof MulticastChannel) {
                     channel.pipeline().addFirst(new DatagramHandler());
                 }
             }

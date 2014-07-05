@@ -4,7 +4,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 
-public interface DatagramChannel extends Channel {
+public interface MulticastChannel extends Channel {
 
     @Override
     InetSocketAddress getLocalAddress();

@@ -5,8 +5,8 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
-import io.gwynt.core.DatagramChannel;
 import io.gwynt.core.DefaultChannelPromise;
+import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.RecvByteBufferAllocator;
 
 import java.io.IOException;
@@ -21,7 +21,7 @@ import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class OioDatagramChannel extends AbstractOioChannel implements DatagramChannel {
+public class OioDatagramChannel extends AbstractOioChannel implements MulticastChannel {
 
     @SuppressWarnings("unused")
     public OioDatagramChannel() throws IOException {
@@ -296,7 +296,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements DatagramCh
         }
 
         @Override
-        protected void closeJavaChannel() {
+        protected void doClose() {
             javaChannel().close();
         }
 
