@@ -1,30 +1,31 @@
 package io.gwynt.core.rudp;
 
-import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
+import io.gwynt.core.nio.NioDatagramChannel;
+import io.gwynt.core.nio.NioEventLoop;
 
-import java.net.InetAddress;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.SocketAddress;
 
-public class RudpNioServerChannel extends AbstractRudpChannel {
+public class RudpNioServerChannel extends AbstractRudpChannel<NioDatagramChannel> {
 
-    public RudpNioServerChannel(Channel parent, Object ch) {
-        super(parent, ch);
+    @SuppressWarnings("unused")
+    public RudpNioServerChannel() throws IOException {
+        super(new NioDatagramChannel());
     }
 
     @Override
     protected boolean isEventLoopCompatible(EventLoop eventLoop) {
-        return false;
+        return eventLoop instanceof NioEventLoop;
     }
 
     @Override
     protected Unsafe newUnsafe() {
-        return null;
+        return new RudpNioServerUnsafe(parent().unsafe());
     }
 
     @Override
@@ -37,115 +38,20 @@ public class RudpNioServerChannel extends AbstractRudpChannel {
         return null;
     }
 
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture joinGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetSocketAddress multicastAddress, NetworkInterface networkInterface, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture leaveGroup(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture block(InetAddress multicastAddress, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture block(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture block(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture unblock(InetAddress multicastAddress, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture unblock(InetAddress multicastAddress, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture unblock(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source) {
-        return null;
-    }
-
-    @Override
-    public ChannelFuture unblock(InetAddress multicastAddress, NetworkInterface networkInterface, InetAddress source, ChannelPromise channelPromise) {
-        return null;
-    }
-
     private class RudpNioServerUnsafe extends AbstractRudpUnsafe<Void> {
+
+        private final Unsafe unsafe;
+
+        private RudpNioServerUnsafe(Unsafe unsafe) {
+            this.unsafe = unsafe;
+        }
+
         @Override
         protected void readRequested() {
-
         }
 
         @Override
         protected void writeRequested() {
-
         }
 
         @Override

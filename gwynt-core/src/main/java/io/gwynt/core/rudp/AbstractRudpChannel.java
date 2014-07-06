@@ -3,6 +3,7 @@ package io.gwynt.core.rudp;
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.EventLoop;
 import io.gwynt.core.MulticastChannel;
 
 import java.net.InetAddress;
@@ -11,14 +12,24 @@ import java.net.NetworkInterface;
 
 public abstract class AbstractRudpChannel<C extends MulticastChannel> extends AbstractChannel implements RudpChannel {
 
-    protected AbstractRudpChannel(C parent, Object ch) {
-        super(parent, ch);
+    protected AbstractRudpChannel(C parent) {
+        super(parent, null);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public C parent() {
         return (C) super.parent();
+    }
+
+    @Override
+    public EventLoop eventLoop() {
+        return parent().eventLoop();
+    }
+
+    @Override
+    public boolean isRegistered() {
+        return parent().isRegistered();
     }
 
     @Override
@@ -133,5 +144,14 @@ public abstract class AbstractRudpChannel<C extends MulticastChannel> extends Ab
 
     protected abstract class AbstractRudpUnsafe<T> extends AbstractUnsafe<T> {
 
+        @Override
+        public void register(EventLoop eventScheduler) {
+            parent().register(eventScheduler);
+        }
+
+        @Override
+        public void unregister() {
+            parent().unregister();
+        }
     }
 }
