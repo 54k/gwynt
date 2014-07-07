@@ -28,10 +28,10 @@ public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
         return super.register(channel, channelPromise).addListener(new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
-                if (future.isFailed()) {
-                    unregister();
-                } else {
+                if (future.isSuccess()) {
                     ch = future.channel();
+                } else {
+                    unregister();
                 }
             }
         });
@@ -47,7 +47,7 @@ public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
         return super.unregister(channel, channelPromise).addListener(new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
-                if (!future.isFailed()) {
+                if (future.isSuccess()) {
                     unregister();
                 }
             }

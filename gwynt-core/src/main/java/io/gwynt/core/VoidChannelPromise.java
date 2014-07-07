@@ -107,7 +107,7 @@ final class VoidChannelPromise extends AbstractFuture<Void> implements ChannelPr
     }
 
     @Override
-    public boolean isFailed() {
+    public boolean isSuccess() {
         return false;
     }
 

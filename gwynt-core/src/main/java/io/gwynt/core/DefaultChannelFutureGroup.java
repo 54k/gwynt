@@ -61,7 +61,7 @@ public class DefaultChannelFutureGroup extends AbstractFutureGroup<Void, Channel
         if (failureCount() > 0) {
             List<Entry<Channel, Throwable>> failed = new ArrayList<>(failureCount());
             for (ChannelFuture f : futures.values()) {
-                if (f.isFailed()) {
+                if (!f.isSuccess()) {
                     failed.add(new DefaultEntry<>(f.channel(), f.getCause()));
                 }
             }

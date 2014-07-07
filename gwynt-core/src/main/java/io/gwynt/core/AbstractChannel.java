@@ -253,7 +253,7 @@ public abstract class AbstractChannel implements Channel {
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final AtomicBoolean pendingClose = new AtomicBoolean();
 
-        private final AtomicBoolean inFlush = new AtomicBoolean();
+        private volatile boolean inFlush;
 
         private ChannelOutboundBuffer channelOutboundBuffer = newChannelOutboundBuffer();
         private RecvByteBufferAllocator.Handle allocHandle;
@@ -382,22 +382,31 @@ public abstract class AbstractChannel implements Channel {
         protected abstract void afterUnregister();
 
         public void flush() {
+            if (inFlush) {
+                return;
+            }
+
+            inFlush = true;
             if (!isActive()) {
-                if (isOpen()) {
-                    channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
-                } else {
-                    channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
+                try {
+                    if (isOpen()) {
+                        channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
+                    } else {
+                        channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
+                    }
+                } finally {
+                    inFlush = false;
                 }
+                return;
             }
 
             if (!channelOutboundBuffer.isEmpty()) {
                 try {
-                    inFlush.set(true);
                     doWrite(channelOutboundBuffer);
                 } catch (Throwable e) {
                     channelOutboundBuffer.clear(e);
                 } finally {
-                    inFlush.set(false);
+                    inFlush = false;
                 }
             }
         }
@@ -433,7 +442,7 @@ public abstract class AbstractChannel implements Channel {
         }
 
         private void close0() {
-            if (inFlush.get()) {
+            if (inFlush) {
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {

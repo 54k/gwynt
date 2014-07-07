@@ -53,7 +53,7 @@ public final class DefaultFutureGroup<V> extends AbstractFutureGroup<V, FutureGr
         if (failureCount() > 0) {
             List<Entry<Future, Throwable>> failed = new ArrayList<>(failureCount());
             for (Future f : futures) {
-                if (f.isFailed()) {
+                if (!f.isSuccess()) {
                     failed.add(new DefaultEntry<>(f, f.getCause()));
                 }
             }

@@ -96,11 +96,6 @@ public class NioSocketChannel extends AbstractNioChannel {
             for (int i = 0; i < config().getWriteSpinCount(); i++) {
                 long bytesWritten = javaChannel().write(buffers);
 
-                if (bytesWritten == -1) {
-                    doClose();
-                    return;
-                }
-
                 remainingBytes -= bytesWritten;
                 if (remainingBytes == 0) {
                     break;

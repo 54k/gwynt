@@ -72,7 +72,7 @@ public class ConnectionWatchDog extends AbstractHandler implements ChannelFuture
 
     @Override
     public void onComplete(ChannelFuture channelFuture) {
-        if (channelFuture.isFailed()) {
+        if (!channelFuture.isSuccess()) {
             channelFuture.channel().eventLoop().execute(new Runnable() {
                 @Override
                 public void run() {

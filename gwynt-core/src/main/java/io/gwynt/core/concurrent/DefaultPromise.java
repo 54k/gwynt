@@ -35,6 +35,18 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         this.eventExecutor = eventExecutor != null ? eventExecutor : GlobalEventExecutor.INSTANCE;
     }
 
+    private static <V> void successChainedPromise(V result, Promise<V> chainedPromise) {
+        chainedPromise.trySuccess(result);
+    }
+
+    private static void failChainedPromise(Throwable error, Promise<?> chainedPromise) {
+        chainedPromise.tryFailure(error);
+    }
+
+    private static void cancelChainedPromise(Promise<?> chainedPromise) {
+        chainedPromise.cancel();
+    }
+
     @Override
     public boolean setUncancellable() {
         return !isDone() && (uncancellable = true);
@@ -51,8 +63,8 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     @Override
-    public boolean isFailed() {
-        return isDone() && cause != null;
+    public boolean isSuccess() {
+        return isDone() && cause == null;
     }
 
     @Override
@@ -224,14 +236,14 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         final Object res = result != CANCELLED_RESULT ? result : null;
         final Promise<V> promise = chainedPromise;
 
-        if (isFailed()) {
+        if (isSuccess()) {
             if (executor().inExecutorThread()) {
-                failChainedPromise(getCause(), promise);
+                successChainedPromise((V) res, promise);
             } else {
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        failChainedPromise(getCause(), promise);
+                        successChainedPromise((V) res, promise);
                     }
                 });
             }
@@ -248,30 +260,18 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             }
         } else {
             if (executor().inExecutorThread()) {
-                successChainedPromise((V) res, promise);
+                failChainedPromise(getCause(), promise);
             } else {
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
-                        successChainedPromise((V) res, promise);
+                        failChainedPromise(getCause(), promise);
                     }
                 });
             }
         }
 
         chainedPromise = null;
-    }
-
-    private static <V> void successChainedPromise(V result, Promise<V> chainedPromise) {
-        chainedPromise.trySuccess(result);
-    }
-
-    private static void failChainedPromise(Throwable error, Promise<?> chainedPromise) {
-        chainedPromise.tryFailure(error);
-    }
-
-    private static void cancelChainedPromise(Promise<?> chainedPromise) {
-        chainedPromise.cancel();
     }
 
     protected EventExecutor executor() {

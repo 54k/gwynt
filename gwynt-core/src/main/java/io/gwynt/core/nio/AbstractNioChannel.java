@@ -180,7 +180,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 try {
                     for (int i = 0; i < config().getReadSpinCount(); i++) {
                         int read = doReadMessages(messages);
-                        messagesRead += read;
                         if (read == 0) {
                             break;
                         }
@@ -188,6 +187,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             closed = true;
                             break;
                         }
+                        messagesRead += read;
                     }
                 } catch (Throwable e) {
                     error = e;
@@ -205,7 +205,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 }
 
                 if (closed && isOpen()) {
-                    doClose();
+                    close(voidPromise());
                 }
                 messages.clear();
             } finally {
@@ -314,7 +314,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 interestOps(interestOps() | readOp);
             }
         };
-
 
     }
 }

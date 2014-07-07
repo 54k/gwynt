@@ -350,7 +350,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
 
         @Override
         protected boolean doWriteMessage(Object message) throws Exception {
-            int bytesWritten = 0;
+            int bytesWritten;
 
             ByteBuffer src;
             SocketAddress remoteAddress;
@@ -376,14 +376,10 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             if (remoteAddress != null) {
                 bytesWritten = javaChannel().send(src, remoteAddress);
             } else {
-                javaChannel().write(src);
+                bytesWritten = javaChannel().write(src);
             }
 
-            if (bytesWritten == -1) {
-                doClose();
-            }
-
-            return !src.hasRemaining();
+            return bytesWritten > 0;
         }
 
         @Override

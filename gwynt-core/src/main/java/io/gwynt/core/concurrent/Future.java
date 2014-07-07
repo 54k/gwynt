@@ -8,7 +8,7 @@ public interface Future<V> extends java.util.concurrent.Future<V> {
 
     boolean isUncancellable();
 
-    boolean isFailed();
+    boolean isSuccess();
 
     V getNow();
 
