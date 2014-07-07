@@ -317,10 +317,12 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void read(ChannelPromise channelPromise) {
-            if (!pendingClose.get() && isActive()) {
-                if (channelPromise.setUncancellable()) {
+            if (!pendingClose.get()) {
+                if (isActive() && channelPromise.setUncancellable()) {
                     readRequested();
                     safeSetSuccess(channelPromise);
+                } else if (isOpen()) {
+                    safeSetFailure(channelPromise, NOT_YET_CONNECTED_EXCEPTION);
                 }
             } else {
                 safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
@@ -331,10 +333,12 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
-            if (!pendingClose.get() && isActive()) {
-                if (channelPromise.setUncancellable()) {
+            if (!pendingClose.get()) {
+                if (isActive() && channelPromise.setUncancellable()) {
                     channelOutboundBuffer.addMessage(message, channelPromise);
                     writeRequested();
+                } else if (isOpen()) {
+                    safeSetFailure(channelPromise, NOT_YET_CONNECTED_EXCEPTION);
                 }
             } else {
                 safeSetFailure(channelPromise, CLOSED_CHANNEL_EXCEPTION);
