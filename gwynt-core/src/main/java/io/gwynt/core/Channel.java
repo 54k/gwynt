@@ -1,5 +1,6 @@
 package io.gwynt.core;
 
+import io.gwynt.core.buffer.ByteBufferPool;
 import io.gwynt.core.pipeline.Pipeline;
 
 import java.net.InetSocketAddress;

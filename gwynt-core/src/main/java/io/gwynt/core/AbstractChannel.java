@@ -1,5 +1,7 @@
 package io.gwynt.core;
 
+import io.gwynt.core.buffer.ByteBufferPool;
+import io.gwynt.core.buffer.RecvByteBufferAllocator;
 import io.gwynt.core.concurrent.EventExecutor;
 import io.gwynt.core.concurrent.GlobalEventExecutor;
 import io.gwynt.core.pipeline.DefaultPipeline;

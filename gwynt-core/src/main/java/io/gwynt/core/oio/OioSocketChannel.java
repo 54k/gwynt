@@ -4,7 +4,7 @@ import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.RecvByteBufferAllocator;
+import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

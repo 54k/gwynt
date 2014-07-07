@@ -3,7 +3,7 @@ package io.gwynt.core.nio;
 import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.RecvByteBufferAllocator;
+import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

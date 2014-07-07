@@ -1,7 +1,7 @@
 package io.gwynt.core.codec;
 
 import io.gwynt.core.AbstractHandler;
-import io.gwynt.core.ByteBufferPool;
+import io.gwynt.core.buffer.ByteBufferPool;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;

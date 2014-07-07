@@ -1,5 +1,8 @@
 package io.gwynt.core;
 
+import io.gwynt.core.buffer.ByteBufferPool;
+import io.gwynt.core.buffer.RecvByteBufferAllocator;
+
 public interface ChannelConfig {
 
     boolean isAutoRead();

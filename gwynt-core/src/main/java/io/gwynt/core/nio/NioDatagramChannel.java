@@ -6,7 +6,7 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.MulticastChannel;
-import io.gwynt.core.RecvByteBufferAllocator;
+import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
 import java.net.InetAddress;
