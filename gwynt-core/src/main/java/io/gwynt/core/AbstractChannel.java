@@ -272,21 +272,23 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void bind(InetSocketAddress address, ChannelPromise channelPromise) {
-            if (channelPromise.setUncancellable()) {
-                try {
-                    boolean wasActive = isActive();
-                    doBind(address, channelPromise);
-                    safeSetSuccess(channelPromise);
-                    if (!wasActive && isActive()) {
-                        pipeline().fireOpen();
-                        if (config().isAutoRead()) {
-                            readRequested();
-                        }
+            if (!channelPromise.setUncancellable()) {
+                return;
+            }
+
+            try {
+                boolean wasActive = isActive();
+                doBind(address, channelPromise);
+                safeSetSuccess(channelPromise);
+                if (!wasActive && isActive()) {
+                    pipeline().fireOpen();
+                    if (config().isAutoRead()) {
+                        readRequested();
                     }
-                } catch (Throwable t) {
-                    safeSetFailure(channelPromise, t);
-                    close0();
                 }
+            } catch (Throwable t) {
+                safeSetFailure(channelPromise, t);
+                close0();
             }
         }
 
@@ -296,18 +298,20 @@ public abstract class AbstractChannel implements Channel {
 
         @Override
         public void disconnect(ChannelPromise channelPromise) {
-            if (channelPromise.setUncancellable()) {
-                try {
-                    boolean wasActive = isActive();
-                    doDisconnect(channelPromise);
-                    safeSetSuccess(channelPromise);
-                    if (wasActive && !isActive()) {
-                        pipeline().fireClose();
-                    }
-                } catch (Throwable t) {
-                    safeSetFailure(channelPromise, t);
-                    close0();
+            if (!channelPromise.setUncancellable()) {
+                return;
+            }
+
+            try {
+                boolean wasActive = isActive();
+                doDisconnect(channelPromise);
+                safeSetSuccess(channelPromise);
+                if (wasActive && !isActive()) {
+                    pipeline().fireClose();
                 }
+            } catch (Throwable t) {
+                safeSetFailure(channelPromise, t);
+                close0();
             }
         }
 
@@ -321,7 +325,7 @@ public abstract class AbstractChannel implements Channel {
                 if (isActive() && channelPromise.setUncancellable()) {
                     readRequested();
                     safeSetSuccess(channelPromise);
-                } else if (isOpen()) {
+                } else if (isOpen() && !isActive()) {
                     safeSetFailure(channelPromise, NOT_YET_CONNECTED_EXCEPTION);
                 }
             } else {
@@ -337,7 +341,7 @@ public abstract class AbstractChannel implements Channel {
                 if (isActive() && channelPromise.setUncancellable()) {
                     channelOutboundBuffer.addMessage(message, channelPromise);
                     writeRequested();
-                } else if (isOpen()) {
+                } else if (isOpen() && !isActive()) {
                     safeSetFailure(channelPromise, NOT_YET_CONNECTED_EXCEPTION);
                 }
             } else {
