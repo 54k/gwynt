@@ -6,6 +6,7 @@ import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.DefaultChannelPromise;
+import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
@@ -271,14 +272,15 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
             }
         }
 
+        @SuppressWarnings("unchecked")
         protected boolean doWriteMessage(Object message) throws Exception {
             byte[] src;
             SocketAddress remoteAddress;
 
-            if (message instanceof Datagram) {
-                Datagram datagram = (Datagram) message;
-                src = datagram.content();
-                remoteAddress = datagram.recipient();
+            if (message instanceof Envelope) {
+                Envelope<byte[], SocketAddress> envelope = (Envelope<byte[], SocketAddress>) message;
+                src = envelope.content();
+                remoteAddress = envelope.recipient();
             } else if (message instanceof byte[]) {
                 src = (byte[]) message;
                 remoteAddress = null;

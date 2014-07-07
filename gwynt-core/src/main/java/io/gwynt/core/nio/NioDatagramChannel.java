@@ -5,6 +5,7 @@ import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
+import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
@@ -348,6 +349,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             return 0;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         protected boolean doWriteMessage(Object message) throws Exception {
             int bytesWritten;
@@ -355,12 +357,12 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             ByteBuffer src;
             SocketAddress remoteAddress;
 
-            if (message instanceof Datagram) {
-                Datagram datagram = (Datagram) message;
-                byte[] bytes = datagram.content();
+            if (message instanceof Envelope) {
+                Envelope<byte[], SocketAddress> envelope = (Envelope<byte[], SocketAddress>) message;
+                byte[] bytes = envelope.content();
                 src = byteBufferPool().acquire(bytes.length, false).put(bytes);
                 src.flip();
-                remoteAddress = datagram.recipient();
+                remoteAddress = envelope.recipient();
             } else if (message instanceof ByteBuffer) {
                 src = (ByteBuffer) message;
                 remoteAddress = null;
