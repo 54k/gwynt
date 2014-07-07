@@ -52,7 +52,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
-            doClose();
+            closeForcibly();
         }
 
         @Override

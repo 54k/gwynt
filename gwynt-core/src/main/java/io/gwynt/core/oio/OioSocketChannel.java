@@ -54,7 +54,7 @@ public class OioSocketChannel extends AbstractOioChannel {
 
         @Override
         protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
-            doClose();
+            closeForcibly();
         }
 
         @Override
@@ -101,7 +101,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         @Override
-        protected void doClose() {
+        public void closeForcibly() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {

@@ -80,7 +80,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        protected void doClose() {
+        public void closeForcibly() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {

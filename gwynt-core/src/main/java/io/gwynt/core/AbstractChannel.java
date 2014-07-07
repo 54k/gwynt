@@ -363,7 +363,7 @@ public abstract class AbstractChannel implements Channel {
             } finally {
                 if (!success) {
                     unregister();
-                    doClose();
+                    closeForcibly();
                 }
             }
         }
@@ -455,7 +455,7 @@ public abstract class AbstractChannel implements Channel {
             if (!closePromise.isDone()) {
                 final boolean wasActive = isActive();
                 pendingClose.set(true);
-                doClose();
+                closeForcibly();
                 channelOutboundBuffer.clear(CLOSED_CHANNEL_EXCEPTION);
                 if (wasActive && !isActive()) {
                     closePromise.setClosed();
@@ -469,8 +469,6 @@ public abstract class AbstractChannel implements Channel {
                 }
             }
         }
-
-        protected abstract void doClose();
 
         protected void invokeLater(Runnable task) {
             try {

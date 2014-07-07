@@ -79,7 +79,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
                 }
             } catch (Throwable t) {
                 safeSetFailure(channelPromise, t);
-                doClose();
+                closeForcibly();
             }
         }
 
@@ -111,7 +111,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
                 }
 
                 if (closed && isOpen()) {
-                    doClose();
+                    close(voidPromise());
                 }
                 messages.clear();
             } finally {

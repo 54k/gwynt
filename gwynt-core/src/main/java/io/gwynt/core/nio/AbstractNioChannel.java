@@ -115,7 +115,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             public void run() {
                                 ChannelException cause = new ChannelException("Connection timeout: " + address);
                                 if (connectPromise != null && connectPromise.tryFailure(cause)) {
-                                    doClose();
+                                    closeForcibly();
                                 }
                             }
                         }, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -129,14 +129,14 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                                     connectTimeout.cancel();
                                 }
                                 connectPromise = null;
-                                doClose();
+                                closeForcibly();
                             }
                         }
                     });
                 }
             } catch (Throwable t) {
                 safeSetFailure(channelPromise, t);
-                doClose();
+                closeForcibly();
             }
         }
 
@@ -157,15 +157,15 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                     }
 
                     if (!connectSuccess) {
-                        doClose();
+                        closeForcibly();
                     }
                 } else {
-                    doClose();
+                    closeForcibly();
                     connectPromise.tryFailure(new ChannelException("Connection failed"));
                 }
             } catch (Throwable t) {
                 safeSetFailure(connectPromise, t);
-                doClose();
+                closeForcibly();
             }
         }
 
@@ -273,7 +273,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected void doClose() {
+        public void closeForcibly() {
             try {
                 javaChannel().close();
             } catch (IOException ignore) {
@@ -298,7 +298,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 selectionKey.interestOps(interestOps);
                 eventLoop().wakeUpSelector();
             } else {
-                doClose();
+                closeForcibly();
             }
         }
 

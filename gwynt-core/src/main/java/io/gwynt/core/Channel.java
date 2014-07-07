@@ -71,6 +71,8 @@ public interface Channel {
 
         void close(ChannelPromise channelFuture);
 
+        void closeForcibly();
+
         void register(EventLoop eventLoop);
 
         void unregister();

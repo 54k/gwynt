@@ -3,6 +3,8 @@ package io.gwynt.core;
 import io.gwynt.core.concurrent.DefaultFutureGroup;
 import io.gwynt.core.concurrent.Future;
 import io.gwynt.core.pipeline.HandlerContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -10,7 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public final class IOReactor {
+public final class IOReactor implements Cloneable {
 
     private EventLoopGroup primaryGroup;
     private EventLoopGroup secondaryGroup;
@@ -19,6 +21,18 @@ public final class IOReactor {
     private List<Handler> childHandlers = new ArrayList<>();
     private ChannelFactory channelFactory = new DefaultChannelFactory();
     private Class<? extends Channel> channelClass;
+
+    public IOReactor() {
+    }
+
+    private IOReactor(IOReactor reactor) {
+        primaryGroup = reactor.primaryGroup;
+        secondaryGroup = reactor.secondaryGroup;
+        serverHandlers.addAll(reactor.serverHandlers);
+        childHandlers.addAll(reactor.childHandlers);
+        channelFactory = reactor.channelFactory;
+        channelClass = reactor.channelClass;
+    }
 
     public IOReactor addServerHandler(Handler handler) {
         if (handler == null) {
@@ -138,11 +152,12 @@ public final class IOReactor {
     private ChannelFuture initAndRegisterChannel() {
         Channel channel = channelFactory.createChannel(channelClass);
         if (channel instanceof ServerChannel) {
-            DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor();
-            channel.pipeline().addFirst(acceptor);
             for (Handler handler : serverHandlers()) {
-                channel.pipeline().addBefore(handler, acceptor);
+                channel.pipeline().addLast(handler);
             }
+
+            DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor(childHandlers, secondaryGroup);
+            channel.pipeline().addLast(acceptor);
         } else {
             for (Handler handler : childHandlers()) {
                 channel.pipeline().addLast(handler);
@@ -167,28 +182,56 @@ public final class IOReactor {
         return new DefaultFutureGroup<>(futures);
     }
 
-    private final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
+    @Override
+    @SuppressWarnings("CloneDoesntCallSuperClone")
+    public IOReactor clone() {
+        return new IOReactor(this);
+    }
+
+    private static final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
+
+        private static final Logger logger = LoggerFactory.getLogger(DefaultChannelAcceptor.class);
+
+        private Iterable<Handler> childHandlers;
+        private EventLoopGroup secondaryGroup;
+
+        private DefaultChannelAcceptor(Iterable<Handler> childHandlers, EventLoopGroup secondaryGroup) {
+            this.childHandlers = childHandlers;
+            this.secondaryGroup = secondaryGroup;
+        }
+
+        private static void handleException(Channel channel, Throwable t) {
+            channel.unsafe().closeForcibly();
+            logger.warn("Channel " + channel + " registration failed: ", t);
+        }
 
         @Override
-        public void onMessageReceived(HandlerContext context, Channel channel) {
-            for (Handler handler : childHandlers()) {
+        public void onMessageReceived(HandlerContext context, final Channel channel) {
+            for (Handler handler : childHandlers) {
                 channel.pipeline().addLast(handler);
             }
 
-            secondaryGroup.register(channel).addListener(new ChannelFutureListener() {
-                @Override
-                public void onComplete(ChannelFuture channelFuture) {
-                    Channel ch = channelFuture.channel();
-                    if (ch.config().isAutoRead()) {
-                        ch.read();
+            try {
+                secondaryGroup.register(channel).addListener(new ChannelFutureListener() {
+                    @Override
+                    public void onComplete(ChannelFuture channelFuture) {
+                        Channel ch = channelFuture.channel();
+                        if (channelFuture.isSuccess()) {
+                            if (ch.config().isAutoRead()) {
+                                ch.read();
+                            }
+                        } else {
+                            handleException(channel, channelFuture.getCause());
+                        }
                     }
-                }
-            });
+                });
+            } catch (Throwable t) {
+                handleException(channel, t);
+            }
         }
     }
 
-    private final class DefaultChannelFactory implements ChannelFactory<AbstractChannel> {
-
+    private static final class DefaultChannelFactory implements ChannelFactory<AbstractChannel> {
         @Override
         public AbstractChannel createChannel(Class<? extends AbstractChannel> channelClass) {
             try {

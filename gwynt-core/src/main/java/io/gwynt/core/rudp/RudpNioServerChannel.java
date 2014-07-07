@@ -80,7 +80,7 @@ public class RudpNioServerChannel extends AbstractRudpChannel<NioDatagramChannel
         }
 
         @Override
-        protected void doClose() {
+        public void closeForcibly() {
 
         }
 

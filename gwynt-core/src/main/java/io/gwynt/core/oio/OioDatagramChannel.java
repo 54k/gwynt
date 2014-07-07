@@ -222,7 +222,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
 
         @Override
         protected void doDisconnect(ChannelPromise channelPromise) throws Exception {
-            doClose();
+            closeForcibly();
         }
 
         @Override
@@ -296,7 +296,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
         }
 
         @Override
-        protected void doClose() {
+        public void closeForcibly() {
             javaChannel().close();
         }
 
