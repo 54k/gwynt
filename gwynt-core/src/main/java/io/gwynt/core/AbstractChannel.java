@@ -381,6 +381,7 @@ public abstract class AbstractChannel implements Channel {
 
         protected abstract void afterUnregister();
 
+        @Override
         public void flush() {
             if (inFlush) {
                 return;
