@@ -34,7 +34,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         private final Runnable READ_TASK = new Runnable() {
             @Override
             public void run() {
-                doRead();
+                read();
             }
         };
         private final Runnable WRITE_TASK = new Runnable() {
@@ -85,7 +85,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
 
         protected abstract void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception;
 
-        protected void doRead() {
+        protected void read() {
             Throwable error = null;
             boolean closed = false;
             try {
