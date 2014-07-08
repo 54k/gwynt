@@ -6,8 +6,8 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
-import io.gwynt.core.oio.OioEventLoopGroup;
-import io.gwynt.core.oio.OioServerSocketChannel;
+import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.util.Date;
@@ -16,8 +16,8 @@ public class GwyntSimpleServer implements Runnable {
 
     @Override
     public void run() {
-        EventLoopGroup eventLoop = new OioEventLoopGroup(2);
-        Class<? extends Channel> clazz = OioServerSocketChannel.class;
+        EventLoopGroup eventLoop = new NioEventLoopGroup(2);
+        Class<? extends Channel> clazz = NioServerSocketChannel.class;
         final IOReactor reactor = new IOReactor().channelClass(clazz).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
                 .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler<String, Object>() {
                     @Override
@@ -27,7 +27,7 @@ public class GwyntSimpleServer implements Runnable {
                             @Override
                             public void onComplete(ChannelFuture future) {
                                 if (future.isSuccess()) {
-                                    //                                    future.channel().close();
+                                    future.channel().close();
                                 }
                             }
                         });
@@ -35,7 +35,7 @@ public class GwyntSimpleServer implements Runnable {
 
                     @Override
                     public void onClose(HandlerContext context) {
-                        System.out.println("Gwynt: " + context.channel() + " closed");
+                        //                        System.out.println("Gwynt: " + context.channel() + " closed");
                     }
                 });
 

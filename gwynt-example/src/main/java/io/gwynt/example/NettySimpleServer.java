@@ -36,7 +36,7 @@ public class NettySimpleServer implements Runnable {
                             @Override
                             public void operationComplete(ChannelFuture future) throws Exception {
                                 if (future.isSuccess()) {
-                                    //                                    ctx.close();
+                                    ctx.close();
                                 }
                             }
                         });
@@ -44,7 +44,7 @@ public class NettySimpleServer implements Runnable {
 
                     @Override
                     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-                        System.out.println("Netty: " + ctx.channel() + " closed");
+                        //                        System.out.println("Netty: " + ctx.channel() + " closed");
                     }
                 });
             }

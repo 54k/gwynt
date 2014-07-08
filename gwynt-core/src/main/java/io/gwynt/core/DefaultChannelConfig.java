@@ -3,7 +3,10 @@ package io.gwynt.core;
 import io.gwynt.core.buffer.AdaptiveRecvByteBufferAllocator;
 import io.gwynt.core.buffer.ArrayByteBufferPool;
 import io.gwynt.core.buffer.ByteBufferPool;
+import io.gwynt.core.buffer.FixedRecvByteBufferAllocator;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
+
+import java.nio.channels.DatagramChannel;
 
 public class DefaultChannelConfig implements ChannelConfig {
 
@@ -16,7 +19,22 @@ public class DefaultChannelConfig implements ChannelConfig {
     private int connectTimeoutMillis = 0;
 
     public DefaultChannelConfig(Channel channel) {
+        if (channel == null) {
+            throw new IllegalArgumentException("channel");
+        }
+
         this.channel = channel;
+        recvByteBufferAllocator = defaultRecvByteBufferAllocator(channel);
+    }
+
+    private static RecvByteBufferAllocator defaultRecvByteBufferAllocator(Channel channel) {
+        if (channel instanceof ServerChannel) {
+            return null;
+        } else if (channel instanceof DatagramChannel) {
+            return FixedRecvByteBufferAllocator.DEFAULT;
+        } else {
+            return AdaptiveRecvByteBufferAllocator.DEFAULT;
+        }
     }
 
     @Override
