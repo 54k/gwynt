@@ -214,15 +214,15 @@ public abstract class AbstractChannel implements Channel {
         return strCache + ", registered: " + registered + ", attachment: " + attachment + ')';
     }
 
-    final class ClosePromise extends DefaultChannelPromise {
+    private static final class ClosePromise extends DefaultChannelPromise {
 
-        ClosePromise(AbstractChannel ch) {
+        public ClosePromise(AbstractChannel ch) {
             super(ch);
         }
 
         @Override
         protected EventExecutor executor() {
-            return isRegistered() ? eventLoop() : GlobalEventExecutor.INSTANCE;
+            return channel().isRegistered() ? channel().eventLoop() : GlobalEventExecutor.INSTANCE;
         }
 
         @Override
