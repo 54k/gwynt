@@ -1,4 +1,4 @@
-package io.gwynt.core.rudp;
+package io.gwynt.core.rudp.oio;
 
 public class RudpOioServerChannel {
 }

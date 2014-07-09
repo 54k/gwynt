@@ -141,17 +141,4 @@ public abstract class AbstractRudpChannel<C extends MulticastChannel> extends Ab
     public ChannelFuture joinGroup(InetAddress multicastAddress) {
         return parent().joinGroup(multicastAddress);
     }
-
-    protected abstract class AbstractRudpUnsafe<T> extends AbstractUnsafe<T> {
-
-        @Override
-        public void register(EventLoop eventScheduler) {
-            parent().register(eventScheduler);
-        }
-
-        @Override
-        public void unregister() {
-            parent().unregister();
-        }
-    }
 }

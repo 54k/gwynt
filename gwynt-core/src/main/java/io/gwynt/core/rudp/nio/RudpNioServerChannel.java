@@ -1,4 +1,4 @@
-package io.gwynt.core.rudp;
+package io.gwynt.core.rudp.nio;
 
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelOutboundBuffer;
@@ -6,6 +6,7 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoop;
+import io.gwynt.core.rudp.AbstractRudpChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
