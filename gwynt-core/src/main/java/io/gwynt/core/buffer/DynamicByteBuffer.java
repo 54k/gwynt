@@ -36,6 +36,7 @@ public abstract class DynamicByteBuffer {
     protected abstract ByteBuffer newByteBuffer(ByteBufferPool pool);
 
     private void ensureCapacity(int capacity) {
+        checkReleased();
         if (buffer.remaining() < capacity) {
             int position = buffer.position();
             int newCapacity = position + capacity - buffer.remaining();
@@ -50,6 +51,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public byte get() {
+        checkReleased();
         return buffer.get();
     }
 
@@ -60,6 +62,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public byte get(int index) {
+        checkReleased();
         return buffer.get(index);
     }
 
@@ -70,13 +73,13 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer get(byte[] dst, int offset, int length) {
-        ensureCapacity(length);
+        checkReleased();
         buffer.get(dst, offset, length);
         return this;
     }
 
     public DynamicByteBuffer get(byte[] dst) {
-        ensureCapacity(dst.length);
+        checkReleased();
         buffer.get(dst);
         return this;
     }
@@ -94,6 +97,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public char getChar() {
+        checkReleased();
         return buffer.getChar();
     }
 
@@ -104,6 +108,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public char getChar(int index) {
+        checkReleased();
         return buffer.getChar(index);
     }
 
@@ -114,6 +119,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public short getShort() {
+        checkReleased();
         return buffer.getShort();
     }
 
@@ -124,6 +130,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public short getShort(int index) {
+        checkReleased();
         return buffer.getShort(index);
     }
 
@@ -133,6 +140,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public int getInt() {
+        checkReleased();
         return buffer.getInt();
     }
 
@@ -143,7 +151,8 @@ public abstract class DynamicByteBuffer {
     }
 
     public int getInt(int index) {
-        return buffer.getInt();
+        checkReleased();
+        return buffer.getInt(index);
     }
 
     public DynamicByteBuffer putInt(int index, int value) {
@@ -153,6 +162,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public long getLong() {
+        checkReleased();
         return buffer.getLong();
     }
 
@@ -163,7 +173,8 @@ public abstract class DynamicByteBuffer {
     }
 
     public long getLong(int index) {
-        return buffer.getLong();
+        checkReleased();
+        return buffer.getLong(index);
     }
 
     public DynamicByteBuffer putLong(int index, long value) {
@@ -173,6 +184,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public float getFloat() {
+        checkReleased();
         return buffer.getFloat();
     }
 
@@ -183,6 +195,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public float getFloat(int index) {
+        checkReleased();
         return buffer.getFloat(index);
     }
 
@@ -193,6 +206,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public double getDouble() {
+        checkReleased();
         return buffer.getDouble();
     }
 
@@ -203,7 +217,8 @@ public abstract class DynamicByteBuffer {
     }
 
     public double getDouble(int index) {
-        return buffer.getDouble();
+        checkReleased();
+        return buffer.getDouble(index);
     }
 
     public DynamicByteBuffer putDouble(int index, double value) {
@@ -213,24 +228,39 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer flip() {
+        checkReleased();
         buffer.flip();
         return this;
     }
 
     public int remaining() {
+        checkReleased();
         return buffer.remaining();
     }
 
     public int position() {
+        checkReleased();
         return buffer.position();
     }
 
+    public DynamicByteBuffer duplicate() {
+        checkReleased();
+        return new DynamicByteBuffer(pool) {
+            @Override
+            protected ByteBuffer newByteBuffer(ByteBufferPool pool) {
+                return buffer.duplicate();
+            }
+        };
+    }
+
     public DynamicByteBuffer position(int newPosition) {
+        checkReleased();
         buffer.position(newPosition);
         return this;
     }
 
     public DynamicByteBuffer compact() {
+        checkReleased();
         buffer.compact();
         return this;
     }
@@ -239,5 +269,11 @@ public abstract class DynamicByteBuffer {
         pool.release(buffer);
         buffer = null;
         pool = null;
+    }
+
+    private void checkReleased() {
+        if (buffer == null) {
+            throw new IllegalStateException("Buffer was released.");
+        }
     }
 }
