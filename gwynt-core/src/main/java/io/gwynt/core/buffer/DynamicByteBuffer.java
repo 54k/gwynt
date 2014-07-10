@@ -64,16 +64,19 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer put(int index, byte b) {
+        ensureCapacity(1);
         buffer.put(index, b);
         return this;
     }
 
     public DynamicByteBuffer get(byte[] dst, int offset, int length) {
+        ensureCapacity(length);
         buffer.get(dst, offset, length);
         return this;
     }
 
     public DynamicByteBuffer get(byte[] dst) {
+        ensureCapacity(dst.length);
         buffer.get(dst);
         return this;
     }
@@ -105,6 +108,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer putChar(int index, char value) {
+        ensureCapacity(2);
         buffer.putChar(index, value);
         return this;
     }
@@ -143,6 +147,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer putInt(int index, int value) {
+        ensureCapacity(4);
         buffer.putInt(index, value);
         return this;
     }
@@ -162,6 +167,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer putLong(int index, long value) {
+        ensureCapacity(8);
         buffer.putLong(index, value);
         return this;
     }
@@ -181,6 +187,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer putFloat(int index, float value) {
+        ensureCapacity(4);
         buffer.putFloat(index, value);
         return this;
     }
@@ -200,6 +207,7 @@ public abstract class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer putDouble(int index, double value) {
+        ensureCapacity(8);
         buffer.putDouble(index, value);
         return this;
     }
@@ -219,6 +227,11 @@ public abstract class DynamicByteBuffer {
 
     public DynamicByteBuffer position(int newPosition) {
         buffer.position(newPosition);
+        return this;
+    }
+
+    public DynamicByteBuffer compact() {
+        buffer.compact();
         return this;
     }
 
