@@ -31,12 +31,17 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     @Override
     protected ChannelConfig newConfig() {
-        return new NioSocketChannelConfig(this, (SocketChannel) javaChannel());
+        return new NioSocketChannelConfig(this, javaChannel());
     }
 
     @Override
     public NioSocketChannelConfig config() {
         return (NioSocketChannelConfig) super.config();
+    }
+
+    @Override
+    protected SocketChannel javaChannel() {
+        return (SocketChannel) super.javaChannel();
     }
 
     private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
