@@ -2,6 +2,7 @@ package io.gwynt.core.codec;
 
 import io.gwynt.core.AbstractHandler;
 import io.gwynt.core.ChannelPromise;
+import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.pipeline.HandlerContext;
 
 import java.nio.ByteBuffer;
@@ -39,7 +40,7 @@ public abstract class ByteToMessageCodec<O> extends AbstractHandler<byte[], O> {
 
     protected abstract void decode(HandlerContext context, ByteBuffer message, List<Object> out);
 
-    protected abstract void encode(HandlerContext context, O message, ByteBuffer out);
+    protected abstract void encode(HandlerContext context, O message, DynamicByteBuffer out);
 
     private final class Decoder extends ByteToMessageDecoder {
         @Override
@@ -50,7 +51,7 @@ public abstract class ByteToMessageCodec<O> extends AbstractHandler<byte[], O> {
 
     private final class Encoder extends MessageToByteEncoder<O> {
         @Override
-        protected void encode(HandlerContext context, O message, ByteBuffer out) {
+        protected void encode(HandlerContext context, O message, DynamicByteBuffer out) {
             ByteToMessageCodec.this.encode(context, message, out);
         }
     }

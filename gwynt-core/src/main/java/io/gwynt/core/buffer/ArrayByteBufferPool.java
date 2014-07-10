@@ -59,6 +59,11 @@ public class ArrayByteBufferPool implements ByteBufferPool {
     }
 
     @Override
+    public DynamicByteBuffer acquireDynamic(int size, boolean direct) {
+        return direct ? DynamicByteBuffer.allocateDirect(this, size) : DynamicByteBuffer.allocate(this, size);
+    }
+
+    @Override
     public void release(ByteBuffer buffer) {
         if (buffer != null) {
             Bucket bucket = bucketFor(buffer.capacity(), buffer.isDirect());
@@ -67,6 +72,11 @@ public class ArrayByteBufferPool implements ByteBufferPool {
                 bucket.queue.offer(buffer);
             }
         }
+    }
+
+    @Override
+    public void release(DynamicByteBuffer buffer) {
+        buffer.release();
     }
 
     @Override

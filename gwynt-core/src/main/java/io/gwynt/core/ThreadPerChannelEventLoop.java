@@ -3,12 +3,12 @@ package io.gwynt.core;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
+public final class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
 
     private Channel ch;
     private ThreadPerChannelEventLoopGroup parent;
 
-    public ThreadPerChannelEventLoop(ThreadPerChannelEventLoopGroup parent) {
+    ThreadPerChannelEventLoop(ThreadPerChannelEventLoopGroup parent) {
         super(parent, true, parent.executor);
         this.parent = parent;
     }
