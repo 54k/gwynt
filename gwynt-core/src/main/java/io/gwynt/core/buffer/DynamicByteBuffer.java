@@ -96,6 +96,12 @@ public abstract class DynamicByteBuffer {
         return this;
     }
 
+    public DynamicByteBuffer put(byte[] src) {
+        ensureCapacity(src.length);
+        buffer.put(src);
+        return this;
+    }
+
     public char getChar() {
         checkReleased();
         return buffer.getChar();

@@ -7,6 +7,7 @@ import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
+import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
@@ -259,7 +260,7 @@ public class GwyntSimpleChatServer implements Runnable {
         private StringBuilder buffer = new StringBuilder();
 
         @Override
-        protected void encode(HandlerContext context, String message, ByteBuffer out) {
+        protected void encode(HandlerContext context, String message, DynamicByteBuffer out) {
             out.put(message.getBytes());
         }
 
