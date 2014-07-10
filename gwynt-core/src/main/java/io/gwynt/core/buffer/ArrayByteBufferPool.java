@@ -99,11 +99,11 @@ public class ArrayByteBufferPool implements ByteBufferPool {
         return direct ? this.direct[b] : indirect[b];
     }
 
-    public static class Bucket {
+    private static final class Bucket {
         public final int size;
         public final Queue<ByteBuffer> queue = new ConcurrentLinkedQueue<>();
 
-        Bucket(int size) {
+        public Bucket(int size) {
             this.size = size;
         }
     }

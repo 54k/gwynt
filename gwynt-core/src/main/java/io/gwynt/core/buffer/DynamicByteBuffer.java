@@ -271,6 +271,11 @@ public abstract class DynamicByteBuffer {
         pool = null;
     }
 
+    public ByteBuffer asByteBuffer() {
+        checkReleased();
+        return buffer;
+    }
+
     private void checkReleased() {
         if (buffer == null) {
             throw new IllegalStateException("Buffer was released.");
