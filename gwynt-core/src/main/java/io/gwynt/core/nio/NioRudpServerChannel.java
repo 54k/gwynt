@@ -1,5 +1,6 @@
 package io.gwynt.core.nio;
 
+import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
@@ -7,6 +8,7 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
+import io.gwynt.core.ServerChannel;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
@@ -25,34 +27,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class NioDatagramChannel extends AbstractNioChannel implements MulticastChannel {
+public class NioRudpServerChannel extends AbstractNioChannel implements ServerChannel, MulticastChannel {
 
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public NioDatagramChannel() throws IOException {
+    public NioRudpServerChannel() throws IOException {
         this(null);
     }
 
-    public NioDatagramChannel(AbstractNioChannel parent) throws IOException {
+    public NioRudpServerChannel(AbstractNioChannel parent) throws IOException {
         super(parent, DatagramChannel.open());
-    }
-
-    private static byte[] getBytes(ByteBuffer buffer) {
-        buffer.flip();
-        byte[] message = new byte[buffer.limit()];
-        buffer.get(message);
-        return message;
     }
 
     @Override
     protected Unsafe newUnsafe() {
-        return new NioDatagramChannelUnsafe();
+        return new NioRudpServerChannelUnsafe();
     }
 
     @Override
     protected ChannelConfig newConfig() {
-        return new NioDatagramChannelConfig(this, javaChannel());
+        return new RudpChannelConfig(this);
     }
 
     @Override
@@ -301,7 +296,14 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    @Override
+    public RudpChannelConfig config() {
+        return (RudpChannelConfig) super.config();
+    }
+
+    private class NioRudpServerChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+
+        private Map<SocketAddress, Channel> clients = new HashMap<>();
 
         @Override
         protected boolean isActive() {
@@ -344,20 +346,33 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             try {
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
-                    if (javaChannel().isConnected()) {
-                        if (address.equals(getRemoteAddress())) {
-                            messages.add(getBytes(buffer));
-                            return 1;
-                        }
-                    } else {
-                        messages.add(new Datagram(getBytes(buffer), address));
-                        return 1;
-                    }
+                    buffer.flip();
+                    byte[] message = new byte[buffer.limit()];
+                    buffer.get(message);
+                    messages.add(new Datagram(message, address));
+                    return 1;
                 }
             } finally {
                 config().getByteBufferPool().release(buffer);
             }
             return 0;
+        }
+
+        private void processPacket(SocketAddress address, ByteBuffer packet) {
+            if (!protocolMatching(packet)) {
+                // discard
+                return;
+            }
+
+            if (clients.containsKey(address)) {
+                //processClient
+            } else {
+                //createClient
+            }
+        }
+
+        private boolean protocolMatching(ByteBuffer packet) {
+            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
         }
 
         @SuppressWarnings("unchecked")
