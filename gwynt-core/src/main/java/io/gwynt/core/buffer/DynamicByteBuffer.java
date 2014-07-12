@@ -282,6 +282,12 @@ public abstract class DynamicByteBuffer {
         return buffer;
     }
 
+    public DynamicByteBuffer clear() {
+        checkReleased();
+        buffer.clear();
+        return this;
+    }
+
     private void checkReleased() {
         if (buffer == null) {
             throw new IllegalStateException("Buffer was released.");
