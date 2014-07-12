@@ -236,10 +236,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             if (done) {
                 channelOutboundBuffer.remove();
             }
-
-            if (!channelOutboundBuffer.isEmpty()) {
-                writeRequested();
-            }
         }
 
         protected boolean doWriteMessage(Object message) throws Exception {

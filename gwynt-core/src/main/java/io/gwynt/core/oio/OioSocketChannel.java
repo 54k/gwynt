@@ -95,8 +95,6 @@ public class OioSocketChannel extends AbstractOioChannel {
 
             if (done) {
                 channelOutboundBuffer.remove();
-            } else {
-                writeRequested();
             }
         }
 

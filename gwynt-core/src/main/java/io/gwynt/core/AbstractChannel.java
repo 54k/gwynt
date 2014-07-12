@@ -418,6 +418,9 @@ public abstract class AbstractChannel implements Channel {
                     channelOutboundBuffer.clear(e);
                 } finally {
                     inFlush = false;
+                    if (!channelOutboundBuffer.isEmpty()) {
+                        writeRequested();
+                    }
                 }
             }
         }

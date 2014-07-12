@@ -267,8 +267,6 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
 
             if (done) {
                 channelOutboundBuffer.remove();
-            } else {
-                writeRequested();
             }
         }
 

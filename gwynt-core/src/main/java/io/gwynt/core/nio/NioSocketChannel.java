@@ -109,11 +109,9 @@ public class NioSocketChannel extends AbstractNioChannel {
 
             for (ByteBuffer buffer : buffers) {
                 if (buffer.hasRemaining()) {
-                    writeRequested();
                     break;
-                } else {
-                    outboundBuffer.remove();
                 }
+                outboundBuffer.remove();
             }
         }
 
