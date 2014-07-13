@@ -39,7 +39,6 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     }
 
     private static byte[] getBytes(ByteBuffer buffer) {
-        buffer.flip();
         byte[] message = new byte[buffer.limit()];
         buffer.get(message);
         return message;
@@ -342,15 +341,21 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             try {
+                Object message = null;
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
                     if (javaChannel().isConnected()) {
                         if (address.equals(getRemoteAddress())) {
-                            messages.add(getBytes(buffer));
-                            return 1;
+                            buffer.flip();
+                            message = getBytes(buffer);
                         }
                     } else {
-                        messages.add(new Datagram(getBytes(buffer), address));
+                        buffer.flip();
+                        message = new Datagram(getBytes(buffer), address);
+                    }
+
+                    if (message != null) {
+                        messages.add(message);
                         return 1;
                     }
                 }

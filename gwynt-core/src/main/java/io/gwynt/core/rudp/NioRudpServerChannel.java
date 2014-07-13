@@ -6,7 +6,6 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
-import io.gwynt.core.ServerChannel;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 import io.gwynt.core.nio.AbstractNioChannel;
@@ -27,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class NioRudpServerChannel extends AbstractNioChannel implements ServerChannel, MulticastChannel {
+public class NioRudpServerChannel extends AbstractNioChannel implements MulticastChannel {
 
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 
@@ -41,7 +40,6 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
     }
 
     private static byte[] getBytes(ByteBuffer buffer) {
-        buffer.flip();
         byte[] message = new byte[buffer.limit()];
         buffer.get(message);
         return message;
@@ -351,15 +349,25 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
             RecvByteBufferAllocator.Handle allocHandle = allocHandle();
             ByteBuffer buffer = allocHandle.allocate(config().getByteBufferPool());
             try {
+                Object message = null;
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
                     if (javaChannel().isConnected()) {
                         if (address.equals(getRemoteAddress())) {
-                            messages.add(getBytes(buffer));
-                            return 1;
+                            buffer.flip();
+                            if (protocolMatch(buffer)) {
+                                message = getBytes(buffer);
+                            }
                         }
                     } else {
-                        messages.add(new Datagram(getBytes(buffer), address));
+                        buffer.flip();
+                        if (protocolMatch(buffer)) {
+                            message = new Datagram(getBytes(buffer), address);
+                        }
+                    }
+
+                    if (message != null) {
+                        messages.add(message);
                         return 1;
                     }
                 }
@@ -369,16 +377,8 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
             return 0;
         }
 
-        private void processPacket(SocketAddress address, ByteBuffer packet) {
-            if (!isValidPacket(packet)) {
-                return;
-            }
-
-            RudpVirtualChannel ch = getVirtualChannel(address);
-        }
-
-        private boolean isValidPacket(ByteBuffer packet) {
-            return packet.remaining() == 12 && packet.getInt() == config().getProtocolId();
+        private boolean protocolMatch(ByteBuffer packet) {
+            return packet.remaining() == 4 && packet.getInt() == config().getProtocolId();
         }
 
         private RudpVirtualChannel getVirtualChannel(SocketAddress address) {
