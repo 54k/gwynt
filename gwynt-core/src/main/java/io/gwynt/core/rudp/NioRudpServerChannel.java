@@ -1,13 +1,14 @@
-package io.gwynt.core.nio;
+package io.gwynt.core.rudp;
 
-import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Datagram;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
+import io.gwynt.core.ServerChannel;
+import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
+import io.gwynt.core.nio.AbstractNioChannel;
 import io.gwynt.core.util.Buffers;
 
 import java.io.IOException;
@@ -26,27 +27,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class NioDatagramChannel extends AbstractNioChannel implements MulticastChannel {
+public class NioRudpServerChannel extends AbstractNioChannel implements ServerChannel, MulticastChannel {
 
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public NioDatagramChannel() throws IOException {
+    public NioRudpServerChannel() throws IOException {
         this(null);
     }
 
-    public NioDatagramChannel(AbstractNioChannel parent) throws IOException {
+    public NioRudpServerChannel(AbstractNioChannel parent) throws IOException {
         super(parent, DatagramChannel.open());
     }
 
     @Override
     protected Unsafe newUnsafe() {
-        return new NioDatagramChannelUnsafe();
+        return new NioRudpChannelUnsafe();
     }
 
     @Override
-    protected ChannelConfig newConfig() {
-        return new NioDatagramChannelConfig(this, javaChannel());
+    protected RudpChannelConfig newConfig() {
+        return new RudpChannelConfig(this);
     }
 
     @Override
@@ -295,7 +296,14 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    @Override
+    public RudpChannelConfig config() {
+        return (RudpChannelConfig) super.config();
+    }
+
+    private class NioRudpChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+
+        private Map<SocketAddress, RudpVirtualChannel> virtualChannels = new HashMap<>();
 
         @Override
         protected boolean isActive() {
@@ -339,14 +347,21 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
                 Object message = null;
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
+                    buffer.flip();
+                    if (!isValidProtocol(buffer)) {
+                        return 0;
+                    }
+
                     if (javaChannel().isConnected()) {
                         if (address.equals(getRemoteAddress())) {
-                            buffer.flip();
                             message = Buffers.getBytes(buffer);
                         }
                     } else {
-                        buffer.flip();
-                        message = new Datagram(Buffers.getBytes(buffer), address);
+                        boolean newChannel = !virtualChannels.containsKey(address);
+                        RudpVirtualChannel ch = processVirtualChannel(address, Buffers.getBytes(buffer));
+                        if (newChannel) {
+                            message = ch;
+                        }
                     }
 
                     if (message != null) {
@@ -360,26 +375,47 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             return 0;
         }
 
+        private boolean isValidProtocol(ByteBuffer packet) {
+            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
+        }
+
+        private RudpVirtualChannel processVirtualChannel(SocketAddress address, byte[] message) {
+            RudpVirtualChannel ch = getVirtualChannel(address);
+            ch.unsafe().messageReceived(message);
+            return ch;
+        }
+
+        private RudpVirtualChannel getVirtualChannel(SocketAddress address) {
+            if (!virtualChannels.containsKey(address)) {
+                RudpVirtualChannel ch = new RudpVirtualChannel(NioRudpServerChannel.this);
+                ch.remoteAddress = address;
+                virtualChannels.put(address, ch);
+                return ch;
+            }
+            return virtualChannels.get(address);
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         protected boolean doWriteMessage(Object message) throws Exception {
             int bytesWritten;
 
-            ByteBuffer src;
+            DynamicByteBuffer src = byteBufferPool().acquireDynamic(4, false);
+            src.putInt(config().getProtocolId());
             SocketAddress remoteAddress;
 
             if (message instanceof Envelope) {
                 Envelope<byte[], SocketAddress> envelope = (Envelope<byte[], SocketAddress>) message;
                 byte[] bytes = envelope.content();
-                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.put(bytes);
                 src.flip();
                 remoteAddress = envelope.recipient();
             } else if (message instanceof ByteBuffer) {
-                src = (ByteBuffer) message;
+                src.put((ByteBuffer) message);
                 remoteAddress = null;
             } else if (message instanceof byte[]) {
                 byte[] bytes = (byte[]) message;
-                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.put(bytes);
                 src.flip();
                 remoteAddress = null;
             } else {
@@ -387,10 +423,11 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
             }
 
             try {
+                ByteBuffer buf = src.asByteBuffer();
                 if (remoteAddress != null) {
-                    bytesWritten = javaChannel().send(src, remoteAddress);
+                    bytesWritten = javaChannel().send(buf, remoteAddress);
                 } else {
-                    bytesWritten = javaChannel().write(src);
+                    bytesWritten = javaChannel().write(buf);
                 }
             } finally {
                 byteBufferPool().release(src);

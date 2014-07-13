@@ -1,9 +1,10 @@
 package io.gwynt.core;
 
+import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ChannelOutboundBuffer {
+public class ChannelOutboundBuffer implements Iterable<Object> {
 
     private final Queue<Entry> entries = new ConcurrentLinkedQueue<>();
     private Channel channel;
@@ -14,6 +15,24 @@ public class ChannelOutboundBuffer {
 
     protected Channel channel() {
         return channel;
+    }
+
+    @Override
+    public Iterator<Object> iterator() {
+        return new Iterator<Object>() {
+
+            Iterator<Entry> entryIterator = entries.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return entryIterator.hasNext();
+            }
+
+            @Override
+            public Object next() {
+                return entryIterator.next().getMessage();
+            }
+        };
     }
 
     public void addMessage(Object message, ChannelPromise channelPromise) {

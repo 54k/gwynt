@@ -46,7 +46,11 @@ class LoggingHandler extends AbstractHandler {
         channelPromise.addListener(new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture channelFuture) {
-                logger.info("Sent to channel [{}], channelPromise [{}], message [{}]", channelFuture.channel(), channelPromise, message);
+                if (channelFuture.isSuccess()) {
+                    logger.info("Sent to channel [{}], channelPromise [{}], message [{}]", channelFuture.channel(), channelPromise, message);
+                } else {
+                    logger.info("Failed sent to channel [{}], channelPromise [{}], message [{}]", channelFuture.channel(), channelPromise, message);
+                }
             }
         });
         context.write(message, channelPromise);

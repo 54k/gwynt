@@ -2,37 +2,58 @@ package io.gwynt.example;
 
 import io.gwynt.core.ByteHandler;
 import io.gwynt.core.Channel;
-import io.gwynt.core.Datagram;
-import io.gwynt.core.DatagramHandler;
+import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
 import io.gwynt.core.rudp.NioRudpChannel;
+import io.gwynt.core.rudp.NioRudpServerChannel;
+import io.gwynt.core.util.Buffers;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
         EventLoopGroup group = new NioEventLoopGroup(1);
-        IOReactor prototype = new IOReactor().channelClass(NioRudpChannel.class).group(group);
 
-        IOReactor server = prototype.clone();
-        server.addChildHandler(new DatagramHandler() {
+        IOReactor server = new IOReactor().channelClass(NioRudpServerChannel.class).group(group);
+        server.addChildHandler(new LoggingHandler()).addChildHandler(new ByteHandler() {
             @Override
-            public void onMessageReceived(HandlerContext context, Datagram message) {
+            public void onMessageReceived(HandlerContext context, byte[] message) {
                 context.write(message);
+            }
+
+            @Override
+            public void onExceptionCaught(HandlerContext context, Throwable e) {
+                e.printStackTrace();
             }
         });
         server.bind(3001).sync();
 
-        IOReactor client = prototype.clone();
+        final AtomicInteger localSeq = new AtomicInteger();
+        final AtomicInteger remoteSeq = new AtomicInteger();
+
+        IOReactor client = new IOReactor().channelClass(NioRudpChannel.class).group(group);
         client.addChildHandler(new ByteHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, byte[] message) {
-                System.out.println(new String(message));
+                ByteBuffer buf = ByteBuffer.wrap(message);
+                remoteSeq.set(buf.getInt());
+                int ack = buf.getInt();
+                byte[] m = new byte[buf.remaining()];
+                buf.get(m);
+//                System.out.println("=== RCV PACKET ===");
+//                System.out.println("SEQ: " + remoteSeq.get());
+//                System.out.println("ACK: " + ack);
+//                System.out.println("MSG: " + new String(m));
+//                System.out.println("=== END PACKET ===");
+                System.out.println(new String(m));
             }
         });
         Channel channel = client.connect("localhost", 3001).sync().channel();
@@ -41,7 +62,26 @@ public class Main {
             String line;
             while ((line = in.readLine()) != null) {
                 if (!line.isEmpty()) {
-                    channel.write(line.getBytes());
+                    final int lseq = localSeq.getAndIncrement();
+                    final byte[] mes = line.getBytes();
+                    ByteBuffer buf = ByteBuffer.allocate(8 + mes.length);
+                    buf.putInt(lseq);
+                    buf.putInt(remoteSeq.get());
+                    buf.put(mes);
+                    buf.flip();
+
+                    channel.write(Buffers.getBytes(buf)).addListener(new ChannelFutureListener() {
+                        @Override
+                        public void onComplete(ChannelFuture future) {
+                            if (future.isSuccess()) {
+//                                System.out.println("=== SND PACKET ===");
+//                                System.out.println("SEQ: " + lseq);
+//                                System.out.println("ACK: " + remoteSeq.get());
+//                                System.out.println("MSG: " + new String(mes));
+//                                System.out.println("=== END PACKET ===");
+                            }
+                        }
+                    });
                 }
             }
         }

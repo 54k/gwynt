@@ -85,7 +85,7 @@ public final class NioEventLoop extends SingleThreadEventLoop implements EventLo
             }
             if (key.isWritable()) {
                 key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
-                channel.unsafe().flush();
+                channel.unsafe().write();
             }
             if (key.isAcceptable()) {
                 channel.unsafe().read();

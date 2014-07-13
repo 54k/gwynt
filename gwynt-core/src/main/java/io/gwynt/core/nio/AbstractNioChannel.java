@@ -57,6 +57,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         void read();
 
+        void write();
+
         void finishConnect();
     }
 
@@ -219,6 +221,16 @@ public abstract class AbstractNioChannel extends AbstractChannel {
          * @return number of messages read or -1 if end of stream occurred
          */
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
+
+        @Override
+        public void flush() {
+            writeRequested();
+        }
+
+        @Override
+        public void write() {
+            super.flush();
+        }
 
         @Override
         protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {

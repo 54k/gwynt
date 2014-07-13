@@ -6,13 +6,11 @@ import io.gwynt.core.buffer.ByteBufferPool;
 import io.gwynt.core.buffer.FixedRecvByteBufferAllocator;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
-import java.nio.channels.DatagramChannel;
-
 public class DefaultChannelConfig implements ChannelConfig {
 
     private Channel channel;
     private boolean autoRead = true;
-    private RecvByteBufferAllocator recvByteBufferAllocator = AdaptiveRecvByteBufferAllocator.DEFAULT;
+    private RecvByteBufferAllocator recvByteBufferAllocator;
     private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
     private int writeSpinCount = 8;
     private int readSpinCount = 8;
@@ -28,9 +26,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     }
 
     private static RecvByteBufferAllocator defaultRecvByteBufferAllocator(Channel channel) {
-        if (channel instanceof ServerChannel) {
-            return null;
-        } else if (channel instanceof DatagramChannel) {
+        if (channel instanceof MulticastChannel) {
             return FixedRecvByteBufferAllocator.DEFAULT;
         } else {
             return AdaptiveRecvByteBufferAllocator.DEFAULT;

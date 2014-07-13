@@ -3,12 +3,12 @@ package io.gwynt.core.rudp;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.Datagram;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 import io.gwynt.core.nio.AbstractNioChannel;
+import io.gwynt.core.util.Buffers;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -39,16 +39,9 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
         super(parent, DatagramChannel.open());
     }
 
-    private static byte[] getBytes(ByteBuffer buffer) {
-        int length = buffer.limit() - buffer.position();
-        byte[] message = new byte[length];
-        buffer.get(message, 0, length);
-        return message;
-    }
-
     @Override
     protected Unsafe newUnsafe() {
-        return new NioDatagramChannelUnsafe();
+        return new NioRudpChannelUnsafe();
     }
 
     @Override
@@ -307,7 +300,9 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
         return (RudpChannelConfig) super.config();
     }
 
-    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    private class NioRudpChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+
+        private Map<SocketAddress, RudpVirtualChannel> virtualChannels = new HashMap<>();
 
         @Override
         protected boolean isActive() {
@@ -358,10 +353,10 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
 
                     if (javaChannel().isConnected()) {
                         if (address.equals(getRemoteAddress())) {
-                            message = getBytes(buffer);
+                            message = Buffers.getBytes(buffer);
                         }
                     } else {
-                        message = new Datagram(getBytes(buffer), address);
+                        processMessage(address, Buffers.getBytes(buffer));
                     }
 
                     if (message != null) {
@@ -379,46 +374,58 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
             return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
         }
 
+        private void processMessage(SocketAddress address, byte[] message) {
+            RudpVirtualChannel ch = getVirtualChannel(address);
+            ch.unsafe().messageReceived(message);
+        }
+
+        private RudpVirtualChannel getVirtualChannel(SocketAddress address) {
+            if (!virtualChannels.containsKey(address)) {
+                RudpVirtualChannel ch = new RudpVirtualChannel(NioRudpChannel.this);
+                ch.remoteAddress = address;
+                ch.register(eventLoop());
+                virtualChannels.put(address, ch);
+                return ch;
+            }
+            return virtualChannels.get(address);
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         protected boolean doWriteMessage(Object message) throws Exception {
             int bytesWritten;
 
-            ByteBuffer src;
+            DynamicByteBuffer src = byteBufferPool().acquireDynamic(4, false);
+            src.putInt(config().getProtocolId());
             SocketAddress remoteAddress;
 
             if (message instanceof Envelope) {
                 Envelope<byte[], SocketAddress> envelope = (Envelope<byte[], SocketAddress>) message;
                 byte[] bytes = envelope.content();
-                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.put(bytes);
                 src.flip();
                 remoteAddress = envelope.recipient();
             } else if (message instanceof ByteBuffer) {
-                src = (ByteBuffer) message;
+                src.put((ByteBuffer) message);
                 remoteAddress = null;
             } else if (message instanceof byte[]) {
                 byte[] bytes = (byte[]) message;
-                src = byteBufferPool().acquire(bytes.length, false).put(bytes);
+                src.put(bytes);
                 src.flip();
                 remoteAddress = null;
             } else {
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
-            DynamicByteBuffer sndBuffer = byteBufferPool().acquireDynamic(4 + src.remaining(), false);
-            sndBuffer.putInt(config().getProtocolId());
-            sndBuffer.put(src);
-            sndBuffer.flip();
-
             try {
+                ByteBuffer buf = src.asByteBuffer();
                 if (remoteAddress != null) {
-                    bytesWritten = javaChannel().send(sndBuffer.asByteBuffer(), remoteAddress);
+                    bytesWritten = javaChannel().send(buf, remoteAddress);
                 } else {
-                    bytesWritten = javaChannel().write(sndBuffer.asByteBuffer());
+                    bytesWritten = javaChannel().write(buf);
                 }
             } finally {
                 byteBufferPool().release(src);
-                byteBufferPool().release(sndBuffer);
             }
 
             return bytesWritten > 0;
