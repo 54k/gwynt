@@ -39,8 +39,9 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     }
 
     private static byte[] getBytes(ByteBuffer buffer) {
-        byte[] message = new byte[buffer.limit()];
-        buffer.get(message);
+        int length = buffer.limit() - buffer.position();
+        byte[] message = new byte[length];
+        buffer.get(message, 0, length);
         return message;
     }
 

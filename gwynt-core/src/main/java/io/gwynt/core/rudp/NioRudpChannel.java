@@ -40,8 +40,9 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
     }
 
     private static byte[] getBytes(ByteBuffer buffer) {
-        byte[] message = new byte[buffer.limit()];
-        buffer.get(message);
+        int length = buffer.limit() - buffer.position();
+        byte[] message = new byte[length];
+        buffer.get(message, 0, length);
         return message;
     }
 
@@ -308,8 +309,6 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
 
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
-        private Map<SocketAddress, RudpVirtualChannel> children = new HashMap<>();
-
         @Override
         protected boolean isActive() {
             return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
@@ -352,18 +351,17 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
                 Object message = null;
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
+                    buffer.flip();
+                    if (!isValidProtocol(buffer)) {
+                        return 0;
+                    }
+
                     if (javaChannel().isConnected()) {
                         if (address.equals(getRemoteAddress())) {
-                            buffer.flip();
-                            if (protocolMatch(buffer)) {
-                                message = getBytes(buffer);
-                            }
+                            message = getBytes(buffer);
                         }
                     } else {
-                        buffer.flip();
-                        if (protocolMatch(buffer)) {
-                            message = new Datagram(getBytes(buffer), address);
-                        }
+                        message = new Datagram(getBytes(buffer), address);
                     }
 
                     if (message != null) {
@@ -377,15 +375,8 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
             return 0;
         }
 
-        private boolean protocolMatch(ByteBuffer packet) {
-            return packet.remaining() == 4 && packet.getInt() == config().getProtocolId();
-        }
-
-        private RudpVirtualChannel getVirtualChannel(SocketAddress address) {
-            if (!children.containsKey(address)) {
-                return children.put(address, null);
-            }
-            return children.get(address);
+        private boolean isValidProtocol(ByteBuffer packet) {
+            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
         }
 
         @SuppressWarnings("unchecked")
@@ -417,12 +408,13 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
             DynamicByteBuffer sndBuffer = byteBufferPool().acquireDynamic(4 + src.remaining(), false);
             sndBuffer.putInt(config().getProtocolId());
             sndBuffer.put(src);
+            sndBuffer.flip();
 
             try {
                 if (remoteAddress != null) {
-                    bytesWritten = javaChannel().send(src, remoteAddress);
+                    bytesWritten = javaChannel().send(sndBuffer.asByteBuffer(), remoteAddress);
                 } else {
-                    bytesWritten = javaChannel().write(src);
+                    bytesWritten = javaChannel().write(sndBuffer.asByteBuffer());
                 }
             } finally {
                 byteBufferPool().release(src);
