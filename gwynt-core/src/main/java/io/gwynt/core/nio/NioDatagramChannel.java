@@ -386,10 +386,14 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
-            if (remoteAddress != null) {
-                bytesWritten = javaChannel().send(src, remoteAddress);
-            } else {
-                bytesWritten = javaChannel().write(src);
+            try {
+                if (remoteAddress != null) {
+                    bytesWritten = javaChannel().send(src, remoteAddress);
+                } else {
+                    bytesWritten = javaChannel().write(src);
+                }
+            } finally {
+                byteBufferPool().release(src);
             }
 
             return bytesWritten > 0;

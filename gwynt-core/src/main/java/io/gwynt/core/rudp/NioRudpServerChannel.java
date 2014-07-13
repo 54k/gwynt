@@ -1,7 +1,5 @@
-package io.gwynt.core.nio;
+package io.gwynt.core.rudp;
 
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
@@ -9,7 +7,9 @@ import io.gwynt.core.Datagram;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.ServerChannel;
+import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
+import io.gwynt.core.nio.AbstractNioChannel;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -40,13 +40,20 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
         super(parent, DatagramChannel.open());
     }
 
-    @Override
-    protected Unsafe newUnsafe() {
-        return new NioRudpServerChannelUnsafe();
+    private static byte[] getBytes(ByteBuffer buffer) {
+        buffer.flip();
+        byte[] message = new byte[buffer.limit()];
+        buffer.get(message);
+        return message;
     }
 
     @Override
-    protected ChannelConfig newConfig() {
+    protected Unsafe newUnsafe() {
+        return new NioDatagramChannelUnsafe();
+    }
+
+    @Override
+    protected RudpChannelConfig newConfig() {
         return new RudpChannelConfig(this);
     }
 
@@ -301,9 +308,9 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
         return (RudpChannelConfig) super.config();
     }
 
-    private class NioRudpServerChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
-        private Map<SocketAddress, Channel> clients = new HashMap<>();
+        private Map<SocketAddress, RudpVirtualChannel> children = new HashMap<>();
 
         @Override
         protected boolean isActive() {
@@ -346,11 +353,15 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
             try {
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
-                    buffer.flip();
-                    byte[] message = new byte[buffer.limit()];
-                    buffer.get(message);
-                    messages.add(new Datagram(message, address));
-                    return 1;
+                    if (javaChannel().isConnected()) {
+                        if (address.equals(getRemoteAddress())) {
+                            messages.add(getBytes(buffer));
+                            return 1;
+                        }
+                    } else {
+                        messages.add(new Datagram(getBytes(buffer), address));
+                        return 1;
+                    }
                 }
             } finally {
                 config().getByteBufferPool().release(buffer);
@@ -359,20 +370,22 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
         }
 
         private void processPacket(SocketAddress address, ByteBuffer packet) {
-            if (!protocolMatching(packet)) {
-                // discard
+            if (!isValidPacket(packet)) {
                 return;
             }
 
-            if (clients.containsKey(address)) {
-                //processClient
-            } else {
-                //createClient
-            }
+            RudpVirtualChannel ch = getVirtualChannel(address);
         }
 
-        private boolean protocolMatching(ByteBuffer packet) {
-            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
+        private boolean isValidPacket(ByteBuffer packet) {
+            return packet.remaining() == 12 && packet.getInt() == config().getProtocolId();
+        }
+
+        private RudpVirtualChannel getVirtualChannel(SocketAddress address) {
+            if (!children.containsKey(address)) {
+                return children.put(address, null);
+            }
+            return children.get(address);
         }
 
         @SuppressWarnings("unchecked")
@@ -401,10 +414,19 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
                 throw new ChannelException("Unsupported message type: " + message.getClass().getSimpleName());
             }
 
-            if (remoteAddress != null) {
-                bytesWritten = javaChannel().send(src, remoteAddress);
-            } else {
-                bytesWritten = javaChannel().write(src);
+            DynamicByteBuffer sndBuffer = byteBufferPool().acquireDynamic(4 + src.remaining(), false);
+            sndBuffer.putInt(config().getProtocolId());
+            sndBuffer.put(src);
+
+            try {
+                if (remoteAddress != null) {
+                    bytesWritten = javaChannel().send(src, remoteAddress);
+                } else {
+                    bytesWritten = javaChannel().write(src);
+                }
+            } finally {
+                byteBufferPool().release(src);
+                byteBufferPool().release(sndBuffer);
             }
 
             return bytesWritten > 0;
