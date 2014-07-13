@@ -26,16 +26,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class NioRudpServerChannel extends AbstractNioChannel implements MulticastChannel {
+public class NioRudpChannel extends AbstractNioChannel implements MulticastChannel {
 
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public NioRudpServerChannel() throws IOException {
+    public NioRudpChannel() throws IOException {
         this(null);
     }
 
-    public NioRudpServerChannel(AbstractNioChannel parent) throws IOException {
+    public NioRudpChannel(AbstractNioChannel parent) throws IOException {
         super(parent, DatagramChannel.open());
     }
 
