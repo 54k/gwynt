@@ -308,7 +308,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
 
         @Override
         public boolean isActive() {
-            return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
+            return javaChannel().isOpen() && javaChannel().socket().isBound();
         }
 
         @Override

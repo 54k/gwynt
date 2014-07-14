@@ -29,7 +29,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         return new OioSocketChannelUnsafe();
     }
 
-    private class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
+    protected class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
 
         @Override
         public boolean isActive() {

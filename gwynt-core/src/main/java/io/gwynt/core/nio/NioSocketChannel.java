@@ -44,7 +44,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         return (SocketChannel) super.javaChannel();
     }
 
-    private class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
+    protected class NioSocketChannelUnsafe extends AbstractNioUnsafe<SocketChannel> {
 
         @Override
         protected boolean doConnect(final InetSocketAddress address, ChannelPromise channelPromise) throws Exception {

@@ -295,7 +295,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    protected class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
         @Override
         public boolean isActive() {

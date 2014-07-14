@@ -204,7 +204,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    private class OioDatagramChannelUnsafe extends AbstractOioUnsafe<DatagramSocket> {
+    protected class OioDatagramChannelUnsafe extends AbstractOioUnsafe<DatagramSocket> {
 
         @Override
         public boolean isActive() {

@@ -24,7 +24,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         return new OioServerSocketChannelUnsafe();
     }
 
-    private class OioServerSocketChannelUnsafe extends AbstractOioUnsafe<ServerSocket> {
+    protected class OioServerSocketChannelUnsafe extends AbstractOioUnsafe<ServerSocket> {
 
         @Override
         public boolean isActive() {

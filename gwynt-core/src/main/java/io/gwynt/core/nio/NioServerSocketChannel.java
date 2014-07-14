@@ -39,7 +39,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         return new NioServerSocketChannelUnsafe();
     }
 
-    private class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
+    protected class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
 
         @Override
         protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
