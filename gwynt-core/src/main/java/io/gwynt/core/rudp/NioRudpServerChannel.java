@@ -2,6 +2,7 @@ package io.gwynt.core.rudp;
 
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
+import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
@@ -348,7 +349,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
                 SocketAddress address = javaChannel().receive(buffer);
                 if (address != null) {
                     buffer.flip();
-                    if (!isValidProtocol(buffer)) {
+                    if (!isValidProtocolMagic(buffer)) {
                         return 0;
                     }
 
@@ -375,8 +376,8 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
             return 0;
         }
 
-        private boolean isValidProtocol(ByteBuffer packet) {
-            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
+        private boolean isValidProtocolMagic(ByteBuffer packet) {
+            return packet.remaining() >= 4 && packet.getInt() == config().getProtocolMagic();
         }
 
         private RudpVirtualChannel processVirtualChannel(SocketAddress address, byte[] message) {
@@ -390,6 +391,12 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
                 RudpVirtualChannel ch = new RudpVirtualChannel(NioRudpServerChannel.this);
                 ch.remoteAddress = address;
                 virtualChannels.put(address, ch);
+                ch.closeFuture().addListener(new ChannelFutureListener() {
+                    @Override
+                    public void onComplete(ChannelFuture future) {
+                        virtualChannels.remove(future.channel().getRemoteAddress());
+                    }
+                });
                 return ch;
             }
             return virtualChannels.get(address);
@@ -401,7 +408,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
             int bytesWritten;
 
             DynamicByteBuffer src = byteBufferPool().acquireDynamic(4, false);
-            src.putInt(config().getProtocolId());
+            src.putInt(config().getProtocolMagic());
             SocketAddress remoteAddress;
 
             if (message instanceof Envelope) {

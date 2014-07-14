@@ -5,20 +5,32 @@ import io.gwynt.core.DefaultChannelConfig;
 
 public class RudpChannelConfig extends DefaultChannelConfig {
 
-    private int protocolId = 1337;
+    private int protocolMagic = 1337;
+    private int disconnectTimeoutMillis = 1000;
 
     public RudpChannelConfig(Channel channel) {
         super(channel);
     }
 
-    public int getProtocolId() {
-        return protocolId;
+    public int getProtocolMagic() {
+        return protocolMagic;
     }
 
-    public void setProtocolId(int protocolId) {
-        if (protocolId <= 0) {
-            throw new IllegalArgumentException("protocolId > 0");
+    public void setProtocolMagic(int protocolMagic) {
+        if (protocolMagic <= 0) {
+            throw new IllegalArgumentException("protocolMagic > 0");
         }
-        this.protocolId = protocolId;
+        this.protocolMagic = protocolMagic;
+    }
+
+    public int getDisconnectTimeoutMillis() {
+        return disconnectTimeoutMillis;
+    }
+
+    public void setDisconnectTimeoutMillis(int disconnectTimeoutMillis) {
+        if (disconnectTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("disconnectTimeoutMillis > 0");
+        }
+        this.disconnectTimeoutMillis = disconnectTimeoutMillis;
     }
 }

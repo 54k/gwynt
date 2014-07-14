@@ -135,10 +135,7 @@ public class RudpVirtualChannel extends AbstractChannel {
 
             if (isRegistered() && config().isAutoRead()) {
                 readRequested();
-                if (timeoutFuture != null) {
-                    timeoutFuture.cancel();
-                }
-                timeoutFuture = eventLoop().schedule(TIMEOUT_TASK, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                scheduleTimeoutTask();
             }
         }
 
@@ -193,12 +190,26 @@ public class RudpVirtualChannel extends AbstractChannel {
         @Override
         protected void afterRegister() {
             STATE_UPDATER.set(RudpVirtualChannel.this, ST_ACTIVE);
-            timeoutFuture = eventLoop().schedule(TIMEOUT_TASK, config().getConnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+            scheduleTimeoutTask();
         }
 
         @Override
         protected void afterUnregister() {
-            timeoutFuture.cancel();
+            cancelTimeoutTask();
+        }
+
+        private void scheduleTimeoutTask() {
+            if (timeoutFuture != null) {
+                timeoutFuture.cancel();
+            }
+            timeoutFuture = eventLoop().schedule(TIMEOUT_TASK, config().getDisconnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+        }
+
+        private void cancelTimeoutTask() {
+            if (timeoutFuture != null) {
+                timeoutFuture.cancel();
+                timeoutFuture = null;
+            }
         }
 
         private void read() {

@@ -371,7 +371,7 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
         }
 
         private boolean isValidProtocol(ByteBuffer packet) {
-            return packet.remaining() > 4 && packet.getInt() == config().getProtocolId();
+            return packet.remaining() > 4 && packet.getInt() == config().getProtocolMagic();
         }
 
         private void processMessage(SocketAddress address, byte[] message) {
@@ -396,7 +396,7 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
             int bytesWritten;
 
             DynamicByteBuffer src = byteBufferPool().acquireDynamic(4, false);
-            src.putInt(config().getProtocolId());
+            src.putInt(config().getProtocolMagic());
             SocketAddress remoteAddress;
 
             if (message instanceof Envelope) {
