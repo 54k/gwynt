@@ -4,8 +4,10 @@ import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
+import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 
+import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class AbstractVirtualChannel extends AbstractChannel {
@@ -57,6 +59,11 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
                 flush();
             }
         };
+
+        @Override
+        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
+            safeSetFailure(channelPromise, new UnsupportedOperationException());
+        }
 
         protected abstract void read();
 
