@@ -48,11 +48,11 @@ public class Main {
                 int ack = buf.getInt();
                 byte[] m = new byte[buf.remaining()];
                 buf.get(m);
-//                System.out.println("=== RCV PACKET ===");
-//                System.out.println("SEQ: " + remoteSeq.get());
-//                System.out.println("ACK: " + ack);
-//                System.out.println("MSG: " + new String(m));
-//                System.out.println("=== END PACKET ===");
+                //                System.out.println("=== RCV PACKET ===");
+                //                System.out.println("SEQ: " + remoteSeq.get());
+                //                System.out.println("ACK: " + ack);
+                //                System.out.println("MSG: " + new String(m));
+                //                System.out.println("=== END PACKET ===");
                 System.out.println(new String(m));
             }
         });
@@ -74,11 +74,11 @@ public class Main {
                         @Override
                         public void onComplete(ChannelFuture future) {
                             if (future.isSuccess()) {
-//                                System.out.println("=== SND PACKET ===");
-//                                System.out.println("SEQ: " + lseq);
-//                                System.out.println("ACK: " + remoteSeq.get());
-//                                System.out.println("MSG: " + new String(mes));
-//                                System.out.println("=== END PACKET ===");
+                                //                                System.out.println("=== SND PACKET ===");
+                                //                                System.out.println("SEQ: " + lseq);
+                                //                                System.out.println("ACK: " + remoteSeq.get());
+                                //                                System.out.println("MSG: " + new String(mes));
+                                //                                System.out.println("=== END PACKET ===");
                             }
                         }
                     });

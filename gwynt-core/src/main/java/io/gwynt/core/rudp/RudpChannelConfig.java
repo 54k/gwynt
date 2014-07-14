@@ -6,7 +6,7 @@ import io.gwynt.core.DefaultChannelConfig;
 public class RudpChannelConfig extends DefaultChannelConfig {
 
     private int protocolMagic = 1337;
-    private int disconnectTimeoutMillis = 1000;
+    private int disconnectTimeoutMillis = 1000 * 30;
 
     public RudpChannelConfig(Channel channel) {
         super(channel);
