@@ -6,9 +6,9 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
+import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.rudp.NioRudpChannel;
 import io.gwynt.core.rudp.NioRudpServerChannel;
 import io.gwynt.core.util.Buffers;
 
@@ -41,15 +41,15 @@ public class Main {
         final AtomicInteger localSeq = new AtomicInteger();
         final AtomicInteger remoteSeq = new AtomicInteger();
 
-        IOReactor client = new IOReactor().channelClass(NioRudpChannel.class).group(group);
+        IOReactor client = new IOReactor().channelClass(NioDatagramChannel.class).group(group);
         client.addChildHandler(new ByteHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, byte[] message) {
-                ByteBuffer buf = ByteBuffer.wrap(message);
-                remoteSeq.set(buf.getInt());
-                int ack = buf.getInt();
-                byte[] m = new byte[buf.remaining()];
-                buf.get(m);
+                //                ByteBuffer buf = ByteBuffer.wrap(message);
+                //                remoteSeq.set(buf.getInt());
+                //                int ack = buf.getInt();
+                //                byte[] m = new byte[buf.remaining()];
+                //                buf.get(m);
                 //                System.out.println("=== RCV PACKET ===");
                 //                System.out.println("SEQ: " + remoteSeq.get());
                 //                System.out.println("ACK: " + ack);
@@ -66,9 +66,9 @@ public class Main {
                 if (!line.isEmpty()) {
                     final int lseq = localSeq.getAndIncrement();
                     final byte[] mes = line.getBytes();
-                    ByteBuffer buf = ByteBuffer.allocate(8 + mes.length + 2);
-                    buf.putInt(lseq);
-                    buf.putInt(remoteSeq.get());
+                    ByteBuffer buf = ByteBuffer.allocate(/*8 + */mes.length + 2);
+                    //                    buf.putInt(lseq);
+                    //                    buf.putInt(remoteSeq.get());
                     buf.put(mes);
                     buf.put(new byte[]{'\r', '\n'});
                     buf.flip();

@@ -13,10 +13,10 @@ import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.group.ChannelGroup;
 import io.gwynt.core.group.DefaultChannelGroup;
 import io.gwynt.core.nio.NioEventLoopGroup;
+import io.gwynt.core.nio.NioServerDatagramChannel;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.rudp.NioRudpServerChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +56,8 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        final IOReactor endpoint2 =
-                new IOReactor().group(eventLoop).channelClass(NioRudpServerChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
+        final IOReactor endpoint2 = new IOReactor().group(eventLoop).channelClass(NioServerDatagramChannel.class)/*.addChildHandler(new UtfStringConverter())*/
+                .addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addLast(new MessageDecoder());
@@ -106,7 +106,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             client.connect("localhost", port);
         }
 

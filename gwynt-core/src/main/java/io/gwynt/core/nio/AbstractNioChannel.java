@@ -71,7 +71,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         };
-        private ChannelPromise connectPromise;
+        private volatile ChannelPromise connectPromise;
         private ScheduledFuture<?> connectTimeout;
 
         @Override
@@ -111,6 +111,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 } else {
                     connectPromise = channelPromise;
                     long connectTimeoutMillis = config().getConnectTimeoutMillis();
+
                     if (connectTimeoutMillis > 0) {
                         connectTimeout = eventLoop().schedule(new Runnable() {
                             @Override
@@ -135,6 +136,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                             }
                         }
                     });
+
+                    interestOps(SelectionKey.OP_CONNECT);
                 }
             } catch (Throwable t) {
                 safeSetFailure(channelPromise, t);
@@ -162,8 +165,8 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                         closeForcibly();
                     }
                 } else {
+                    safeSetFailure(connectPromise, new ChannelException("Connection failed"));
                     closeForcibly();
-                    connectPromise.tryFailure(new ChannelException("Connection failed"));
                 }
             } catch (Throwable t) {
                 safeSetFailure(connectPromise, t);

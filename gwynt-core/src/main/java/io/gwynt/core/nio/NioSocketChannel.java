@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 
@@ -48,11 +47,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
         @Override
         protected boolean doConnect(final InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
-            boolean connected = javaChannel().connect(address);
-            if (!connected) {
-                interestOps(SelectionKey.OP_CONNECT);
-            }
-            return connected;
+            return javaChannel().connect(address);
         }
 
         @Override

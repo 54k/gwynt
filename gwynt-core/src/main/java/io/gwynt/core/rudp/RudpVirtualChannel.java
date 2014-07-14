@@ -1,5 +1,6 @@
 package io.gwynt.core.rudp;
 
+import io.gwynt.core.AbstractVirtualChannel;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
@@ -144,7 +145,7 @@ public class RudpVirtualChannel extends AbstractVirtualChannel {
         }
 
         @Override
-        protected void read() {
+        protected void readReceivedMessages() {
             if (inboundBuffer.isEmpty()) {
                 return;
             }

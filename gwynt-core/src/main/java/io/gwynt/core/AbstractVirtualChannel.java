@@ -1,13 +1,4 @@
-package io.gwynt.core.rudp;
-
-import io.gwynt.core.AbstractChannel;
-import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelConfig;
-import io.gwynt.core.ChannelFuture;
-import io.gwynt.core.ChannelFutureListener;
-import io.gwynt.core.ChannelOutboundBuffer;
-import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.EventLoop;
+package io.gwynt.core;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -40,6 +31,11 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
     @Override
     protected abstract AbstractVirtualUnsafe newUnsafe();
 
+    @Override
+    public VirtualUnsafe unsafe() {
+        return (VirtualUnsafe) super.unsafe();
+    }
+
     public static interface VirtualUnsafe<T> extends Unsafe<T> {
 
         void messageReceived(Object message);
@@ -47,20 +43,18 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
     protected abstract class AbstractVirtualUnsafe<T> extends AbstractUnsafe<T> implements VirtualUnsafe<T> {
 
-        private final ChannelFutureListener PARENT_LISTENER = new ChannelFutureListener() {
+        private final ChannelFutureListener PARENT_CLOSE_LISTENER = new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
                 close(voidPromise());
             }
         };
-
         private final Runnable READ_TASK = new Runnable() {
             @Override
             public void run() {
-                read();
+                readReceivedMessages();
             }
         };
-
         private final Runnable WRITE_TASK = new Runnable() {
             @Override
             public void run() {
@@ -73,7 +67,7 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
             safeSetFailure(channelPromise, new UnsupportedOperationException());
         }
 
-        protected abstract void read();
+        protected abstract void readReceivedMessages();
 
         @Override
         public boolean isActive() {
@@ -87,7 +81,7 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
         @Override
         protected void afterRegister() {
-            parent().closeFuture().addListener(PARENT_LISTENER);
+            parent().closeFuture().addListener(PARENT_CLOSE_LISTENER);
             STATE_UPDATER.set(AbstractVirtualChannel.this, ST_ACTIVE);
         }
 
@@ -98,7 +92,7 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
         @Override
         public void closeForcibly() {
-            parent().closeFuture().removeListener(PARENT_LISTENER);
+            parent().closeFuture().removeListener(PARENT_CLOSE_LISTENER);
             STATE_UPDATER.set(AbstractVirtualChannel.this, ST_INACTIVE);
         }
 
