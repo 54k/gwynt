@@ -16,6 +16,7 @@ import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
+import io.gwynt.core.rudp.NioRudpServerChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +56,17 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
+        final IOReactor endpoint2 =
+                new IOReactor().group(eventLoop).channelClass(NioRudpServerChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
+                    @Override
+                    protected void initialize(Channel channel) {
+                        channel.pipeline().addLast(new MessageDecoder());
+                        channel.pipeline().addLast(chatHandler);
+                    }
+                });
         try {
             endpoint.bind(port).sync();
+            endpoint2.bind(port).sync();
             //            runDiscoveryServer(3000).sync();
             //            runDiscoveryClient(3000).sync();
             logger.info("Server listening port {}", 1337);
@@ -96,7 +106,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 100; i++) {
             client.connect("localhost", port);
         }
 
@@ -219,7 +229,7 @@ public class GwyntSimpleChatServer implements Runnable {
         @Override
         public void onOpen(final HandlerContext context) {
             channels.add(context.channel());
-            channels.write(context.channel() + " entered in chat\r\n");
+            channels.write(context.channel().getRemoteAddress() + " entered in chat\r\n");
             ActivityListener activityListener = new ActivityListener(context.channel());
             context.channel().attach(activityListener);
             activityListener.refresh();
@@ -228,7 +238,7 @@ public class GwyntSimpleChatServer implements Runnable {
         @Override
         public void onClose(HandlerContext context) {
             channels.remove(context.channel());
-            channels.write(context.channel() + " left the chat\r\n");
+            channels.write(context.channel().getRemoteAddress() + " left the chat\r\n");
         }
 
         @Override
@@ -245,7 +255,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     channels.add(context.channel());
                 }
             } else {
-                channels.write(context.channel() + " wrote: " + message);
+                channels.write(context.channel().getRemoteAddress() + " wrote: " + message);
             }
         }
 

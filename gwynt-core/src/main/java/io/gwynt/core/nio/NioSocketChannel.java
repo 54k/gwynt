@@ -119,7 +119,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         protected boolean doWriteMessage(Object message) throws Exception {
             ByteBuffer buffer = (ByteBuffer) message;
             javaChannel().write(buffer);
-            return buffer.hasRemaining();
+            return !buffer.hasRemaining();
         }
 
         @Override

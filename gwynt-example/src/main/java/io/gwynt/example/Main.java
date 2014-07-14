@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        new GwyntSimpleChatServer().run();
+
         EventLoopGroup group = new NioEventLoopGroup(1);
 
         IOReactor server = new IOReactor().channelClass(NioRudpServerChannel.class).group(group);
@@ -53,10 +55,10 @@ public class Main {
                 //                System.out.println("ACK: " + ack);
                 //                System.out.println("MSG: " + new String(m));
                 //                System.out.println("=== END PACKET ===");
-                System.out.println(new String(m));
+                System.out.println(new String(message));
             }
         });
-        Channel channel = client.connect("localhost", 3001).sync().channel();
+        Channel channel = client.connect("localhost", 1337).sync().channel();
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
             String line;
@@ -64,10 +66,11 @@ public class Main {
                 if (!line.isEmpty()) {
                     final int lseq = localSeq.getAndIncrement();
                     final byte[] mes = line.getBytes();
-                    ByteBuffer buf = ByteBuffer.allocate(8 + mes.length);
+                    ByteBuffer buf = ByteBuffer.allocate(8 + mes.length + 2);
                     buf.putInt(lseq);
                     buf.putInt(remoteSeq.get());
                     buf.put(mes);
+                    buf.put(new byte[]{'\r', '\n'});
                     buf.flip();
 
                     channel.write(Buffers.getBytes(buf)).addListener(new ChannelFutureListener() {
