@@ -298,7 +298,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     private class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
         }
 

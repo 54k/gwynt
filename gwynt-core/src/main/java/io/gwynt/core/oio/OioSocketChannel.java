@@ -32,12 +32,12 @@ public class OioSocketChannel extends AbstractOioChannel {
     private class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return isOpen() && javaChannel().isConnected();
         }
 
         @Override
-        protected boolean isOpen() {
+        public boolean isOpen() {
             return !javaChannel().isClosed();
         }
 

@@ -178,12 +178,12 @@ public class RudpVirtualChannel extends AbstractChannel {
         }
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return isOpen();
         }
 
         @Override
-        protected boolean isOpen() {
+        public boolean isOpen() {
             return STATE_UPDATER.get(RudpVirtualChannel.this) == ST_ACTIVE;
         }
 

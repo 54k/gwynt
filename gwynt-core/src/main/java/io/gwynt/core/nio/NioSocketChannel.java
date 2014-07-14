@@ -128,7 +128,7 @@ public class NioSocketChannel extends AbstractNioChannel {
         }
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return javaChannel().isOpen() && javaChannel().isConnected();
         }
 

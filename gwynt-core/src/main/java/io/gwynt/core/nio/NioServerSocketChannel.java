@@ -82,7 +82,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return isOpen() && javaChannel().socket().isBound();
         }
 

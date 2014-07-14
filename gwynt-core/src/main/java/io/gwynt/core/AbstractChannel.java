@@ -96,6 +96,11 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
+    public boolean isActive() {
+        return unsafe().isActive();
+    }
+
+    @Override
     public ChannelConfig config() {
         return config;
     }
@@ -350,10 +355,6 @@ public abstract class AbstractChannel implements Channel {
         }
 
         protected abstract void writeRequested();
-
-        protected abstract boolean isActive();
-
-        protected abstract boolean isOpen();
 
         @Override
         public void register(EventLoop eventScheduler) {

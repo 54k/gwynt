@@ -27,12 +27,12 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
     private class OioServerSocketChannelUnsafe extends AbstractOioUnsafe<ServerSocket> {
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return isOpen() && javaChannel().isBound();
         }
 
         @Override
-        protected boolean isOpen() {
+        public boolean isOpen() {
             return !javaChannel().isClosed();
         }
 

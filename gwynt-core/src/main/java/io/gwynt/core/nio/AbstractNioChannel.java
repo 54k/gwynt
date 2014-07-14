@@ -269,12 +269,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return javaChannel().isOpen();
         }
 
         @Override
-        protected boolean isOpen() {
+        public boolean isOpen() {
             return javaChannel().isOpen();
         }
 

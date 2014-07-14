@@ -307,7 +307,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
         private Map<SocketAddress, RudpVirtualChannel> virtualChannels = new HashMap<>();
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return javaChannel().isOpen() && (javaChannel().socket().isBound() || javaChannel().isConnected());
         }
 

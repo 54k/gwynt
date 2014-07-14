@@ -207,12 +207,12 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
     private class OioDatagramChannelUnsafe extends AbstractOioUnsafe<DatagramSocket> {
 
         @Override
-        protected boolean isActive() {
+        public boolean isActive() {
             return isOpen() && (javaChannel().isBound() || javaChannel().isConnected());
         }
 
         @Override
-        protected boolean isOpen() {
+        public boolean isOpen() {
             return !javaChannel().isClosed();
         }
 

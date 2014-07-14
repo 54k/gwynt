@@ -12,6 +12,8 @@ public interface Channel {
 
     boolean isRegistered();
 
+    boolean isActive();
+
     ChannelConfig config();
 
     Object attach(Object attachment);
@@ -57,6 +59,10 @@ public interface Channel {
     interface Unsafe<T> {
 
         T javaChannel();
+
+        boolean isOpen();
+
+        boolean isActive();
 
         void bind(InetSocketAddress address, ChannelPromise channelPromise);
 
