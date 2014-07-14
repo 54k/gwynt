@@ -27,6 +27,9 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
         return true;
     }
 
+    @Override
+    protected abstract AbstractVirtualUnsafe newUnsafe();
+
     public static interface VirtualUnsafe<T> extends Unsafe<T> {
 
         void messageReceived(Object message);
@@ -37,13 +40,6 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
         private final ChannelFutureListener PARENT_LISTENER = new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
-                close(voidPromise());
-            }
-        };
-
-        private final Runnable CLOSE_TASK = new Runnable() {
-            @Override
-            public void run() {
                 close(voidPromise());
             }
         };
@@ -89,6 +85,24 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
         public void closeForcibly() {
             parent().closeFuture().removeListener(PARENT_LISTENER);
             STATE_UPDATER.set(AbstractVirtualChannel.this, ST_INACTIVE);
+        }
+
+        @Override
+        protected void readRequested() {
+            if (eventLoop().inExecutorThread()) {
+                READ_TASK.run();
+            } else {
+                invokeLater(READ_TASK);
+            }
+        }
+
+        @Override
+        protected void writeRequested() {
+            if (eventLoop().inExecutorThread()) {
+                WRITE_TASK.run();
+            } else {
+                invokeLater(WRITE_TASK);
+            }
         }
     }
 }
