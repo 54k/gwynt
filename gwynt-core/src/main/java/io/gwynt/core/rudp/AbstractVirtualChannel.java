@@ -2,12 +2,15 @@ package io.gwynt.core.rudp;
 
 import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
+import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.EventLoop;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class AbstractVirtualChannel extends AbstractChannel {
@@ -22,6 +25,11 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
     protected AbstractVirtualChannel(Channel parent) {
         super(parent, null);
+    }
+
+    @Override
+    protected ChannelConfig newConfig() {
+        return parent().config();
     }
 
     @Override
@@ -110,6 +118,24 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
             } else {
                 invokeLater(WRITE_TASK);
             }
+        }
+
+        @Override
+        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
+            while (!channelOutboundBuffer.isEmpty()) {
+                parent().unsafe().write(channelOutboundBuffer.current(), voidPromise());
+                channelOutboundBuffer.remove();
+            }
+        }
+
+        @Override
+        public SocketAddress getLocalAddress() throws Exception {
+            return parent().getLocalAddress();
+        }
+
+        @Override
+        public SocketAddress getRemoteAddress() throws Exception {
+            return parent().getRemoteAddress();
         }
     }
 }

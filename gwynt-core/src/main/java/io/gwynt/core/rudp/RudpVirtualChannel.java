@@ -1,41 +1,28 @@
 package io.gwynt.core.rudp;
 
-import io.gwynt.core.AbstractChannel;
 import io.gwynt.core.Channel;
-import io.gwynt.core.ChannelConfig;
-import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
-import io.gwynt.core.EventLoop;
 import io.gwynt.core.buffer.ByteBufferPool;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.util.Buffers;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-public class RudpVirtualChannel extends AbstractChannel {
-
-    private static final int ST_ACTIVE = 1;
-    private static final int ST_INACTIVE = 2;
-    private static final AtomicIntegerFieldUpdater<RudpVirtualChannel> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(RudpVirtualChannel.class, "state");
+public class RudpVirtualChannel extends AbstractVirtualChannel {
 
     SocketAddress remoteAddress;
     AtomicInteger localSeq = new AtomicInteger();
     AtomicInteger remoteSeq = new AtomicInteger();
 
-    @SuppressWarnings("FieldCanBeLocal")
-    private volatile int state;
-
     public RudpVirtualChannel(Channel parent) {
-        super(parent, parent.unsafe().javaChannel());
+        super(parent);
     }
 
     @Override
@@ -44,18 +31,8 @@ public class RudpVirtualChannel extends AbstractChannel {
     }
 
     @Override
-    protected boolean isEventLoopCompatible(EventLoop eventLoop) {
-        return true;
-    }
-
-    @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractVirtualUnsafe newUnsafe() {
         return new RudpVirtualChannelUnsafe();
-    }
-
-    @Override
-    protected ChannelConfig newConfig() {
-        return parent().config();
     }
 
     @Override
@@ -66,11 +43,6 @@ public class RudpVirtualChannel extends AbstractChannel {
     @Override
     public VirtualUnsafe unsafe() {
         return (VirtualUnsafe) super.unsafe();
-    }
-
-    public static interface VirtualUnsafe<T> extends Unsafe<T> {
-
-        void messageReceived(Object message);
     }
 
     private final static class Entry implements Comparable<Entry> {
@@ -101,26 +73,12 @@ public class RudpVirtualChannel extends AbstractChannel {
         }
     }
 
-    private class RudpVirtualChannelUnsafe extends AbstractUnsafe<Void> implements VirtualUnsafe<Void> {
+    private class RudpVirtualChannelUnsafe extends AbstractVirtualUnsafe<Void> {
 
         private final Runnable TIMEOUT_TASK = new Runnable() {
             @Override
             public void run() {
                 close(voidPromise());
-            }
-        };
-
-        private final Runnable READ_TASK = new Runnable() {
-            @Override
-            public void run() {
-                read();
-            }
-        };
-
-        private final Runnable WRITE_TASK = new Runnable() {
-            @Override
-            public void run() {
-                flush();
             }
         };
 
@@ -160,42 +118,15 @@ public class RudpVirtualChannel extends AbstractChannel {
         }
 
         @Override
-        protected void readRequested() {
-            if (eventLoop().inExecutorThread()) {
-                READ_TASK.run();
-            } else {
-                invokeLater(READ_TASK);
-            }
-        }
-
-        @Override
-        protected void writeRequested() {
-            if (eventLoop().inExecutorThread()) {
-                WRITE_TASK.run();
-            } else {
-                invokeLater(WRITE_TASK);
-            }
-        }
-
-        @Override
-        public boolean isActive() {
-            return isOpen();
-        }
-
-        @Override
-        public boolean isOpen() {
-            return STATE_UPDATER.get(RudpVirtualChannel.this) == ST_ACTIVE;
-        }
-
-        @Override
         protected void afterRegister() {
-            STATE_UPDATER.set(RudpVirtualChannel.this, ST_ACTIVE);
+            super.afterRegister();
             scheduleTimeoutTask();
         }
 
         @Override
         protected void afterUnregister() {
-            cancelTimeoutTask();
+            super.afterUnregister();
+            purgeTimeoutTask();
         }
 
         private void scheduleTimeoutTask() {
@@ -205,14 +136,15 @@ public class RudpVirtualChannel extends AbstractChannel {
             timeoutFuture = eventLoop().schedule(TIMEOUT_TASK, config().getDisconnectTimeoutMillis(), TimeUnit.MILLISECONDS);
         }
 
-        private void cancelTimeoutTask() {
+        private void purgeTimeoutTask() {
             if (timeoutFuture != null) {
                 timeoutFuture.cancel();
                 timeoutFuture = null;
             }
         }
 
-        private void read() {
+        @Override
+        protected void read() {
             if (inboundBuffer.isEmpty()) {
                 return;
             }
@@ -257,29 +189,6 @@ public class RudpVirtualChannel extends AbstractChannel {
             } finally {
                 alloc.release(dynamicBuffer);
             }
-        }
-
-        @Override
-        protected void doWrite(ChannelOutboundBuffer channelOutboundBuffer) throws Exception {
-            while (!channelOutboundBuffer.isEmpty()) {
-                parent().unsafe().write(channelOutboundBuffer.current(), voidPromise());
-                channelOutboundBuffer.remove();
-            }
-        }
-
-        @Override
-        public void connect(InetSocketAddress address, ChannelPromise channelPromise) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void closeForcibly() {
-            STATE_UPDATER.set(RudpVirtualChannel.this, ST_INACTIVE);
-        }
-
-        @Override
-        public SocketAddress getLocalAddress() throws Exception {
-            return parent().getLocalAddress();
         }
 
         @Override
