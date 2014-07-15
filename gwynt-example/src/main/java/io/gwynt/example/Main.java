@@ -9,7 +9,6 @@ import io.gwynt.core.IOReactor;
 import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.rudp.NioRudpServerChannel;
 import io.gwynt.core.util.Buffers;
 
 import java.io.BufferedReader;
@@ -20,23 +19,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+
         new GwyntSimpleChatServer().run();
 
         EventLoopGroup group = new NioEventLoopGroup(1);
 
-        IOReactor server = new IOReactor().channelClass(NioRudpServerChannel.class).group(group);
-        server.addChildHandler(new LoggingHandler()).addChildHandler(new ByteHandler() {
-            @Override
-            public void onMessageReceived(HandlerContext context, byte[] message) {
-                context.write(message);
-            }
-
-            @Override
-            public void onExceptionCaught(HandlerContext context, Throwable e) {
-                e.printStackTrace();
-            }
-        });
-        server.bind(3001).sync();
+        //                IOReactor server = new IOReactor().channelClass(NioRudpServerChannel.class).group(group);
+        //                server.addChildHandler(new LoggingHandler()).addChildHandler(new ByteHandler() {
+        //                    @Override
+        //                    public void onMessageReceived(HandlerContext context, byte[] message) {
+        //                        context.write(message);
+        //                    }
+        //
+        //                    @Override
+        //                    public void onExceptionCaught(HandlerContext context, Throwable e) {
+        //                        e.printStackTrace();
+        //                    }
+        //                });
+        //                server.bind(3001).sync();
 
         final AtomicInteger localSeq = new AtomicInteger();
         final AtomicInteger remoteSeq = new AtomicInteger();
@@ -58,7 +58,7 @@ public class Main {
                 System.out.println(new String(message));
             }
         });
-        Channel channel = client.connect("localhost", 1337).sync().channel();
+        Channel channel = client.connect("localhost", 3008).sync().channel();
 
         try (BufferedReader in = new BufferedReader(new InputStreamReader(System.in))) {
             String line;

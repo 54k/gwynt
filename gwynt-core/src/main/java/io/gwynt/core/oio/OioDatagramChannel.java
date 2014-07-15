@@ -217,6 +217,11 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
         }
 
         @Override
+        protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            javaChannel().bind(address);
+        }
+
+        @Override
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             javaChannel().connect(address);
         }

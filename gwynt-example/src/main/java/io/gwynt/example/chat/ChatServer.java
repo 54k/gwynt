@@ -94,7 +94,7 @@ public class ChatServer implements Runnable {
 
         @Override
         public void onMessageSent(HandlerContext context, byte[] message, ChannelPromise channelPromise) {
-            context.write(new Datagram(message, sender), channelPromise);
+            context.write(new Datagram(message, sender, null), channelPromise);
         }
     }
 }
