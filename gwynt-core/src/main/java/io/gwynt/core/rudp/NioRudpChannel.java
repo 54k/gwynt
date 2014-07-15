@@ -40,7 +40,7 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioRudpChannelUnsafe();
     }
 

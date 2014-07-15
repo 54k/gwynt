@@ -30,7 +30,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractOioUnsafe newUnsafe() {
         return new OioDatagramChannelUnsafe();
     }
 

@@ -25,7 +25,7 @@ public class OioSocketChannel extends AbstractOioChannel {
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractOioUnsafe newUnsafe() {
         return new OioSocketChannelUnsafe();
     }
 

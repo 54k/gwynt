@@ -53,6 +53,9 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         return (NioUnsafe) super.unsafe();
     }
 
+    @Override
+    protected abstract AbstractNioUnsafe newUnsafe();
+
     public static interface NioUnsafe<T> extends Unsafe<T> {
 
         void read();

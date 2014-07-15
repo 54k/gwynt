@@ -24,7 +24,7 @@ public class NioSocketChannel extends AbstractNioChannel {
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioSocketChannelUnsafe();
     }
 

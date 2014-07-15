@@ -40,7 +40,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioDatagramChannelUnsafe();
     }
 

@@ -35,7 +35,7 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioServerSocketChannelUnsafe();
     }
 

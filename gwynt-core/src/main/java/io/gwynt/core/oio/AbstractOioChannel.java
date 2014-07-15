@@ -29,6 +29,9 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         return eventLoop instanceof ThreadPerChannelEventLoop;
     }
 
+    @Override
+    protected abstract AbstractOioUnsafe newUnsafe();
+
     protected abstract class AbstractOioUnsafe<T> extends AbstractUnsafe<T> {
 
         private final Runnable READ_TASK = new Runnable() {

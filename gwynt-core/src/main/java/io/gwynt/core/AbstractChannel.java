@@ -204,7 +204,7 @@ public abstract class AbstractChannel implements Channel {
         return unsafe;
     }
 
-    protected abstract Unsafe newUnsafe();
+    protected abstract AbstractUnsafe newUnsafe();
 
     @Override
     public ByteBufferPool byteBufferPool() {

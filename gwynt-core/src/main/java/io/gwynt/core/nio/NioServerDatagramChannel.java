@@ -28,7 +28,7 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioServerDatagramChannelUnsafe();
     }
 

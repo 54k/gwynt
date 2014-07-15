@@ -20,7 +20,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractOioUnsafe newUnsafe() {
         return new OioServerSocketChannelUnsafe();
     }
 

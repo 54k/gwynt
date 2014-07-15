@@ -42,7 +42,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
     }
 
     @Override
-    protected Unsafe newUnsafe() {
+    protected AbstractNioUnsafe newUnsafe() {
         return new NioRudpChannelUnsafe();
     }
 
