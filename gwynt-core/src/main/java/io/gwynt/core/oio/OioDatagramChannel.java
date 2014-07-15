@@ -9,6 +9,7 @@ import io.gwynt.core.DefaultChannelPromise;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
+import io.gwynt.core.util.Buffers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -26,7 +27,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
 
     @SuppressWarnings("unused")
     public OioDatagramChannel() throws IOException {
-        super(new MulticastSocket());
+        super(new MulticastSocket(null));
     }
 
     @Override
@@ -248,10 +249,9 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
                 address = datagramPacket.getSocketAddress();
 
                 if (address != null) {
+                    buffer.position(datagramPacket.getLength());
                     buffer.flip();
-                    byte[] message = new byte[buffer.limit()];
-                    buffer.get(message);
-                    messages.add(new Datagram(message, getLocalAddress(), address));
+                    messages.add(new Datagram(Buffers.getBytes(buffer), getLocalAddress(), address));
                     return 1;
                 }
             } catch (SocketTimeoutException ignore) {
