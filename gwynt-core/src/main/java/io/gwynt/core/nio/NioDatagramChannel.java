@@ -346,7 +346,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
                         }
                     } else {
                         buffer.flip();
-                        message = new Datagram(Buffers.getBytes(buffer), address);
+                        message = new Datagram(Buffers.getBytes(buffer), getLocalAddress(), address);
                     }
 
                     if (message != null) {

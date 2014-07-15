@@ -15,10 +15,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +52,7 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
 
         private class DatagramVirtualChannelUnsafe extends AbstractVirtualUnsafe<Void> {
 
-            private final Runnable TIMEOUT_TASK = new Runnable() {
+            private final Runnable timeoutTask = new Runnable() {
                 @Override
                 public void run() {
                     close(voidPromise());
@@ -79,7 +79,7 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
 
             @Override
             public void write(Object message, ChannelPromise channelPromise) {
-                super.write(new Datagram((byte[]) message, remoteAddress), channelPromise);
+                super.write(new Datagram((byte[]) message, remoteAddress, parent().getLocalAddress()), channelPromise);
             }
 
             @Override
@@ -98,7 +98,7 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
                 if (timeoutFuture != null) {
                     timeoutFuture.cancel();
                 }
-                timeoutFuture = eventLoop().schedule(TIMEOUT_TASK, ((RudpChannelConfig) config()).getDisconnectTimeoutMillis(), TimeUnit.MILLISECONDS);
+                timeoutFuture = eventLoop().schedule(timeoutTask, ((RudpChannelConfig) config()).getDisconnectTimeoutMillis(), TimeUnit.MILLISECONDS);
             }
 
             private void purgeTimeoutTask() {
@@ -117,14 +117,14 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
 
     protected class NioServerDatagramChannelUnsafe extends NioDatagramChannelUnsafe {
 
-        private final ChannelFutureListener CLOSE_LISTENER = new ChannelFutureListener() {
+        private final ChannelFutureListener childListener = new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
                 children.remove(future.channel().getRemoteAddress());
             }
         };
 
-        private final Map<SocketAddress, AbstractVirtualChannel> children = new HashMap<>();
+        private final Map<SocketAddress, AbstractVirtualChannel> children = new ConcurrentHashMap<>();
 
         @Override
         protected int doReadMessages(List<Object> messages) throws Exception {
@@ -134,13 +134,13 @@ public class NioServerDatagramChannel extends NioDatagramChannel implements Serv
             int read = super.doReadMessages(dgrams);
             for (int i = 0; i < read; i++) {
                 Datagram dgram = (Datagram) dgrams.get(i);
-                SocketAddress address = dgram.recipient();
+                SocketAddress address = dgram.sender();
                 if (!children.containsKey(address)) {
                     DatagramVirtualChannel ch = new DatagramVirtualChannel(NioServerDatagramChannel.this);
-                    ch.closeFuture().addListener(CLOSE_LISTENER);
+                    ch.closeFuture().addListener(childListener);
                     ch.remoteAddress = address;
                     messages.add(ch);
-                    children.put(dgram.recipient(), ch);
+                    children.put(address, ch);
                     accepted++;
                 }
                 AbstractVirtualChannel ch = children.get(address);

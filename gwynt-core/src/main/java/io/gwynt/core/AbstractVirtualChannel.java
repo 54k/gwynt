@@ -43,19 +43,19 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
     protected abstract class AbstractVirtualUnsafe<T> extends AbstractUnsafe<T> implements VirtualUnsafe<T> {
 
-        private final ChannelFutureListener PARENT_CLOSE_LISTENER = new ChannelFutureListener() {
+        private final ChannelFutureListener parentListener = new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
                 close(voidPromise());
             }
         };
-        private final Runnable READ_TASK = new Runnable() {
+        private final Runnable readTask = new Runnable() {
             @Override
             public void run() {
                 readReceivedMessages();
             }
         };
-        private final Runnable WRITE_TASK = new Runnable() {
+        private final Runnable writeTask = new Runnable() {
             @Override
             public void run() {
                 flush();
@@ -81,7 +81,7 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
         @Override
         protected void afterRegister() {
-            parent().closeFuture().addListener(PARENT_CLOSE_LISTENER);
+            parent().closeFuture().addListener(parentListener);
             STATE_UPDATER.set(AbstractVirtualChannel.this, ST_ACTIVE);
         }
 
@@ -92,25 +92,25 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
 
         @Override
         public void closeForcibly() {
-            parent().closeFuture().removeListener(PARENT_CLOSE_LISTENER);
+            parent().closeFuture().removeListener(parentListener);
             STATE_UPDATER.set(AbstractVirtualChannel.this, ST_INACTIVE);
         }
 
         @Override
         protected void readRequested() {
             if (eventLoop().inExecutorThread()) {
-                READ_TASK.run();
+                readTask.run();
             } else {
-                invokeLater(READ_TASK);
+                invokeLater(readTask);
             }
         }
 
         @Override
         protected void writeRequested() {
             if (eventLoop().inExecutorThread()) {
-                WRITE_TASK.run();
+                writeTask.run();
             } else {
-                invokeLater(WRITE_TASK);
+                invokeLater(writeTask);
             }
         }
 

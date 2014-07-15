@@ -174,7 +174,7 @@ public class RudpVirtualChannel extends AbstractVirtualChannel {
         @Override
         public void write(Object message, ChannelPromise channelPromise) {
             byte[] snd = writeSequenceHeader((byte[]) message);
-            super.write(new Datagram(snd, remoteAddress), channelPromise);
+            super.write(new Datagram(snd, remoteAddress, parent().getLocalAddress()), channelPromise);
         }
 
         private byte[] writeSequenceHeader(byte[] message) {
