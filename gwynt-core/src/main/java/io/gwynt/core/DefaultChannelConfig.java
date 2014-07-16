@@ -106,7 +106,7 @@ public class DefaultChannelConfig implements ChannelConfig {
 
     @Override
     public <T> boolean setChannelOption(ChannelOption<T> channelOption, T value) {
-        return false;
+        return true;
     }
 
     @Override
