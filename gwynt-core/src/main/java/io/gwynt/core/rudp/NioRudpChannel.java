@@ -5,10 +5,10 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
+import io.gwynt.core.buffer.Buffers;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 import io.gwynt.core.nio.AbstractNioChannel;
-import io.gwynt.core.util.Buffers;
 
 import java.io.IOException;
 import java.net.InetAddress;

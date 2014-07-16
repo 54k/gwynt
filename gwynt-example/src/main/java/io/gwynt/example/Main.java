@@ -6,10 +6,10 @@ import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
 import io.gwynt.core.IOReactor;
+import io.gwynt.core.buffer.Buffers;
 import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.util.Buffers;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

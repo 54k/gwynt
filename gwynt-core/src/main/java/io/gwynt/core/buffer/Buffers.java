@@ -1,4 +1,4 @@
-package io.gwynt.core.util;
+package io.gwynt.core.buffer;
 
 import java.nio.ByteBuffer;
 

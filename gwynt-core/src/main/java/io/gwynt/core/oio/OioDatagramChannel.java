@@ -8,8 +8,8 @@ import io.gwynt.core.Datagram;
 import io.gwynt.core.DefaultChannelPromise;
 import io.gwynt.core.Envelope;
 import io.gwynt.core.MulticastChannel;
+import io.gwynt.core.buffer.Buffers;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
-import io.gwynt.core.util.Buffers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

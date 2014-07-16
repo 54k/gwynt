@@ -4,10 +4,10 @@ import io.gwynt.core.AbstractVirtualChannel;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
+import io.gwynt.core.buffer.Buffers;
 import io.gwynt.core.buffer.ByteBufferPool;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.concurrent.ScheduledFuture;
-import io.gwynt.core.util.Buffers;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
