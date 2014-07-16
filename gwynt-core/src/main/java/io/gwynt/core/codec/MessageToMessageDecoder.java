@@ -35,7 +35,6 @@ public abstract class MessageToMessageDecoder<I> extends AbstractHandler<I, Obje
                 discarded = true;
                 discardMessage(context, message);
             }
-
             decode(context, message, out);
         } catch (DecoderException e) {
             throw e;
