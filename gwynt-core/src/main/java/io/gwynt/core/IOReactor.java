@@ -10,17 +10,23 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public final class IOReactor implements Cloneable {
 
+    private static final Logger logger = LoggerFactory.getLogger(IOReactor.class);
+
     private EventLoopGroup primaryGroup;
     private EventLoopGroup secondaryGroup;
-
     private List<Handler> serverHandlers = new ArrayList<>();
     private List<Handler> childHandlers = new ArrayList<>();
     private ChannelFactory channelFactory = new DefaultChannelFactory();
     private Class<? extends Channel> channelClass;
+    private Map<ChannelOption<Object>, Object> serverOptions = new HashMap<>();
+    private Map<ChannelOption<Object>, Object> childOptions = new HashMap<>();
 
     public IOReactor() {
     }
@@ -32,6 +38,8 @@ public final class IOReactor implements Cloneable {
         childHandlers.addAll(reactor.childHandlers);
         channelFactory = reactor.channelFactory;
         channelClass = reactor.channelClass;
+        serverOptions.putAll(reactor.serverOptions);
+        childOptions.putAll(reactor.childOptions);
     }
 
     public IOReactor addServerHandler(Handler handler) {
@@ -156,7 +164,13 @@ public final class IOReactor implements Cloneable {
                 channel.pipeline().addLast(handler);
             }
 
-            DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor(childHandlers, secondaryGroup);
+            for (Entry<ChannelOption<Object>, Object> e : childOptions.entrySet()) {
+                if (!channel.config().setChannelOption(e.getKey(), e.getValue())) {
+                    logger.warn("Unknown server channel option: ", e.getKey());
+                }
+            }
+
+            DefaultChannelAcceptor acceptor = new DefaultChannelAcceptor(childHandlers, secondaryGroup, childOptions);
             channel.pipeline().addLast(acceptor);
         } else {
             for (Handler handler : childHandlers()) {
@@ -193,11 +207,14 @@ public final class IOReactor implements Cloneable {
         private static final Logger logger = LoggerFactory.getLogger(DefaultChannelAcceptor.class);
 
         private Iterable<Handler> childHandlers;
+        private Map<ChannelOption<Object>, Object> childOptions;
+
         private EventLoopGroup secondaryGroup;
 
-        private DefaultChannelAcceptor(Iterable<Handler> childHandlers, EventLoopGroup secondaryGroup) {
+        private DefaultChannelAcceptor(Iterable<Handler> childHandlers, EventLoopGroup secondaryGroup, Map<ChannelOption<Object>, Object> childOptions) {
             this.childHandlers = childHandlers;
             this.secondaryGroup = secondaryGroup;
+            this.childOptions = childOptions;
         }
 
         private static void handleException(Channel channel, Throwable t) {
@@ -209,6 +226,12 @@ public final class IOReactor implements Cloneable {
         public void onMessageReceived(HandlerContext context, final Channel channel) {
             for (Handler handler : childHandlers) {
                 channel.pipeline().addLast(handler);
+            }
+
+            for (Entry<ChannelOption<Object>, Object> e : childOptions.entrySet()) {
+                if (!channel.config().setChannelOption(e.getKey(), e.getValue())) {
+                    logger.warn("Unknown child channel option: ", e.getKey());
+                }
             }
 
             try {
