@@ -46,7 +46,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
 
     @Override
     protected ChannelConfig newConfig() {
-        return new NioDatagramChannelConfig(this, javaChannel());
+        return new NioDatagramChannelConfig(this);
     }
 
     @Override

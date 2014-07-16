@@ -1,4 +1,4 @@
-package io.gwynt.core.oio;
+package io.gwynt.core.rudp;
 
 import io.gwynt.core.AbstractVirtualChannel;
 import io.gwynt.core.Channel;
@@ -9,7 +9,7 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.concurrent.ScheduledFuture;
-import io.gwynt.core.rudp.RudpChannelConfig;
+import io.gwynt.core.oio.OioDatagramChannel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

@@ -30,7 +30,7 @@ public class NioSocketChannel extends AbstractNioChannel {
 
     @Override
     protected ChannelConfig newConfig() {
-        return new NioSocketChannelConfig(this, javaChannel());
+        return new NioSocketChannelConfig(this);
     }
 
     @Override

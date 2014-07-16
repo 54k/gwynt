@@ -33,35 +33,35 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return register(channel, new DefaultChannelPromise(channel, this));
+        return register(new DefaultChannelPromise(channel, this));
     }
 
     @Override
     public ChannelFuture unregister(Channel channel) {
-        return unregister(channel, new DefaultChannelPromise(channel, this));
+        return unregister(new DefaultChannelPromise(channel, this));
     }
 
     @Override
-    public ChannelFuture register(final Channel channel, final ChannelPromise channelPromise) {
-        if (channel == null || channelPromise == null) {
-            throw new IllegalArgumentException("all arguments are required");
+    public ChannelFuture register(final ChannelPromise channelPromise) {
+        if (channelPromise == null) {
+            throw new IllegalArgumentException("channelPromise");
         }
         if (inExecutorThread()) {
-            register0(channel, channelPromise);
+            register0(channelPromise);
         } else {
             execute(new Runnable() {
                 @Override
                 public void run() {
-                    register0(channel, channelPromise);
+                    register0(channelPromise);
                 }
             });
         }
         return channelPromise;
     }
 
-    private void register0(Channel channel, ChannelPromise channelPromise) {
+    private void register0(ChannelPromise channelPromise) {
         try {
-            channel.unsafe().register(SingleThreadEventLoop.this);
+            channelPromise.channel().unsafe().register(SingleThreadEventLoop.this);
             channelPromise.setSuccess();
         } catch (ChannelException e) {
             channelPromise.setFailure(e);
@@ -69,26 +69,26 @@ public abstract class SingleThreadEventLoop extends SingleThreadEventExecutor im
     }
 
     @Override
-    public ChannelFuture unregister(final Channel channel, final ChannelPromise channelPromise) {
-        if (channel == null || channelPromise == null) {
-            throw new IllegalArgumentException("all arguments are required");
+    public ChannelFuture unregister(final ChannelPromise channelPromise) {
+        if (channelPromise == null) {
+            throw new IllegalArgumentException("channelPromise");
         }
         if (inExecutorThread()) {
-            unregister0(channel, channelPromise);
+            unregister0(channelPromise);
         } else {
             execute(new Runnable() {
                 @Override
                 public void run() {
-                    unregister0(channel, channelPromise);
+                    unregister0(channelPromise);
                 }
             });
         }
         return channelPromise;
     }
 
-    private void unregister0(Channel channel, ChannelPromise channelPromise) {
+    private void unregister0(ChannelPromise channelPromise) {
         try {
-            channel.unsafe().unregister();
+            channelPromise.channel().unsafe().unregister();
             channelPromise.setSuccess();
         } catch (ChannelException e) {
             channelPromise.setFailure(e);

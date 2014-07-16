@@ -100,12 +100,12 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     }
 
     @Override
-    public ChannelFuture register(Channel channel, ChannelPromise channelPromise) {
-        if (channel == null) {
-            throw new NullPointerException("channel");
+    public ChannelFuture register(ChannelPromise channelPromise) {
+        if (channelPromise == null) {
+            throw new NullPointerException("channelPromise");
         }
         try {
-            return nextChild().register(channel, channelPromise);
+            return nextChild().register(channelPromise);
         } catch (Throwable t) {
             channelPromise.setFailure(t);
             return channelPromise;

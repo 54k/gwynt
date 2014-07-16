@@ -29,7 +29,7 @@ public interface ChannelConfig {
 
     void setConnectTimeoutMillis(int connectTimeoutMillis);
 
-    <T> boolean setChannelOption(ChannelOption<T> channelOption, T value);
+    <T> boolean setOption(ChannelOption<T> channelOption, T value);
 
-    <T> T getChannelOption(ChannelOption<T> channelOption);
+    <T> T getOption(ChannelOption<T> channelOption);
 }

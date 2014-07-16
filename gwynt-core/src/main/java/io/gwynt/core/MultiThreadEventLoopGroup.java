@@ -38,19 +38,14 @@ public abstract class MultiThreadEventLoopGroup extends MultiThreadEventExecutor
         if (channel == null) {
             throw new IllegalArgumentException("channel");
         }
-
         return next().register(channel);
     }
 
     @Override
-    public ChannelFuture register(Channel channel, ChannelPromise channelPromise) {
-        if (channel == null) {
-            throw new IllegalArgumentException("channel");
-        }
+    public ChannelFuture register(ChannelPromise channelPromise) {
         if (channelPromise == null) {
             throw new IllegalArgumentException("channelPromise");
         }
-
-        return next().register(channel, channelPromise);
+        return next().register(channelPromise);
     }
 }

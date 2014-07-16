@@ -20,12 +20,12 @@ public final class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
 
     @Override
     public ChannelFuture register(Channel channel) {
-        return register(channel, new DefaultChannelPromise(channel, this));
+        return register(new DefaultChannelPromise(channel, this));
     }
 
     @Override
-    public ChannelFuture register(Channel channel, ChannelPromise channelPromise) {
-        return super.register(channel, channelPromise).addListener(new ChannelFutureListener() {
+    public ChannelFuture register(ChannelPromise channelPromise) {
+        return super.register(channelPromise).addListener(new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
                 if (future.isSuccess()) {
@@ -39,12 +39,12 @@ public final class ThreadPerChannelEventLoop extends SingleThreadEventLoop {
 
     @Override
     public ChannelFuture unregister(Channel channel) {
-        return unregister(channel, new DefaultChannelPromise(channel, this));
+        return unregister(new DefaultChannelPromise(channel, this));
     }
 
     @Override
-    public ChannelFuture unregister(Channel channel, ChannelPromise channelPromise) {
-        return super.unregister(channel, channelPromise).addListener(new ChannelFutureListener() {
+    public ChannelFuture unregister(ChannelPromise channelPromise) {
+        return super.unregister(channelPromise).addListener(new ChannelFutureListener() {
             @Override
             public void onComplete(ChannelFuture future) {
                 if (future.isSuccess()) {

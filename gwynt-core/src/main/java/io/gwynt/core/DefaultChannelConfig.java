@@ -9,12 +9,14 @@ import io.gwynt.core.buffer.RecvByteBufferAllocator;
 public class DefaultChannelConfig implements ChannelConfig {
 
     private Channel channel;
-    private boolean autoRead = true;
+    private boolean autoRead;
+
+    private int writeSpinCount;
+    private int readSpinCount;
+    private int connectTimeoutMillis;
+
     private RecvByteBufferAllocator recvByteBufferAllocator;
-    private ByteBufferPool byteBufferPool = ArrayByteBufferPool.DEFAULT;
-    private int writeSpinCount = 8;
-    private int readSpinCount = 8;
-    private int connectTimeoutMillis = 0;
+    private ByteBufferPool byteBufferPool;
 
     public DefaultChannelConfig(Channel channel) {
         if (channel == null) {
@@ -22,6 +24,11 @@ public class DefaultChannelConfig implements ChannelConfig {
         }
 
         this.channel = channel;
+        autoRead = true;
+        writeSpinCount = 8;
+        readSpinCount = 8;
+        connectTimeoutMillis = 0;
+        byteBufferPool = ArrayByteBufferPool.DEFAULT;
         recvByteBufferAllocator = defaultRecvByteBufferAllocator(channel);
     }
 
@@ -31,6 +38,14 @@ public class DefaultChannelConfig implements ChannelConfig {
         } else {
             return AdaptiveRecvByteBufferAllocator.DEFAULT;
         }
+    }
+
+    protected Channel channel() {
+        return channel;
+    }
+
+    protected Object javaChannel() {
+        return channel.unsafe().javaChannel();
     }
 
     @Override
@@ -105,12 +120,69 @@ public class DefaultChannelConfig implements ChannelConfig {
     }
 
     @Override
-    public <T> boolean setChannelOption(ChannelOption<T> channelOption, T value) {
-        return true;
+    public <T> boolean setOption(ChannelOption<T> channelOption, T value) {
+        try {
+            boolean isSet = true;
+            if (channelOption == ChannelOption.AUTO_READ) {
+                setAutoRead((Boolean) value);
+            } else if (channelOption == ChannelOption.BYTE_BUFFER_POOL) {
+                setByteBufferPool((ByteBufferPool) value);
+            } else if (channelOption == ChannelOption.RECV_BYTE_BUFFER_ALLOCATOR) {
+                setRecvByteBufferAllocator((RecvByteBufferAllocator) value);
+            } else if (channelOption == ChannelOption.READ_SPIN_COUNT) {
+                setReadSpinCount((Integer) value);
+            } else if (channelOption == ChannelOption.WRITE_SPIN_COUNT) {
+                setWriteSpinCount((Integer) value);
+            } else if (channelOption == ChannelOption.CONNECT_TIMEOUT_MILLIS) {
+                setConnectTimeoutMillis((Integer) value);
+            } else {
+                isSet = false;
+            }
+
+            return setOption0(channelOption, value) || isSet;
+        } catch (UnsupportedOperationException e) {
+            return false;
+        } catch (Throwable e) {
+            throw new ChannelException(e);
+        }
     }
 
+    protected <T> boolean setOption0(ChannelOption<T> channelOption, T value) throws Exception {
+        return false;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> T getChannelOption(ChannelOption<T> channelOption) {
+    public <T> T getOption(ChannelOption<T> channelOption) {
+        try {
+
+            Object result = null;
+            if (channelOption == ChannelOption.AUTO_READ) {
+                result = isAutoRead();
+            } else if (channelOption == ChannelOption.BYTE_BUFFER_POOL) {
+                result = getByteBufferPool();
+            } else if (channelOption == ChannelOption.RECV_BYTE_BUFFER_ALLOCATOR) {
+                result = getRecvByteBufferAllocator();
+            } else if (channelOption == ChannelOption.READ_SPIN_COUNT) {
+                result = getReadSpinCount();
+            } else if (channelOption == ChannelOption.WRITE_SPIN_COUNT) {
+                result = getWriteSpinCount();
+            } else if (channelOption == ChannelOption.CONNECT_TIMEOUT_MILLIS) {
+                result = getConnectTimeoutMillis();
+            }
+
+            if (result == null) {
+                return getOption0(channelOption);
+            }
+            return (T) result;
+        } catch (UnsupportedOperationException e) {
+            return null;
+        } catch (Throwable e) {
+            throw new ChannelException(e);
+        }
+    }
+
+    protected <T> T getOption0(ChannelOption<T> channelOption) throws Exception {
         return null;
     }
 }

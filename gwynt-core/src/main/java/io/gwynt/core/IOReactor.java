@@ -165,7 +165,7 @@ public final class IOReactor implements Cloneable {
             }
 
             for (Entry<ChannelOption<Object>, Object> e : childOptions.entrySet()) {
-                if (!channel.config().setChannelOption(e.getKey(), e.getValue())) {
+                if (!channel.config().setOption(e.getKey(), e.getValue())) {
                     logger.warn("Unknown server channel option: ", e.getKey());
                 }
             }
@@ -196,6 +196,28 @@ public final class IOReactor implements Cloneable {
         return new DefaultFutureGroup<>(futures);
     }
 
+    public IOReactor childOption(ChannelOption<Object> channelOption, Object value) {
+        if (channelOption == null) {
+            throw new IllegalArgumentException("channelOption");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value");
+        }
+        childOptions.put(channelOption, value);
+        return this;
+    }
+
+    public IOReactor serverOption(ChannelOption<Object> channelOption, Object value) {
+        if (channelOption == null) {
+            throw new IllegalArgumentException("channelOption");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value");
+        }
+        serverOptions.put(channelOption, value);
+        return this;
+    }
+
     @Override
     @SuppressWarnings("CloneDoesntCallSuperClone")
     public IOReactor clone() {
@@ -203,8 +225,6 @@ public final class IOReactor implements Cloneable {
     }
 
     private static final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {
-
-        private static final Logger logger = LoggerFactory.getLogger(DefaultChannelAcceptor.class);
 
         private Iterable<Handler> childHandlers;
         private Map<ChannelOption<Object>, Object> childOptions;
@@ -229,7 +249,7 @@ public final class IOReactor implements Cloneable {
             }
 
             for (Entry<ChannelOption<Object>, Object> e : childOptions.entrySet()) {
-                if (!channel.config().setChannelOption(e.getKey(), e.getValue())) {
+                if (!channel.config().setOption(e.getKey(), e.getValue())) {
                     logger.warn("Unknown child channel option: ", e.getKey());
                 }
             }
