@@ -28,4 +28,8 @@ public interface ChannelConfig {
     int getConnectTimeoutMillis();
 
     void setConnectTimeoutMillis(int connectTimeoutMillis);
+
+    <T> boolean setChannelOption(ChannelOption<T> channelOption, T value);
+
+    <T> T getChannelOption(ChannelOption<T> channelOption);
 }

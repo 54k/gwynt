@@ -103,4 +103,14 @@ public class DefaultChannelConfig implements ChannelConfig {
     public void setConnectTimeoutMillis(int connectTimeoutMillis) {
         this.connectTimeoutMillis = connectTimeoutMillis;
     }
+
+    @Override
+    public <T> boolean setChannelOption(ChannelOption<T> channelOption, T value) {
+        return false;
+    }
+
+    @Override
+    public <T> T getChannelOption(ChannelOption<T> channelOption) {
+        return null;
+    }
 }
