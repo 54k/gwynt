@@ -1,6 +1,7 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelConfig;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
@@ -15,12 +16,20 @@ import java.util.List;
 public class NioSocketChannel extends AbstractNioChannel {
 
     @SuppressWarnings("unused")
-    public NioSocketChannel() throws IOException {
-        this(null, SocketChannel.open());
+    public NioSocketChannel() {
+        this(null, newSocket());
     }
 
     public NioSocketChannel(AbstractNioChannel parent, SocketChannel ch) {
         super(parent, ch);
+    }
+
+    private static SocketChannel newSocket() {
+        try {
+            return SocketChannel.open();
+        } catch (IOException e) {
+            throw new ChannelException(e);
+        }
     }
 
     @Override

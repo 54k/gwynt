@@ -27,7 +27,15 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
 
     @SuppressWarnings("unused")
     public OioDatagramChannel() throws IOException {
-        super(new MulticastSocket(null));
+        super(newSocket());
+    }
+
+    private static MulticastSocket newSocket() {
+        try {
+            return new MulticastSocket(null);
+        } catch (IOException e) {
+            throw new ChannelException(e);
+        }
     }
 
     @Override

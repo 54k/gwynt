@@ -31,12 +31,16 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     private Map<InetAddress, List<MembershipKey>> memberships = new HashMap<>();
 
     @SuppressWarnings("unused")
-    public NioDatagramChannel() throws IOException {
-        this(null);
+    public NioDatagramChannel() {
+        super(newSocket());
     }
 
-    public NioDatagramChannel(AbstractNioChannel parent) throws IOException {
-        super(parent, DatagramChannel.open());
+    private static DatagramChannel newSocket() {
+        try {
+            return DatagramChannel.open();
+        } catch (IOException e) {
+            throw new ChannelException(e);
+        }
     }
 
     @Override

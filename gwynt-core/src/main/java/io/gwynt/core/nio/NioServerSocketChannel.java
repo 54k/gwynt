@@ -1,6 +1,7 @@
 package io.gwynt.core.nio;
 
 import io.gwynt.core.ChannelConfig;
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.ServerChannel;
@@ -15,9 +16,17 @@ import java.util.List;
 
 public class NioServerSocketChannel extends AbstractNioChannel implements ServerChannel {
 
-    public NioServerSocketChannel() throws IOException {
-        super(ServerSocketChannel.open());
+    public NioServerSocketChannel() {
+        super(newSocket());
         readOp = SelectionKey.OP_ACCEPT;
+    }
+
+    private static ServerSocketChannel newSocket() {
+        try {
+            return ServerSocketChannel.open();
+        } catch (IOException e) {
+            throw new ChannelException(e);
+        }
     }
 
     @Override

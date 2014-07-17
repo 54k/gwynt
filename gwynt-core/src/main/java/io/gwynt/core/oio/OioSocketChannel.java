@@ -17,11 +17,15 @@ public class OioSocketChannel extends AbstractOioChannel {
 
     @SuppressWarnings("unused")
     public OioSocketChannel() {
-        super(null, new Socket());
+        this(null, newSocket());
     }
 
     public OioSocketChannel(Channel parent, Object ch) {
         super(parent, ch);
+    }
+
+    private static Socket newSocket() {
+        return new Socket();
     }
 
     @Override

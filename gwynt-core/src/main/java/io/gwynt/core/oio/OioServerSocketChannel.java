@@ -1,5 +1,6 @@
 package io.gwynt.core.oio;
 
+import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.ServerChannel;
@@ -15,8 +16,16 @@ import java.util.List;
 public class OioServerSocketChannel extends AbstractOioChannel implements ServerChannel {
 
     @SuppressWarnings("unused")
-    public OioServerSocketChannel() throws IOException {
-        super(new ServerSocket());
+    public OioServerSocketChannel() {
+        super(newSocket());
+    }
+
+    private static ServerSocket newSocket() {
+        try {
+            return new ServerSocket();
+        } catch (IOException e) {
+            throw new ChannelException(e);
+        }
     }
 
     @Override
