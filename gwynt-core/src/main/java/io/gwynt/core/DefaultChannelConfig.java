@@ -155,7 +155,6 @@ public class DefaultChannelConfig implements ChannelConfig {
     @Override
     public <T> T getOption(ChannelOption<T> channelOption) {
         try {
-
             Object result = null;
             if (channelOption == ChannelOption.AUTO_READ) {
                 result = isAutoRead();
