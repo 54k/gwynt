@@ -47,7 +47,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     }
 
     protected Object javaChannel() {
-        return channel.unsafe().javaChannel();
+        return channel.javaChannel();
     }
 
     @Override

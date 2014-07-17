@@ -283,7 +283,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
     }
 
     @Override
-    protected DatagramChannel javaChannel() {
+    public DatagramChannel javaChannel() {
         return (DatagramChannel) super.javaChannel();
     }
 

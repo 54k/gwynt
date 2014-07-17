@@ -285,7 +285,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     }
 
     @Override
-    protected DatagramChannel javaChannel() {
+    public DatagramChannel javaChannel() {
         return (DatagramChannel) super.javaChannel();
     }
 

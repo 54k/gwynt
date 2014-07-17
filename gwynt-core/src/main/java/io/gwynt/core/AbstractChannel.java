@@ -193,7 +193,8 @@ public abstract class AbstractChannel implements Channel {
         return eventLoop.register(this);
     }
 
-    protected Object javaChannel() {
+    @Override
+    public Object javaChannel() {
         return ch;
     }
 

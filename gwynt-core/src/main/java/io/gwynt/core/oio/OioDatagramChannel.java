@@ -44,7 +44,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
     }
 
     @Override
-    protected MulticastSocket javaChannel() {
+    public MulticastSocket javaChannel() {
         return (MulticastSocket) super.javaChannel();
     }
 

@@ -281,7 +281,7 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
     }
 
     @Override
-    protected DatagramChannel javaChannel() {
+    public DatagramChannel javaChannel() {
         return (DatagramChannel) super.javaChannel();
     }
 

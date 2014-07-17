@@ -9,6 +9,13 @@ import java.net.NetworkInterface;
 
 public final class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
 
+    private static final ConstantPool<ChannelOption<Object>> pool = new ConstantPool<ChannelOption<Object>>() {
+        @Override
+        protected ChannelOption<Object> newConstant(int id, String name) {
+            return new ChannelOption<>(id, name);
+        }
+    };
+
     public static final ChannelOption<Boolean> SO_REUSEADDR = valueOf("SO_REUSEADDR");
     public static final ChannelOption<Boolean> TCP_NODELAY = valueOf("TCP_NODELAY");
     public static final ChannelOption<Integer> TRAFFIC_CLASS = valueOf("TRAFFIC_CLASS");
@@ -33,13 +40,6 @@ public final class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
 
     public static final ChannelOption<Integer> RUDP_PROTOCOL_MAGIC = valueOf("RUDP_PROTOCOL_MAGIC");
     public static final ChannelOption<Integer> RUDP_KEEP_ALIVE_PERIOD_MILLIS = valueOf("RUDP_KEEP_ALIVE_PERIOD_MILLIS");
-
-    private static final ConstantPool<ChannelOption<Object>> pool = new ConstantPool<ChannelOption<Object>>() {
-        @Override
-        protected ChannelOption<Object> newConstant(int id, String name) {
-            return new ChannelOption<>(id, name);
-        }
-    };
 
     private ChannelOption(int id, String name) {
         super(id, name);

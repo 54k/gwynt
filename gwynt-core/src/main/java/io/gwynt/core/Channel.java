@@ -56,6 +56,8 @@ public interface Channel {
 
     ByteBufferPool byteBufferPool();
 
+    Object javaChannel();
+
     interface Unsafe<T> {
 
         T javaChannel();
