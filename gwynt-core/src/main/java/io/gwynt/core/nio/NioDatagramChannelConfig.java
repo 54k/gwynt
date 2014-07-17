@@ -6,7 +6,7 @@ import io.gwynt.core.ChannelOption;
 import java.io.IOException;
 import java.nio.channels.DatagramChannel;
 
-public class NioDatagramChannelConfig extends NetworkChannelConfig {
+public final class NioDatagramChannelConfig extends NetworkChannelConfig {
 
     NioDatagramChannelConfig(NioDatagramChannel channel) {
         super(channel);

@@ -24,12 +24,14 @@ public class DefaultChannelConfig implements ChannelConfig {
         }
 
         this.channel = channel;
-        autoRead = true;
-        writeSpinCount = 8;
-        readSpinCount = 8;
-        connectTimeoutMillis = 0;
-        byteBufferPool = ArrayByteBufferPool.DEFAULT;
-        recvByteBufferAllocator = defaultRecvByteBufferAllocator(channel);
+
+        setOption(ChannelOption.AUTO_READ, true);
+        setOption(ChannelOption.WRITE_SPIN_COUNT, 8);
+        setOption(ChannelOption.READ_SPIN_COUNT, 8);
+        setOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 0);
+        setOption(ChannelOption.BYTE_BUFFER_POOL, ArrayByteBufferPool.DEFAULT);
+        setOption(ChannelOption.RECV_BYTE_BUFFER_ALLOCATOR, defaultRecvByteBufferAllocator(channel));
+        setOption(ChannelOption.SO_REUSEADDR, true);
     }
 
     private static RecvByteBufferAllocator defaultRecvByteBufferAllocator(Channel channel) {

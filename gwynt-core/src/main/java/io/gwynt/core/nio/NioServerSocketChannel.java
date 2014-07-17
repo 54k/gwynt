@@ -1,5 +1,6 @@
 package io.gwynt.core.nio;
 
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.ServerChannel;
@@ -37,6 +38,11 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
     @Override
     protected AbstractNioUnsafe newUnsafe() {
         return new NioServerSocketChannelUnsafe();
+    }
+
+    @Override
+    protected ChannelConfig newConfig() {
+        return new NioServerSocketChannelConfig(this);
     }
 
     protected class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {

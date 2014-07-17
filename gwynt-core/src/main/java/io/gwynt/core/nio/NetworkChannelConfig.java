@@ -44,6 +44,8 @@ abstract class NetworkChannelConfig extends DefaultChannelConfig {
                 javaChannel().setOption(StandardSocketOptions.SO_SNDBUF, (Integer) value);
             } else if (channelOption == ChannelOption.SO_KEEPALIVE) {
                 javaChannel().setOption(StandardSocketOptions.SO_KEEPALIVE, (Boolean) value);
+            } else if (channelOption == ChannelOption.TCP_NODELAY) {
+                javaChannel().setOption(StandardSocketOptions.TCP_NODELAY, (Boolean) value);
             } else {
                 isSet = false;
             }
@@ -81,6 +83,8 @@ abstract class NetworkChannelConfig extends DefaultChannelConfig {
                 result = javaChannel().getOption(StandardSocketOptions.SO_SNDBUF);
             } else if (channelOption == ChannelOption.SO_KEEPALIVE) {
                 result = javaChannel().getOption(StandardSocketOptions.SO_KEEPALIVE);
+            } else if (channelOption == ChannelOption.TCP_NODELAY) {
+                result = javaChannel().getOption(StandardSocketOptions.TCP_NODELAY);
             }
 
             if (result == null) {
