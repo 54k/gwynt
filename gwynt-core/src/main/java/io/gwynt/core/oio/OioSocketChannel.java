@@ -68,7 +68,6 @@ public class OioSocketChannel extends AbstractOioChannel {
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             try {
                 javaChannel().connect(address, config().getConnectTimeoutMillis());
-                javaChannel().setSoTimeout(SO_TIMEOUT);
             } catch (SocketTimeoutException e) {
                 throw new ChannelException("Connection timeout: " + address);
             }
