@@ -75,23 +75,21 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         }
 
         @Override
-        public void write(Object message, ChannelPromise channelPromise) {
-            safeSetFailure(channelPromise, new UnsupportedOperationException());
+        protected void writeRequested() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         protected int doReadMessages(List<Object> messages) throws Exception {
-            SocketChannel ch = javaChannel().accept();
             try {
+                SocketChannel ch = javaChannel().accept();
                 if (ch != null) {
-                    ch.configureBlocking(false);
                     NioSocketChannel channel = new NioSocketChannel(NioServerSocketChannel.this, ch);
                     messages.add(channel);
                     return 1;
                 }
             } catch (IOException e) {
                 exceptionCaught(e);
-                ch.close();
             }
             return 0;
         }

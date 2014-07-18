@@ -31,11 +31,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
     protected AbstractNioChannel(AbstractNioChannel parent, SelectableChannel ch) {
         super(parent, ch);
-        try {
-            ch.configureBlocking(false);
-        } catch (IOException e) {
-            throw new ChannelException(e);
-        }
     }
 
     @Override
@@ -76,12 +71,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         };
         private ChannelPromise connectPromise;
         private ScheduledFuture<?> connectTimeout;
-        private final Runnable readTask = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
 
         @Override
         protected void writeRequested() {
@@ -91,6 +80,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 invokeLater(writeTask);
             }
         }
+
+        private final Runnable readTask = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
 
         @Override
         protected void readRequested() {
@@ -269,6 +265,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterRegister() {
             try {
+                try {
+                    javaChannel().configureBlocking(false);
+                } catch (IOException e) {
+                    throw new ChannelException(e);
+                }
                 selectionKey = javaChannel().register(eventLoop().selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
                 throw new ChannelException(e);
@@ -278,6 +279,11 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterUnregister() {
             eventLoop().cancel(selectionKey);
+            try {
+                javaChannel().configureBlocking(true);
+            } catch (IOException e) {
+                throw new ChannelException(e);
+            }
         }
 
         @Override

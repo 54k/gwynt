@@ -52,8 +52,8 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         }
 
         @Override
-        public void write(Object message, ChannelPromise channelPromise) {
-            safeSetFailure(channelPromise, new UnsupportedOperationException());
+        protected void writeRequested() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
