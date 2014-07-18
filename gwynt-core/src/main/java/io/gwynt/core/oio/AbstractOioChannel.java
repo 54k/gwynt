@@ -37,19 +37,37 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         private final Runnable readTask = new Runnable() {
             @Override
             public void run() {
+                setReadPending(false);
                 read();
             }
         };
+
         private final Runnable writeTask = new Runnable() {
             @Override
             public void run() {
                 flush();
             }
         };
+
         private final List<Object> messages = new ArrayList<>(1);
+
+        private volatile boolean readPending;
+
+        private boolean isReadPending() {
+            return readPending;
+        }
+
+        private void setReadPending(boolean readPending) {
+            this.readPending = readPending;
+        }
 
         @Override
         protected void readRequested() {
+            if (isReadPending()) {
+                return;
+            }
+
+            setReadPending(true);
             invokeLater(readTask);
         }
 
