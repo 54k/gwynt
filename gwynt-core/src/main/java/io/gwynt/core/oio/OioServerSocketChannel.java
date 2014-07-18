@@ -47,6 +47,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
 
         @Override
         protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
+            // TODO so backlog
             javaChannel().bind(address);
             javaChannel().setSoTimeout(SO_TIMEOUT);
         }
