@@ -7,6 +7,8 @@ import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -35,6 +37,9 @@ public class OioSocketChannel extends AbstractOioChannel {
 
     protected class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
 
+        private InputStream is;
+        private OutputStream os;
+
         @Override
         public boolean isActive() {
             return isOpen() && javaChannel().isConnected();
@@ -45,11 +50,24 @@ public class OioSocketChannel extends AbstractOioChannel {
             return !javaChannel().isClosed();
         }
 
+        private InputStream getIs() throws IOException {
+            if (is == null) {
+                is = javaChannel().getInputStream();
+            }
+            return is;
+        }
+
+        private OutputStream getOs() throws IOException {
+            if (os == null) {
+                os = javaChannel().getOutputStream();
+            }
+            return os;
+        }
+
         @Override
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             try {
-                javaChannel().setSoTimeout(config().getConnectTimeoutMillis());
-                javaChannel().connect(address);
+                javaChannel().connect(address, config().getConnectTimeoutMillis());
                 javaChannel().setSoTimeout(SO_TIMEOUT);
             } catch (SocketTimeoutException e) {
                 throw new ChannelException("Connection timeout: " + address);
@@ -72,7 +90,7 @@ public class OioSocketChannel extends AbstractOioChannel {
 
             int bytesRead = 0;
             try {
-                bytesRead = javaChannel().getInputStream().read(buffer);
+                bytesRead = getIs().read(buffer);
                 if (bytesRead > 0) {
                     byte[] message = new byte[bytesRead];
                     System.arraycopy(buffer, 0, message, 0, bytesRead);
@@ -91,7 +109,7 @@ public class OioSocketChannel extends AbstractOioChannel {
             Object message = channelOutboundBuffer.current();
             if (message != null) {
                 try {
-                    javaChannel().getOutputStream().write((byte[]) message);
+                    getOs().write((byte[]) message);
                     done = true;
                 } catch (SocketTimeoutException ignore) {
                 }
