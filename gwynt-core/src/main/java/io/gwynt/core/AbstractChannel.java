@@ -420,16 +420,16 @@ public abstract class AbstractChannel implements Channel {
                 return;
             }
 
-            if (!channelOutboundBuffer.isEmpty()) {
-                try {
+            try {
+                if (!channelOutboundBuffer.isEmpty()) {
                     doWrite(channelOutboundBuffer);
-                } catch (Throwable e) {
-                    channelOutboundBuffer.clear(e);
-                } finally {
-                    inFlush = false;
-                    if (!channelOutboundBuffer.isEmpty()) {
-                        writeRequested();
-                    }
+                }
+            } catch (Throwable e) {
+                channelOutboundBuffer.clear(e);
+            } finally {
+                inFlush = false;
+                if (!channelOutboundBuffer.isEmpty()) {
+                    writeRequested();
                 }
             }
         }
