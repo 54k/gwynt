@@ -50,7 +50,6 @@ public abstract class AbstractOioChannel extends AbstractChannel {
         };
 
         private final List<Object> messages = new ArrayList<>(1);
-
         private volatile boolean readPending;
 
         private boolean isReadPending() {
