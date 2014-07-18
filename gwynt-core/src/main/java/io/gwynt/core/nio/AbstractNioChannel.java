@@ -63,12 +63,21 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> implements NioUnsafe<T> {
 
         private final List<Object> messages = new ArrayList<>(config().getReadSpinCount());
+
         private final Runnable writeTask = new Runnable() {
             @Override
             public void run() {
                 interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         };
+
+        private final Runnable readTask = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
+
         private ChannelPromise connectPromise;
         private ScheduledFuture<?> connectTimeout;
 
@@ -144,13 +153,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         protected abstract boolean doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception;
-
-        private final Runnable readTask = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
 
         @Override
         public void finishConnect() {
@@ -232,7 +234,14 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
         @Override
         public void flush() {
-            writeRequested();
+            if (isFlushPending()) {
+                return;
+            }
+            super.flush();
+        }
+
+        private boolean isFlushPending() {
+            return selectionKey.isValid() && (selectionKey.interestOps() & SelectionKey.OP_WRITE) != 0;
         }
 
         @Override
