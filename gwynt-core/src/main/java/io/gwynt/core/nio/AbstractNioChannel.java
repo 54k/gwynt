@@ -81,13 +81,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
-        private final Runnable readTask = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
-
         @Override
         protected void readRequested() {
             if (eventLoop().inExecutorThread()) {
@@ -96,6 +89,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 invokeLater(readTask);
             }
         }
+
+        private final Runnable readTask = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
 
         @Override
         public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
@@ -279,10 +279,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterUnregister() {
             eventLoop().cancel(selectionKey);
-            try {
-                javaChannel().configureBlocking(true);
-            } catch (IOException e) {
-                throw new ChannelException(e);
+            if (isActive()) {
+                try {
+                    javaChannel().configureBlocking(true);
+                } catch (IOException e) {
+                    throw new ChannelException(e);
+                }
             }
         }
 
