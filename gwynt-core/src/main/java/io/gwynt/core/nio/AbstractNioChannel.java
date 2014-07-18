@@ -90,13 +90,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             }
         }
 
-        private final Runnable readTask = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
-
         @Override
         public void connect(final InetSocketAddress address, ChannelPromise channelPromise) {
             if (!channelPromise.setUncancellable()) {
@@ -151,6 +144,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         protected abstract boolean doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception;
+
+        private final Runnable readTask = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
 
         @Override
         public void finishConnect() {
@@ -265,10 +265,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterRegister() {
             try {
-                try {
-                    javaChannel().configureBlocking(false);
-                } catch (IOException e) {
-                    throw new ChannelException(e);
+                if (isOpen()) {
+                    try {
+                        javaChannel().configureBlocking(false);
+                    } catch (IOException e) {
+                        throw new ChannelException(e);
+                    }
                 }
                 selectionKey = javaChannel().register(eventLoop().selector, 0, AbstractNioChannel.this);
             } catch (ClosedChannelException e) {
@@ -279,7 +281,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         @Override
         protected void afterUnregister() {
             eventLoop().cancel(selectionKey);
-            if (isActive()) {
+            if (isOpen()) {
                 try {
                     javaChannel().configureBlocking(true);
                 } catch (IOException e) {
