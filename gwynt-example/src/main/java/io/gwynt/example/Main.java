@@ -21,7 +21,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         new GwyntSimpleServer().run();
         new NettySimpleServer().run();
-        //        new GwyntSimpleChatServer().run();
+        new GwyntSimpleChatServer().run();
 
         EventLoopGroup group = new NioEventLoopGroup(1);
 

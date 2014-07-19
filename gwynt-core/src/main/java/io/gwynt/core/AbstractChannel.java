@@ -347,7 +347,9 @@ public abstract class AbstractChannel implements Channel {
                 if (!pendingClose.get()) {
                     if (isActive() && channelPromise.setUncancellable()) {
                         channelOutboundBuffer.addMessage(message, channelPromise);
-                        writeRequested();
+                        if (config().isAutoFlush()) {
+                            writeRequested();
+                        }
                     } else if (isOpen() && !isActive()) {
                         channelOutboundBuffer.clear(NOT_YET_CONNECTED_EXCEPTION);
                         safeSetFailure(channelPromise, NOT_YET_CONNECTED_EXCEPTION);

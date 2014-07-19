@@ -51,25 +51,38 @@ public class OioSocketChannel extends AbstractOioChannel {
         }
 
         private InputStream getIs() throws IOException {
-            if (is == null) {
-                is = javaChannel().getInputStream();
-            }
             return is;
         }
 
         private OutputStream getOs() throws IOException {
-            if (os == null) {
-                os = javaChannel().getOutputStream();
-            }
             return os;
+        }
+
+        private void initStreams() throws IOException {
+            is = javaChannel().getInputStream();
+            os = javaChannel().getOutputStream();
+        }
+
+        @Override
+        protected void afterRegister() {
+            if (isActive()) {
+                try {
+                    initStreams();
+                } catch (IOException e) {
+                    throw new ChannelException(e);
+                }
+            }
         }
 
         @Override
         protected void doConnect(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
             try {
                 javaChannel().connect(address, config().getConnectTimeoutMillis());
+                initStreams();
             } catch (SocketTimeoutException e) {
                 throw new ChannelException("Connection timeout: " + address);
+            } catch (IOException e) {
+                throw new ChannelException(e);
             }
         }
 

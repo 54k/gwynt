@@ -15,8 +15,9 @@ import io.gwynt.core.group.DefaultChannelGroup;
 import io.gwynt.core.nio.NioEventLoopGroup;
 import io.gwynt.core.nio.NioServerSocketChannel;
 import io.gwynt.core.nio.NioSocketChannel;
+import io.gwynt.core.oio.OioEventLoopGroup;
 import io.gwynt.core.pipeline.HandlerContext;
-import io.gwynt.core.rudp.NioServerDatagramChannel;
+import io.gwynt.core.rudp.OioServerDatagramChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +57,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        final IOReactor endpoint2 = new IOReactor().group(eventLoop).channelClass(NioServerDatagramChannel.class)/*.addChildHandler(new UtfStringConverter())*/
+        final IOReactor endpoint2 = new IOReactor().group(new OioEventLoopGroup()).channelClass(OioServerDatagramChannel.class)/*.addChildHandler(new UtfStringConverter())*/
                 .addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {

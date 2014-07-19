@@ -9,6 +9,10 @@ public interface ChannelConfig {
 
     ChannelConfig setAutoRead(boolean value);
 
+    boolean isAutoFlush();
+
+    ChannelConfig setAutoFlush(boolean value);
+
     ByteBufferPool getByteBufferPool();
 
     ChannelConfig setByteBufferPool(ByteBufferPool byteBufferPool);

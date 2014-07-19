@@ -10,6 +10,7 @@ public class DefaultChannelConfig implements ChannelConfig {
 
     private Channel channel;
     private boolean autoRead;
+    private boolean autoFlush;
 
     private int writeSpinCount;
     private int readSpinCount;
@@ -26,6 +27,7 @@ public class DefaultChannelConfig implements ChannelConfig {
         this.channel = channel;
 
         setOption(ChannelOption.AUTO_READ, true);
+        setOption(ChannelOption.AUTO_FLUSH, true);
         setOption(ChannelOption.WRITE_SPIN_COUNT, 8);
         setOption(ChannelOption.READ_SPIN_COUNT, 8);
         setOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, 0);
@@ -58,6 +60,17 @@ public class DefaultChannelConfig implements ChannelConfig {
     @Override
     public ChannelConfig setAutoRead(boolean autoRead) {
         this.autoRead = autoRead;
+        return this;
+    }
+
+    @Override
+    public boolean isAutoFlush() {
+        return autoFlush;
+    }
+
+    @Override
+    public ChannelConfig setAutoFlush(boolean autoFlush) {
+        this.autoFlush = autoFlush;
         return this;
     }
 
@@ -127,6 +140,8 @@ public class DefaultChannelConfig implements ChannelConfig {
             boolean isSet = true;
             if (channelOption == ChannelOption.AUTO_READ) {
                 setAutoRead((Boolean) value);
+            } else if (channelOption == ChannelOption.AUTO_FLUSH) {
+                setAutoFlush((Boolean) value);
             } else if (channelOption == ChannelOption.BYTE_BUFFER_POOL) {
                 setByteBufferPool((ByteBufferPool) value);
             } else if (channelOption == ChannelOption.RECV_BYTE_BUFFER_ALLOCATOR) {
@@ -160,6 +175,8 @@ public class DefaultChannelConfig implements ChannelConfig {
             Object result = null;
             if (channelOption == ChannelOption.AUTO_READ) {
                 result = isAutoRead();
+            } else if (channelOption == ChannelOption.AUTO_FLUSH) {
+                result = isAutoFlush();
             } else if (channelOption == ChannelOption.BYTE_BUFFER_POOL) {
                 result = getByteBufferPool();
             } else if (channelOption == ChannelOption.RECV_BYTE_BUFFER_ALLOCATOR) {

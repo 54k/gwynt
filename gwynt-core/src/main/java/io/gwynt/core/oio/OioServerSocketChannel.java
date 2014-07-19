@@ -1,6 +1,8 @@
 package io.gwynt.core.oio;
 
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
+import io.gwynt.core.ChannelOption;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.ServerChannel;
@@ -33,6 +35,11 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         return new OioServerSocketChannelUnsafe();
     }
 
+    @Override
+    protected ChannelConfig newConfig() {
+        return new OioServerSocketChannelConfig(this);
+    }
+
     protected class OioServerSocketChannelUnsafe extends AbstractOioUnsafe<ServerSocket> {
 
         @Override
@@ -47,8 +54,7 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
 
         @Override
         protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {
-            // TODO so backlog
-            javaChannel().bind(address);
+            javaChannel().bind(address, config().getOption(ChannelOption.SO_BACKLOG));
             javaChannel().setSoTimeout(SO_TIMEOUT);
         }
 

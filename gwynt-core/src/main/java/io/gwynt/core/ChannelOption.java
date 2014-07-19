@@ -29,9 +29,11 @@ public final class ChannelOption<T> extends AbstractConstant<ChannelOption<T>> {
     public static final ChannelOption<Boolean> SO_KEEPALIVE = valueOf("SO_KEEPALIVE");
     public static final ChannelOption<Boolean> SO_BROADCAST = valueOf("SO_BROADCAST");
     public static final ChannelOption<Boolean> SO_TIMEOUT = valueOf("SO_TIMEOUT");
-    public static final ChannelOption<Boolean> SO_BACKLOG = valueOf("SO_BACKLOG");
+    public static final ChannelOption<Integer> SO_BACKLOG = valueOf("SO_BACKLOG");
 
     public static final ChannelOption<Boolean> AUTO_READ = valueOf("AUTO_READ");
+    public static final ChannelOption<Boolean> AUTO_FLUSH = valueOf("AUTO_FLUSH");
+
     public static final ChannelOption<RecvByteBufferAllocator> RECV_BYTE_BUFFER_ALLOCATOR = valueOf("RECV_BYTE_BUFFER_ALLOCATOR");
     public static final ChannelOption<ByteBufferPool> BYTE_BUFFER_POOL = valueOf("BYTE_BUFFER_POOL");
     public static final ChannelOption<Integer> WRITE_SPIN_COUNT = valueOf("WRITE_SPIN_COUNT");

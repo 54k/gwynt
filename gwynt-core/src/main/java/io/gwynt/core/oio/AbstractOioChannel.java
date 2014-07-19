@@ -14,7 +14,7 @@ import java.util.List;
 
 public abstract class AbstractOioChannel extends AbstractChannel {
 
-    protected static final int SO_TIMEOUT = 16;
+    protected static final int SO_TIMEOUT = 1000;
 
     protected AbstractOioChannel(Object ch) {
         this(null, ch);
@@ -38,14 +38,10 @@ public abstract class AbstractOioChannel extends AbstractChannel {
             @Override
             public void run() {
                 setReadPending(false);
+                if (!config().isAutoRead()) {
+                    return;
+                }
                 read();
-            }
-        };
-
-        private final Runnable writeTask = new Runnable() {
-            @Override
-            public void run() {
-                flush();
             }
         };
 
@@ -72,7 +68,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
 
         @Override
         protected void writeRequested() {
-            invokeLater(writeTask);
+            flush();
         }
 
         @Override
@@ -141,9 +137,6 @@ public abstract class AbstractOioChannel extends AbstractChannel {
             }
         }
 
-        /**
-         * @return number of messages read or -1 if end of stream occurred
-         */
         protected abstract int doReadMessages(List<Object> messages) throws Exception;
     }
 }
