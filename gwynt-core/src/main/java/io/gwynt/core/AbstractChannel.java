@@ -256,7 +256,7 @@ public abstract class AbstractChannel implements Channel {
         }
     }
 
-    protected abstract class AbstractUnsafe<T> implements Unsafe<T> {
+    protected abstract class AbstractUnsafe implements Unsafe {
 
         private final ClosePromise closePromise = new ClosePromise(AbstractChannel.this);
         private final AtomicBoolean pendingClose = new AtomicBoolean();
@@ -268,12 +268,6 @@ public abstract class AbstractChannel implements Channel {
 
         protected ChannelOutboundBuffer newChannelOutboundBuffer() {
             return new ChannelOutboundBuffer(AbstractChannel.this);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public T javaChannel() {
-            return (T) ch;
         }
 
         @Override

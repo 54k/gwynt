@@ -1,12 +1,12 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Bootstrap;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.EventLoopGroup;
-import io.gwynt.core.IOReactor;
 import io.gwynt.core.buffer.DynamicByteBuffer;
 import io.gwynt.core.codec.ByteToMessageCodec;
 import io.gwynt.core.concurrent.ScheduledFuture;
@@ -48,8 +48,8 @@ public class GwyntSimpleChatServer implements Runnable {
         final ChatHandler chatHandler = new ChatHandler();
         channels = new DefaultChannelGroup();
 
-        final IOReactor endpoint =
-                new IOReactor().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
+        final Bootstrap endpoint =
+                new Bootstrap().group(eventLoop).channelClass(NioServerSocketChannel.class)/*.addChildHandler(new UtfStringConverter())*/.addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
                         channel.pipeline().addFirst(new MessageDecoder());
@@ -57,7 +57,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        final IOReactor endpoint2 = new IOReactor().group(new OioEventLoopGroup()).channelClass(OioServerDatagramChannel.class)/*.addChildHandler(new UtfStringConverter())*/
+        final Bootstrap endpoint2 = new Bootstrap().group(new OioEventLoopGroup()).channelClass(OioServerDatagramChannel.class)/*.addChildHandler(new UtfStringConverter())*/
                 .addChildHandler(new ChannelInitializer() {
                     @Override
                     protected void initialize(Channel channel) {
@@ -89,7 +89,7 @@ public class GwyntSimpleChatServer implements Runnable {
     }
 
     private void createBots(int port) {
-        final IOReactor client = new IOReactor().group(new NioEventLoopGroup()).channelClass(NioSocketChannel.class).addChildHandler(new UtfStringConverter())
+        final Bootstrap client = new Bootstrap().group(new NioEventLoopGroup()).channelClass(NioSocketChannel.class).addChildHandler(new UtfStringConverter())
                 .addChildHandler(new AbstractHandler() {
                     @Override
                     public void onOpen(final HandlerContext context) {
@@ -107,7 +107,7 @@ public class GwyntSimpleChatServer implements Runnable {
                     }
                 });
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 20; i++) {
             client.connect("localhost", port);
         }
 

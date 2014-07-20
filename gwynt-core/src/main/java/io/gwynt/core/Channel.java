@@ -58,9 +58,7 @@ public interface Channel {
 
     Object javaChannel();
 
-    interface Unsafe<T> {
-
-        T javaChannel();
+    interface Unsafe {
 
         boolean isOpen();
 

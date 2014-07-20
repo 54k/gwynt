@@ -11,7 +11,6 @@ import io.gwynt.core.ServerChannel;
 import io.gwynt.core.concurrent.ScheduledFuture;
 import io.gwynt.core.oio.OioDatagramChannel;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -23,9 +22,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 public class OioServerDatagramChannel extends OioDatagramChannel implements ServerChannel {
-
-    public OioServerDatagramChannel() throws IOException {
-    }
 
     @Override
     protected AbstractOioUnsafe newUnsafe() {
@@ -50,7 +46,7 @@ public class OioServerDatagramChannel extends OioDatagramChannel implements Serv
             return new DatagramVirtualChannelUnsafe();
         }
 
-        private class DatagramVirtualChannelUnsafe extends AbstractVirtualUnsafe<Void> {
+        private class DatagramVirtualChannelUnsafe extends AbstractVirtualUnsafe {
 
             private final Runnable timeoutTask = new Runnable() {
                 @Override

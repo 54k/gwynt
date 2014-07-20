@@ -74,7 +74,7 @@ public class RudpVirtualChannel extends AbstractVirtualChannel {
         }
     }
 
-    private class RudpVirtualChannelUnsafe extends AbstractVirtualUnsafe<Void> {
+    private class RudpVirtualChannelUnsafe extends AbstractVirtualUnsafe {
 
         private final Runnable TIMEOUT_TASK = new Runnable() {
             @Override

@@ -32,7 +32,11 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
 
     @SuppressWarnings("unused")
     public NioDatagramChannel() {
-        super(newSocket());
+        this(newSocket());
+    }
+
+    public NioDatagramChannel(DatagramChannel ch) {
+        super(ch);
     }
 
     private static DatagramChannel newSocket() {
@@ -51,6 +55,11 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
     @Override
     protected ChannelConfig newConfig() {
         return new NioDatagramChannelConfig(this);
+    }
+
+    @Override
+    public NioDatagramChannelConfig config() {
+        return (NioDatagramChannelConfig) super.config();
     }
 
     @Override
@@ -299,7 +308,7 @@ public class NioDatagramChannel extends AbstractNioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    protected class NioDatagramChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    protected class NioDatagramChannelUnsafe extends AbstractNioUnsafe {
 
         @Override
         public boolean isActive() {

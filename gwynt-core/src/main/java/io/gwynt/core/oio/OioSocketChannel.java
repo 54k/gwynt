@@ -1,6 +1,7 @@
 package io.gwynt.core.oio;
 
 import io.gwynt.core.Channel;
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelOutboundBuffer;
 import io.gwynt.core.ChannelPromise;
@@ -22,7 +23,7 @@ public class OioSocketChannel extends AbstractOioChannel {
         this(null, newSocket());
     }
 
-    public OioSocketChannel(Channel parent, Object ch) {
+    public OioSocketChannel(Channel parent, Socket ch) {
         super(parent, ch);
     }
 
@@ -35,10 +36,25 @@ public class OioSocketChannel extends AbstractOioChannel {
         return new OioSocketChannelUnsafe();
     }
 
-    protected class OioSocketChannelUnsafe extends AbstractOioUnsafe<Socket> {
+    @Override
+    protected ChannelConfig newConfig() {
+        return new OioSocketChannelConfig(this);
+    }
 
-        private InputStream is;
-        private OutputStream os;
+    @Override
+    public OioSocketChannelConfig config() {
+        return (OioSocketChannelConfig) super.config();
+    }
+
+    @Override
+    public Socket javaChannel() {
+        return (Socket) super.javaChannel();
+    }
+
+    protected class OioSocketChannelUnsafe extends AbstractOioUnsafe {
+
+        private InputStream inputStream;
+        private OutputStream outputStream;
 
         @Override
         public boolean isActive() {
@@ -50,17 +66,17 @@ public class OioSocketChannel extends AbstractOioChannel {
             return !javaChannel().isClosed();
         }
 
-        private InputStream getIs() throws IOException {
-            return is;
+        private InputStream getInputStream() throws IOException {
+            return inputStream;
         }
 
-        private OutputStream getOs() throws IOException {
-            return os;
+        private OutputStream getOutputStream() throws IOException {
+            return outputStream;
         }
 
         private void initStreams() throws IOException {
-            is = javaChannel().getInputStream();
-            os = javaChannel().getOutputStream();
+            inputStream = javaChannel().getInputStream();
+            outputStream = javaChannel().getOutputStream();
         }
 
         @Override
@@ -102,7 +118,7 @@ public class OioSocketChannel extends AbstractOioChannel {
 
             int bytesRead = 0;
             try {
-                bytesRead = getIs().read(buffer);
+                bytesRead = getInputStream().read(buffer);
                 if (bytesRead > 0) {
                     byte[] message = new byte[bytesRead];
                     System.arraycopy(buffer, 0, message, 0, bytesRead);
@@ -121,7 +137,7 @@ public class OioSocketChannel extends AbstractOioChannel {
             Object message = channelOutboundBuffer.current();
             if (message != null) {
                 try {
-                    getOs().write((byte[]) message);
+                    getOutputStream().write((byte[]) message);
                     done = true;
                 } catch (SocketTimeoutException ignore) {
                 }
@@ -136,8 +152,14 @@ public class OioSocketChannel extends AbstractOioChannel {
         public void closeForcibly() {
             try {
                 javaChannel().close();
+                closeStreams();
             } catch (IOException ignore) {
             }
+        }
+
+        private void closeStreams() throws IOException {
+            inputStream.close();
+            outputStream.close();
         }
 
         @Override

@@ -16,8 +16,13 @@ import java.util.List;
 
 public class NioServerSocketChannel extends AbstractNioChannel implements ServerChannel {
 
+    @SuppressWarnings("unused")
     public NioServerSocketChannel() {
-        super(newSocket());
+        this(newSocket());
+    }
+
+    public NioServerSocketChannel(ServerSocketChannel ch) {
+        super(ch);
         readOp = SelectionKey.OP_ACCEPT;
     }
 
@@ -27,11 +32,6 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         } catch (IOException e) {
             throw new ChannelException(e);
         }
-    }
-
-    @Override
-    public ChannelFuture read() {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -54,7 +54,17 @@ public class NioServerSocketChannel extends AbstractNioChannel implements Server
         return new NioServerSocketChannelConfig(this);
     }
 
-    protected class NioServerSocketChannelUnsafe extends AbstractNioUnsafe<ServerSocketChannel> {
+    @Override
+    public NioServerSocketChannelConfig config() {
+        return (NioServerSocketChannelConfig) super.config();
+    }
+
+    @Override
+    public ServerSocketChannel javaChannel() {
+        return (ServerSocketChannel) super.javaChannel();
+    }
+
+    protected class NioServerSocketChannelUnsafe extends AbstractNioUnsafe {
 
         @Override
         protected void doBind(InetSocketAddress address, ChannelPromise channelPromise) throws Exception {

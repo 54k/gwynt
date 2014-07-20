@@ -1,10 +1,10 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Bootstrap;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.ChannelPromise;
-import io.gwynt.core.IOReactor;
 import io.gwynt.core.pipeline.HandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +18,9 @@ public class ConnectionWatchDog extends AbstractHandler implements ChannelFuture
     private boolean connected;
     private boolean shouldReconnect = true;
     private InetSocketAddress address;
-    private IOReactor reactor;
+    private Bootstrap reactor;
 
-    public ConnectionWatchDog(IOReactor reactor) {
+    public ConnectionWatchDog(Bootstrap reactor) {
         this.reactor = reactor;
     }
 

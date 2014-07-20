@@ -1,11 +1,11 @@
 package io.gwynt.example;
 
+import io.gwynt.core.Bootstrap;
 import io.gwynt.core.ByteHandler;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
-import io.gwynt.core.IOReactor;
 import io.gwynt.core.buffer.Buffers;
 import io.gwynt.core.nio.NioDatagramChannel;
 import io.gwynt.core.nio.NioEventLoopGroup;
@@ -21,7 +21,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         new GwyntSimpleServer().run();
         new NettySimpleServer().run();
-        new GwyntSimpleChatServer().run();
+//        new GwyntSimpleChatServer().run();
 
         EventLoopGroup group = new NioEventLoopGroup(1);
 
@@ -42,7 +42,7 @@ public class Main {
         final AtomicInteger localSeq = new AtomicInteger();
         final AtomicInteger remoteSeq = new AtomicInteger();
 
-        IOReactor client = new IOReactor().channelClass(NioDatagramChannel.class).group(group);
+        Bootstrap client = new Bootstrap().channelClass(NioDatagramChannel.class).group(group);
         client.addChildHandler(new ByteHandler() {
             @Override
             public void onMessageReceived(HandlerContext context, byte[] message) {

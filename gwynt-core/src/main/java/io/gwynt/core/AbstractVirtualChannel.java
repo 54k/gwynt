@@ -36,12 +36,12 @@ public abstract class AbstractVirtualChannel extends AbstractChannel {
         return (VirtualUnsafe) super.unsafe();
     }
 
-    public static interface VirtualUnsafe<T> extends Unsafe<T> {
+    public static interface VirtualUnsafe extends Unsafe {
 
         void messageReceived(Object message);
     }
 
-    protected abstract class AbstractVirtualUnsafe<T> extends AbstractUnsafe<T> implements VirtualUnsafe<T> {
+    protected abstract class AbstractVirtualUnsafe extends AbstractUnsafe implements VirtualUnsafe {
 
         private final ChannelFutureListener parentListener = new ChannelFutureListener() {
             @Override

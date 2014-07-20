@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public final class IOReactor implements Cloneable {
+public final class Bootstrap implements Cloneable {
 
-    private static final Logger logger = LoggerFactory.getLogger(IOReactor.class);
+    private static final Logger logger = LoggerFactory.getLogger(Bootstrap.class);
 
     private EventLoopGroup primaryGroup;
     private EventLoopGroup secondaryGroup;
@@ -28,21 +28,21 @@ public final class IOReactor implements Cloneable {
     private Map<ChannelOption<Object>, Object> serverOptions = new HashMap<>();
     private Map<ChannelOption<Object>, Object> childOptions = new HashMap<>();
 
-    public IOReactor() {
+    public Bootstrap() {
     }
 
-    private IOReactor(IOReactor reactor) {
-        primaryGroup = reactor.primaryGroup;
-        secondaryGroup = reactor.secondaryGroup;
-        serverHandlers.addAll(reactor.serverHandlers);
-        childHandlers.addAll(reactor.childHandlers);
-        channelFactory = reactor.channelFactory;
-        channelClass = reactor.channelClass;
-        serverOptions.putAll(reactor.serverOptions);
-        childOptions.putAll(reactor.childOptions);
+    private Bootstrap(Bootstrap b) {
+        primaryGroup = b.primaryGroup;
+        secondaryGroup = b.secondaryGroup;
+        serverHandlers.addAll(b.serverHandlers);
+        childHandlers.addAll(b.childHandlers);
+        channelFactory = b.channelFactory;
+        channelClass = b.channelClass;
+        serverOptions.putAll(b.serverOptions);
+        childOptions.putAll(b.childOptions);
     }
 
-    public IOReactor addServerHandler(Handler handler) {
+    public Bootstrap addServerHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -51,7 +51,7 @@ public final class IOReactor implements Cloneable {
         return this;
     }
 
-    public IOReactor removeServerHandler(Handler handler) {
+    public Bootstrap removeServerHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -60,7 +60,7 @@ public final class IOReactor implements Cloneable {
         return this;
     }
 
-    public IOReactor addChildHandler(Handler handler) {
+    public Bootstrap addChildHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -69,7 +69,7 @@ public final class IOReactor implements Cloneable {
         return this;
     }
 
-    public IOReactor removeChildHandler(Handler handler) {
+    public Bootstrap removeChildHandler(Handler handler) {
         if (handler == null) {
             throw new IllegalArgumentException("handler");
         }
@@ -90,7 +90,7 @@ public final class IOReactor implements Cloneable {
         return channelFactory;
     }
 
-    public IOReactor channelFactory(ChannelFactory channelFactory) {
+    public Bootstrap channelFactory(ChannelFactory channelFactory) {
         if (channelFactory == null) {
             throw new IllegalArgumentException("connectionFactory");
         }
@@ -107,11 +107,11 @@ public final class IOReactor implements Cloneable {
         return secondaryGroup;
     }
 
-    public IOReactor group(EventLoopGroup group) {
+    public Bootstrap group(EventLoopGroup group) {
         return group(group, group);
     }
 
-    public IOReactor group(EventLoopGroup primaryGroup, EventLoopGroup secondaryGroup) {
+    public Bootstrap group(EventLoopGroup primaryGroup, EventLoopGroup secondaryGroup) {
         if (primaryGroup == null) {
             throw new IllegalArgumentException("primaryGroup");
         }
@@ -128,7 +128,7 @@ public final class IOReactor implements Cloneable {
         return channelClass;
     }
 
-    public IOReactor channelClass(Class<? extends Channel> channelClass) {
+    public Bootstrap channelClass(Class<? extends Channel> channelClass) {
         if (channelClass == null) {
             throw new IllegalArgumentException("channelClass");
         }
@@ -196,7 +196,7 @@ public final class IOReactor implements Cloneable {
         return new DefaultFutureGroup<>(futures);
     }
 
-    public IOReactor childOption(ChannelOption<Object> channelOption, Object value) {
+    public Bootstrap childOption(ChannelOption<Object> channelOption, Object value) {
         if (channelOption == null) {
             throw new IllegalArgumentException("channelOption");
         }
@@ -207,7 +207,7 @@ public final class IOReactor implements Cloneable {
         return this;
     }
 
-    public IOReactor serverOption(ChannelOption<Object> channelOption, Object value) {
+    public Bootstrap serverOption(ChannelOption<Object> channelOption, Object value) {
         if (channelOption == null) {
             throw new IllegalArgumentException("channelOption");
         }
@@ -220,8 +220,8 @@ public final class IOReactor implements Cloneable {
 
     @Override
     @SuppressWarnings("CloneDoesntCallSuperClone")
-    public IOReactor clone() {
-        return new IOReactor(this);
+    public Bootstrap clone() {
+        return new Bootstrap(this);
     }
 
     private static final class DefaultChannelAcceptor extends AbstractHandler<Channel, Object> {

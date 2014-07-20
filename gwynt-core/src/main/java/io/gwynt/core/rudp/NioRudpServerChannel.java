@@ -302,7 +302,7 @@ public class NioRudpServerChannel extends AbstractNioChannel implements ServerCh
         return (RudpChannelConfig) super.config();
     }
 
-    private class NioRudpChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    private class NioRudpChannelUnsafe extends AbstractNioUnsafe {
 
         private Map<SocketAddress, RudpVirtualChannel> virtualChannels = new HashMap<>();
 

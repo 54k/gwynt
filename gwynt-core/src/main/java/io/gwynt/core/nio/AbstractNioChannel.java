@@ -51,7 +51,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     @Override
     protected abstract AbstractNioUnsafe newUnsafe();
 
-    public static interface NioUnsafe<T> extends Unsafe<T> {
+    @Override
+    public SelectableChannel javaChannel() {
+        return (SelectableChannel) super.javaChannel();
+    }
+
+    public static interface NioUnsafe extends Unsafe {
 
         void read();
 
@@ -60,7 +65,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         void finishConnect();
     }
 
-    protected abstract class AbstractNioUnsafe<T extends SelectableChannel> extends AbstractUnsafe<T> implements NioUnsafe<T> {
+    protected abstract class AbstractNioUnsafe extends AbstractUnsafe implements NioUnsafe {
 
         private final List<Object> messages = new ArrayList<>(config().getReadSpinCount());
 
@@ -70,14 +75,6 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 interestOps(interestOps() | SelectionKey.OP_WRITE);
             }
         };
-
-        private final Runnable readTask = new Runnable() {
-            @Override
-            public void run() {
-                interestOps(interestOps() | readOp);
-            }
-        };
-
         private ChannelPromise connectPromise;
         private ScheduledFuture<?> connectTimeout;
 
@@ -89,6 +86,13 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 invokeLater(writeTask);
             }
         }
+
+        private final Runnable readTask = new Runnable() {
+            @Override
+            public void run() {
+                interestOps(interestOps() | readOp);
+            }
+        };
 
         @Override
         protected void readRequested() {
@@ -348,6 +352,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
                 throw new RegistrationException("Not registered to dispatcher.");
             }
         }
+
 
     }
 }

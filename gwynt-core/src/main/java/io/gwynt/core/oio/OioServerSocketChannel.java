@@ -40,7 +40,17 @@ public class OioServerSocketChannel extends AbstractOioChannel implements Server
         return new OioServerSocketChannelConfig(this);
     }
 
-    protected class OioServerSocketChannelUnsafe extends AbstractOioUnsafe<ServerSocket> {
+    @Override
+    public OioServerSocketChannelConfig config() {
+        return (OioServerSocketChannelConfig) super.config();
+    }
+
+    @Override
+    public ServerSocket javaChannel() {
+        return (ServerSocket) super.javaChannel();
+    }
+
+    protected class OioServerSocketChannelUnsafe extends AbstractOioUnsafe {
 
         @Override
         public boolean isActive() {

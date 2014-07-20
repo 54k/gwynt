@@ -1,5 +1,6 @@
 package io.gwynt.core.oio;
 
+import io.gwynt.core.ChannelConfig;
 import io.gwynt.core.ChannelException;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelOutboundBuffer;
@@ -13,7 +14,6 @@ import io.gwynt.core.buffer.RecvByteBufferAllocator;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
@@ -26,8 +26,12 @@ import java.util.List;
 public class OioDatagramChannel extends AbstractOioChannel implements MulticastChannel {
 
     @SuppressWarnings("unused")
-    public OioDatagramChannel() throws IOException {
-        super(newSocket());
+    public OioDatagramChannel() {
+        this(newSocket());
+    }
+
+    public OioDatagramChannel(MulticastSocket ch) {
+        super(ch);
     }
 
     private static MulticastSocket newSocket() {
@@ -46,6 +50,16 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
     @Override
     public MulticastSocket javaChannel() {
         return (MulticastSocket) super.javaChannel();
+    }
+
+    @Override
+    protected ChannelConfig newConfig() {
+        return new OioDatagramChannelConfig(this);
+    }
+
+    @Override
+    public OioDatagramChannelConfig config() {
+        return (OioDatagramChannelConfig) super.config();
     }
 
     @Override
@@ -213,7 +227,7 @@ public class OioDatagramChannel extends AbstractOioChannel implements MulticastC
         return (InetSocketAddress) super.getLocalAddress();
     }
 
-    protected class OioDatagramChannelUnsafe extends AbstractOioUnsafe<DatagramSocket> {
+    protected class OioDatagramChannelUnsafe extends AbstractOioUnsafe {
 
         @Override
         public boolean isActive() {

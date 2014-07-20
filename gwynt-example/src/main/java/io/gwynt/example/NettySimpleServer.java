@@ -1,14 +1,15 @@
 package io.gwynt.example;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.channel.oio.OioEventLoopGroup;
-import io.netty.channel.socket.oio.OioSocketChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
@@ -21,11 +22,11 @@ public class NettySimpleServer implements Runnable {
         final StringDecoder decoder = new StringDecoder();
         final StringEncoder encoder = new StringEncoder();
 
-        EventLoopGroup eventLoop = new OioEventLoopGroup();
+        EventLoopGroup eventLoop = new NioEventLoopGroup(2);
         ServerBootstrap serverBootstrap =
-                new ServerBootstrap().channel(io.netty.channel.socket.oio.OioServerSocketChannel.class).group(eventLoop).childHandler(new ChannelInitializer<OioSocketChannel>() {
+                new ServerBootstrap().channel(NioServerSocketChannel.class).group(eventLoop).childHandler(new ChannelInitializer<Channel>() {
             @Override
-            protected void initChannel(final OioSocketChannel ch) throws Exception {
+            protected void initChannel(final Channel ch) throws Exception {
                 ch.pipeline().addLast(decoder);
                 ch.pipeline().addLast(encoder);
                 ch.pipeline().addLast(new SimpleChannelInboundHandler<String>() {

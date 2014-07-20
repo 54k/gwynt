@@ -300,7 +300,7 @@ public class NioRudpChannel extends AbstractNioChannel implements MulticastChann
         return (RudpChannelConfig) super.config();
     }
 
-    private class NioRudpChannelUnsafe extends AbstractNioUnsafe<DatagramChannel> {
+    private class NioRudpChannelUnsafe extends AbstractNioUnsafe {
 
         private Map<SocketAddress, RudpVirtualChannel> virtualChannels = new HashMap<>();
 

@@ -1,12 +1,12 @@
 package io.gwynt.example.chat;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Bootstrap;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelInitializer;
 import io.gwynt.core.ChannelPromise;
 import io.gwynt.core.Datagram;
 import io.gwynt.core.EventLoopGroup;
-import io.gwynt.core.IOReactor;
 import io.gwynt.core.MulticastChannel;
 import io.gwynt.core.ServerChannel;
 import io.gwynt.core.group.ChannelGroup;
@@ -28,7 +28,7 @@ public class ChatServer implements Runnable {
 
     @Override
     public void run() {
-        IOReactor reactor = new IOReactor();
+        Bootstrap reactor = new Bootstrap();
         reactor.channelClass(serverChannel).group(group).addChildHandler(new ChannelInitializer() {
             @Override
             protected void initialize(Channel channel) {

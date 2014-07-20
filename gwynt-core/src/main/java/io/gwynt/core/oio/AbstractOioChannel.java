@@ -32,7 +32,7 @@ public abstract class AbstractOioChannel extends AbstractChannel {
     @Override
     protected abstract AbstractOioUnsafe newUnsafe();
 
-    protected abstract class AbstractOioUnsafe<T> extends AbstractUnsafe<T> {
+    protected abstract class AbstractOioUnsafe extends AbstractUnsafe {
 
         private final Runnable readTask = new Runnable() {
             @Override
@@ -42,6 +42,13 @@ public abstract class AbstractOioChannel extends AbstractChannel {
                     return;
                 }
                 read();
+            }
+        };
+
+        private final Runnable writeTask = new Runnable() {
+            @Override
+            public void run() {
+                flush();
             }
         };
 
@@ -68,7 +75,11 @@ public abstract class AbstractOioChannel extends AbstractChannel {
 
         @Override
         protected void writeRequested() {
-            flush();
+            if (eventLoop().inExecutorThread()) {
+                writeTask.run();
+            } else {
+                invokeLater(writeTask);
+            }
         }
 
         @Override

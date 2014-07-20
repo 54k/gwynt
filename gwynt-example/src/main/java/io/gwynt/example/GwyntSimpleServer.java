@@ -1,11 +1,11 @@
 package io.gwynt.example;
 
 import io.gwynt.core.AbstractHandler;
+import io.gwynt.core.Bootstrap;
 import io.gwynt.core.Channel;
 import io.gwynt.core.ChannelFuture;
 import io.gwynt.core.ChannelFutureListener;
 import io.gwynt.core.EventLoopGroup;
-import io.gwynt.core.IOReactor;
 import io.gwynt.core.oio.OioEventLoopGroup;
 import io.gwynt.core.oio.OioServerSocketChannel;
 import io.gwynt.core.pipeline.HandlerContext;
@@ -18,7 +18,7 @@ public class GwyntSimpleServer implements Runnable {
     public void run() {
         EventLoopGroup eventLoop = new OioEventLoopGroup();
         Class<? extends Channel> clazz = OioServerSocketChannel.class;
-        final IOReactor reactor = new IOReactor().channelClass(clazz).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
+        final Bootstrap reactor = new Bootstrap().channelClass(clazz).group(eventLoop)/*.addServerHandler(new LoggingHandler()).addChildHandler(new LoggingHandler())*/
                 .addChildHandler(new UtfStringConverter()).addChildHandler(new AbstractHandler<String, Object>() {
                     @Override
                     public void onMessageReceived(HandlerContext context, String message) {
