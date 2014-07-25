@@ -214,7 +214,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
     }
 
     private void notifyAllListeners() {
-        if (inNotify.getAndSet(true)) {
+        if (!inNotify.compareAndSet(false, true)) {
             invokeLater(new Runnable() {
                 @Override
                 public void run() {
@@ -309,7 +309,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public Promise<V> setFailure(Throwable cause) {
-        if (done.getAndSet(true)) {
+        if (!done.compareAndSet(false, true)) {
             throw new IllegalStateException("Promise already completed");
         }
         this.cause = cause;
@@ -333,7 +333,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
 
     @Override
     public Promise<V> setSuccess(V result) {
-        if (done.getAndSet(true)) {
+        if (!done.compareAndSet(false, true)) {
             throw new IllegalStateException("Promise already completed");
         }
         this.result = result;
@@ -382,7 +382,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
             return false;
         }
 
-        if (done.getAndSet(true)) {
+        if (!done.compareAndSet(false, true)) {
             return false;
         }
 
