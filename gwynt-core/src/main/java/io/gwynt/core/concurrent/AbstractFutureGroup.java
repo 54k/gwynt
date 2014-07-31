@@ -27,15 +27,14 @@ public abstract class AbstractFutureGroup<V, T extends Future> extends DefaultPr
     }
 
     protected void count(Future future) {
-        synchronized (AbstractFutureGroup.this) {
+        synchronized (this) {
             if (future.isSuccess()) {
                 successCount++;
             } else {
                 failureCount++;
             }
+            notify0();
         }
-
-        notify0();
     }
 
     protected int successCount() {
