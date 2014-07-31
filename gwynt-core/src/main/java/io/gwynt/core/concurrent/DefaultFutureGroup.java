@@ -20,11 +20,11 @@ public final class DefaultFutureGroup<V> extends AbstractFutureGroup<V, FutureGr
     };
     private Set<Future<V>> futures;
 
-    public DefaultFutureGroup(Collection<Future<V>> futures) {
+    public DefaultFutureGroup(Collection<? extends Future<V>> futures) {
         this(null, futures);
     }
 
-    public DefaultFutureGroup(EventExecutor eventExecutor, Collection<Future<V>> futures) {
+    public DefaultFutureGroup(EventExecutor eventExecutor, Collection<? extends Future<V>> futures) {
         super(eventExecutor);
         if (futures == null) {
             throw new IllegalArgumentException("futures");
