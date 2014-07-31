@@ -33,8 +33,8 @@ public abstract class AbstractFutureGroup<V, T extends Future> extends DefaultPr
             } else {
                 failureCount++;
             }
-            notify0();
         }
+        notify0();
     }
 
     protected int successCount() {
