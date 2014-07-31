@@ -145,7 +145,19 @@ public final class Bootstrap implements Cloneable {
     }
 
     public ChannelFuture bind(int port) {
-        return newChannel().bind(new InetSocketAddress(port));
+        return bind(new InetSocketAddress(port));
+    }
+
+    public ChannelFuture bind(String host, int port) {
+        return bind(new InetSocketAddress(host, port));
+    }
+
+    public ChannelFuture bind(InetSocketAddress address) {
+        return newChannel().bind(address);
+    }
+
+    public ChannelFuture connect(int port) {
+        return connect(new InetSocketAddress(port));
     }
 
     public ChannelFuture connect(String host, int port) {
