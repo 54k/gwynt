@@ -11,6 +11,7 @@ import java.util.Set;
 
 public final class DefaultFutureGroup<V> extends AbstractFutureGroup<V, FutureGroup<V>> implements FutureGroup<V> {
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final FutureListener<Future<V>> futureListener = new FutureListener<Future<V>>() {
         @Override
         public void onComplete(Future future) {
