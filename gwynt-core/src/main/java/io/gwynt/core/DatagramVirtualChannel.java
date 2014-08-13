@@ -15,7 +15,7 @@ public class DatagramVirtualChannel extends AbstractVirtualChannel {
     public DatagramVirtualChannel(Channel parent, SocketAddress remoteAddress) {
         super(parent);
         if (remoteAddress == null) {
-            throw new NullPointerException("remoteAddress");
+            throw new IllegalArgumentException("remoteAddress");
         }
 
         this.remoteAddress = remoteAddress;

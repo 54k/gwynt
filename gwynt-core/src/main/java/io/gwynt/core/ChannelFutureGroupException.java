@@ -12,7 +12,7 @@ public class ChannelFutureGroupException extends ChannelException implements Ite
 
     public ChannelFutureGroupException(Collection<Map.Entry<Channel, Throwable>> causes) {
         if (causes == null) {
-            throw new NullPointerException("causes");
+            throw new IllegalArgumentException("causes");
         }
         if (causes.isEmpty()) {
             throw new IllegalArgumentException("causes must be non empty");

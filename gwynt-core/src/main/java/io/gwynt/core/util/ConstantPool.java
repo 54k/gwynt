@@ -10,10 +10,10 @@ public abstract class ConstantPool<T extends Constant<T>> {
 
     public T valueOf(Class<?> firstNameComponent, String secondNameComponent) {
         if (firstNameComponent == null) {
-            throw new NullPointerException("firstNameComponent");
+            throw new IllegalArgumentException("firstNameComponent");
         }
         if (secondNameComponent == null) {
-            throw new NullPointerException("secondNameComponent");
+            throw new IllegalArgumentException("secondNameComponent");
         }
 
         return valueOf(firstNameComponent.getName() + '#' + secondNameComponent);

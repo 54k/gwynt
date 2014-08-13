@@ -56,7 +56,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
             throw new IllegalArgumentException(String.format("maxChannels: %d (expected: >= 0)", maxChannels));
         }
         if (executor == null) {
-            throw new NullPointerException("executor");
+            throw new IllegalArgumentException("executor");
         }
 
         this.maxChannels = maxChannels;
@@ -88,7 +88,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     @Override
     public ChannelFuture register(Channel channel) {
         if (channel == null) {
-            throw new NullPointerException("channel");
+            throw new IllegalArgumentException("channel");
         }
         try {
             return nextChild().register(channel);
@@ -102,7 +102,7 @@ public abstract class ThreadPerChannelEventLoopGroup extends AbstractEventExecut
     @Override
     public ChannelFuture register(ChannelPromise channelPromise) {
         if (channelPromise == null) {
-            throw new NullPointerException("channelPromise");
+            throw new IllegalArgumentException("channelPromise");
         }
         try {
             return nextChild().register(channelPromise);

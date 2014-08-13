@@ -12,7 +12,7 @@ public class FutureGroupException extends RuntimeException implements Iterable<E
 
     public FutureGroupException(Collection<Map.Entry<Future, Throwable>> causes) {
         if (causes == null) {
-            throw new NullPointerException("causes");
+            throw new IllegalArgumentException("causes");
         }
         if (causes.isEmpty()) {
             throw new IllegalArgumentException("causes must be non empty");
