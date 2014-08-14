@@ -53,7 +53,7 @@ public abstract class MultiThreadEventExecutorGroup extends AbstractEventExecuto
     }
 
     private static boolean isPowerOfTwo(int val) {
-        return (val & -val) == val;
+        return (val & (val - 1)) == 0;
     }
 
     protected abstract EventExecutor newEventExecutor(Executor executor, Object... args);
